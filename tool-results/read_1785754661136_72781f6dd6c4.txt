@@ -1,0 +1,1369 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState } from 'react';
+     4→     4→import { motion } from 'framer-motion';
+     5→     5→import {
+     6→     6→  User,
+     7→     7→  CreditCard,
+     8→     8→  Bell,
+     9→     9→  Shield,
+    10→    10→  Save,
+    11→    11→  Upload,
+    12→    12→  RefreshCw,
+    13→    13→  Eye,
+    14→    14→  EyeOff,
+    15→    15→  Key,
+    16→    16→  QrCode,
+    17→    17→  Building,
+    18→    18→  Wallet,
+    19→    19→  Landmark,
+    20→    20→  Smartphone,
+    21→    21→  Mail,
+    22→    22→  MessageSquare,
+    23→    23→  CheckCircle2,
+    24→    24→  AlertTriangle,
+    25→    25→  Globe,
+    26→    26→  Zap,
+    27→    27→  Clock,
+    28→    28→  Send,
+    29→    29→  XCircle,
+    30→    30→} from 'lucide-react';
+    31→    31→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+    32→    32→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    33→    33→import { Button } from '@/components/ui/button';
+    34→    34→import { Input } from '@/components/ui/input';
+    35→    35→import { Label } from '@/components/ui/label';
+    36→    36→import { Switch } from '@/components/ui/switch';
+    37→    37→import { Separator } from '@/components/ui/separator';
+    38→    38→import { Badge } from '@/components/ui/badge';
+    39→    39→import { toast } from 'sonner';
+    40→    40→import {
+    41→    41→  AlertDialog,
+    42→    42→  AlertDialogAction,
+    43→    43→  AlertDialogCancel,
+    44→    44→  AlertDialogContent,
+    45→    45→  AlertDialogDescription,
+    46→    46→  AlertDialogFooter,
+    47→    47→  AlertDialogHeader,
+    48→    48→  AlertDialogTitle,
+    49→    49→} from '@/components/ui/alert-dialog';
+    50→    50→import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+    51→    51→import { Checkbox } from '@/components/ui/checkbox';
+    52→    52→import { Settings as SettingsIcon } from 'lucide-react';
+    53→    53→import { PageHeader } from '@/components/app/page-header';
+    54→    54→
+    55→    55→// ── Payment method types ─────────────────────────────────────────────────────
+    56→    56→
+    57→    57→interface PaymentMethodConfig {
+    58→    58→  id: string;
+    59→    59→  label: string;
+    60→    60→  icon: React.ReactNode;
+    61→    61→  enabled: boolean;
+    62→    62→  feeRate: number;
+    63→    63→  minAmount: number;
+    64→    64→  maxAmount: number;
+    65→    65→}
+    66→    66→
+    67→    67→interface NotificationConfig {
+    68→    68→  id: string;
+    69→    69→  label: string;
+    70→    70→  icon: React.ReactNode;
+    71→    71→  enabled: boolean;
+    72→    72→  description: string;
+    73→    73→}
+    74→    74→
+    75→    75→// ── Profil Tab ────────────────────────────────────────────────────────────────
+    76→    76→
+    77→    77→function ProfilTab() {
+    78→    78→  const [form, setForm] = useState({
+    79→    79→    businessName: 'Pos Ril Indonesia',
+    80→    80→    email: 'admin@posril.id',
+    81→    81→    phone: '+62 812 3456 7890',
+    82→    82→    address: 'Jl. Sudirman No. 123, Jakarta Selatan 12190',
+    83→    83→  });
+    84→    84→  const [saving, setSaving] = useState(false);
+    85→    85→
+    86→    86→  const handleSave = async () => {
+    87→    87→    setSaving(true);
+    88→    88→    // Simulate save
+    89→    89→    await new Promise((r) => setTimeout(r, 1000));
+    90→    90→    setSaving(false);
+    91→    91→    toast.success('Profil berhasil disimpan');
+    92→    92→  };
+    93→    93→
+    94→    94→  return (
+    95→    95→    <motion.div
+    96→    96→      initial={{ opacity: 0, y: 10 }}
+    97→    97→      animate={{ opacity: 1, y: 0 }}
+    98→    98→      transition={{ duration: 0.3 }}
+    99→    99→      className="space-y-6"
+   100→   100→    >
+   101→   101→      {/* Logo Upload */}
+   102→   102→      <Card className="card-hover hover-glow-border">
+   103→   103→        <CardHeader>
+   104→   104→          <CardTitle className="text-base">Logo Bisnis</CardTitle>
+   105→   105→          <CardDescription>
+   106→   106→            Upload logo yang akan ditampilkan di halaman pembayaran
+   107→   107→          </CardDescription>
+   108→   108→        </CardHeader>
+   109→   109→        <CardContent>
+   110→   110→          <div className="flex items-start gap-6">
+   111→   111→            <div className="relative">
+   112→   112→              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 shadow-lg">
+   113→   113→                <span className="text-2xl font-bold text-white">PR</span>
+   114→   114→              </div>
+   115→   115→              <div className="absolute -bottom-2 -right-2">
+   116→   116→                <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-emerald-500 text-white shadow-md transition-colors hover:bg-emerald-600">
+   117→   117→                  <Upload className="h-3.5 w-3.5" />
+   118→   118→                </button>
+   119→   119→              </div>
+   120→   120→            </div>
+   121→   121→            <div className="flex-1 space-y-3">
+   122→   122→              <p className="text-sm text-muted-foreground">
+   123→   123→                Format yang didukung: PNG, JPG, SVG. Ukuran maksimal 2MB.
+   124→   124→              </p>
+   125→   125→              <Button variant="outline" size="sm" className="gap-2">
+   126→   126→                <Upload className="h-3.5 w-3.5" />
+   127→   127→                Ganti Logo
+   128→   128→              </Button>
+   129→   129→              <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:text-destructive">
+   130→   130→                Hapus
+   131→   131→              </Button>
+   132→   132→            </div>
+   133→   133→          </div>
+   134→   134→        </CardContent>
+   135→   135→      </Card>
+   136→   136→
+   137→   137→      {/* Business Info */}
+   138→   138→      <Card className="card-hover hover-glow-border">
+   139→   139→        <CardHeader>
+   140→   140→          <CardTitle className="text-base">Informasi Bisnis</CardTitle>
+   141→   141→          <CardDescription>
+   142→   142→            Data bisnis yang akan ditampilkan ke pelanggan
+   143→   143→          </CardDescription>
+   144→   144→        </CardHeader>
+   145→   145→        <CardContent className="space-y-5">
+   146→   146→          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+   147→   147→            <div className="space-y-2">
+   148→   148→              <Label htmlFor="businessName">Nama Bisnis</Label>
+   149→   149→              <Input
+   150→   150→                id="businessName"
+   151→   151→                value={form.businessName}
+   152→   152→                onChange={(e) =>
+   153→   153→                  setForm((f) => ({ ...f, businessName: e.target.value }))
+   154→   154→                }
+   155→   155→                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   156→   156→              />
+   157→   157→            </div>
+   158→   158→            <div className="space-y-2">
+   159→   159→              <Label htmlFor="email">Email</Label>
+   160→   160→              <Input
+   161→   161→                id="email"
+   162→   162→                type="email"
+   163→   163→                value={form.email}
+   164→   164→                onChange={(e) =>
+   165→   165→                  setForm((f) => ({ ...f, email: e.target.value }))
+   166→   166→                }
+   167→   167→                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   168→   168→              />
+   169→   169→            </div>
+   170→   170→            <div className="space-y-2">
+   171→   171→              <Label htmlFor="phone">Telepon</Label>
+   172→   172→              <Input
+   173→   173→                id="phone"
+   174→   174→                type="tel"
+   175→   175→                value={form.phone}
+   176→   176→                onChange={(e) =>
+   177→   177→                  setForm((f) => ({ ...f, phone: e.target.value }))
+   178→   178→                }
+   179→   179→                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   180→   180→              />
+   181→   181→            </div>
+   182→   182→            <div className="space-y-2 md:col-span-1">
+   183→   183→              <Label htmlFor="address">Alamat</Label>
+   184→   184→              <Input
+   185→   185→                id="address"
+   186→   186→                value={form.address}
+   187→   187→                onChange={(e) =>
+   188→   188→                  setForm((f) => ({ ...f, address: e.target.value }))
+   189→   189→                }
+   190→   190→                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   191→   191→              />
+   192→   192→            </div>
+   193→   193→          </div>
+   194→   194→
+   195→   195→          <Separator />
+   196→   196→
+   197→   197→          <div className="flex justify-end">
+   198→   198→            <Button
+   199→   199→              onClick={handleSave}
+   200→   200→              disabled={saving}
+   201→   201→              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
+   202→   202→            >
+   203→   203→              {saving ? (
+   204→   204→                <RefreshCw className="h-4 w-4 animate-spin" />
+   205→   205→              ) : (
+   206→   206→                <Save className="h-4 w-4" />
+   207→   207→              )}
+   208→   208→              {saving ? 'Menyimpan...' : 'Simpan Profil'}
+   209→   209→            </Button>
+   210→   210→          </div>
+   211→   211→        </CardContent>
+   212→   212→      </Card>
+   213→   213→    </motion.div>
+   214→   214→  );
+   215→   215→}
+   216→   216→
+   217→   217→// ── Pembayaran Tab ───────────────────────────────────────────────────────────
+   218→   218→
+   219→   219→function PembayaranTab() {
+   220→   220→  const [methods, setMethods] = useState<PaymentMethodConfig[]>([
+   221→   221→    {
+   222→   222→      id: 'qris',
+   223→   223→      label: 'QRIS',
+   224→   224→      icon: <QrCode className="h-4 w-4" />,
+   225→   225→      enabled: true,
+   226→   226→      feeRate: 0.7,
+   227→   227→      minAmount: 1000,
+   228→   228→      maxAmount: 10000000,
+   229→   229→    },
+   230→   230→    {
+   231→   231→      id: 'bank_transfer',
+   232→   232→      label: 'Bank Transfer',
+   233→   233→      icon: <Landmark className="h-4 w-4" />,
+   234→   234→      enabled: true,
+   235→   235→      feeRate: 4000,
+   236→   236→      minAmount: 10000,
+   237→   237→      maxAmount: 50000000,
+   238→   238→    },
+   239→   239→    {
+   240→   240→      id: 'ewallet',
+   241→   241→      label: 'E-Wallet',
+   242→   242→      icon: <Smartphone className="h-4 w-4" />,
+   243→   243→      enabled: true,
+   244→   244→      feeRate: 2.0,
+   245→   245→      minAmount: 1000,
+   246→   246→      maxAmount: 20000000,
+   247→   247→    },
+   248→   248→    {
+   249→   249→      id: 'va',
+   250→   250→      label: 'Virtual Account',
+   251→   251→      icon: <Building className="h-4 w-4" />,
+   252→   252→      enabled: true,
+   253→   253→      feeRate: 5000,
+   254→   254→      minAmount: 10000,
+   255→   255→      maxAmount: 100000000,
+   256→   256→    },
+   257→   257→    {
+   258→   258→      id: 'cc',
+   259→   259→      label: 'Kartu Kredit',
+   260→   260→      icon: <CreditCard className="h-4 w-4" />,
+   261→   261→      enabled: false,
+   262→   262→      feeRate: 3.5,
+   263→   263→      minAmount: 10000,
+   264→   264→      maxAmount: 50000000,
+   265→   265→    },
+   266→   266→  ]);
+   267→   267→
+   268→   268→  const [saving, setSaving] = useState(false);
+   269→   269→
+   270→   270→  const toggleMethod = (id: string) => {
+   271→   271→    setMethods((prev) =>
+   272→   272→      prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m)),
+   273→   273→    );
+   274→   274→  };
+   275→   275→
+   276→   276→  const updateMethod = (id: string, field: keyof PaymentMethodConfig, value: number) => {
+   277→   277→    setMethods((prev) =>
+   278→   278→      prev.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
+   279→   279→    );
+   280→   280→  };
+   281→   281→
+   282→   282→  const handleSave = async () => {
+   283→   283→    setSaving(true);
+   284→   284→    await new Promise((r) => setTimeout(r, 1000));
+   285→   285→    setSaving(false);
+   286→   286→    toast.success('Pengaturan pembayaran berhasil disimpan');
+   287→   287→  };
+   288→   288→
+   289→   289→  const formatRp = (n: number) =>
+   290→   290→    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+   291→   291→
+   292→   292→  return (
+   293→   293→    <motion.div
+   294→   294→      initial={{ opacity: 0, y: 10 }}
+   295→   295→      animate={{ opacity: 1, y: 0 }}
+   296→   296→      transition={{ duration: 0.3 }}
+   297→   297→      className="space-y-6"
+   298→   298→    >
+   299→   299→      {/* Global limits */}
+   300→   300→      <Card className="card-hover hover-glow-border">
+   301→   301→        <CardHeader>
+   302→   302→          <div className="flex items-center gap-2">
+   303→   303→            <Wallet className="h-4 w-4 text-emerald-500" />
+   304→   304→            <CardTitle className="text-base">Batas Transaksi Global</CardTitle>
+   305→   305→          </div>
+   306→   306→          <CardDescription>
+   307→   307→            Batas minimum dan maksimum untuk semua transaksi
+   308→   308→          </CardDescription>
+   309→   309→        </CardHeader>
+   310→   310→        <CardContent>
+   311→   311→          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+   312→   312→            <div className="space-y-2">
+   313→   313→              <Label>Minimum Transaksi</Label>
+   314→   314→              <div className="relative">
+   315→   315→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+   316→   316→                  Rp
+   317→   317→                </span>
+   318→   318→                <Input
+   319→   319→                  type="number"
+   320→   320→                  defaultValue={1000}
+   321→   321→                  className="pl-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   322→   322→                />
+   323→   323→              </div>
+   324→   324→            </div>
+   325→   325→            <div className="space-y-2">
+   326→   326→              <Label>Maksimum Transaksi</Label>
+   327→   327→              <div className="relative">
+   328→   328→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+   329→   329→                  Rp
+   330→   330→                </span>
+   331→   331→                <Input
+   332→   332→                  type="number"
+   333→   333→                  defaultValue={100000000}
+   334→   334→                  className="pl-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   335→   335→                />
+   336→   336→              </div>
+   337→   337→            </div>
+   338→   338→          </div>
+   339→   339→        </CardContent>
+   340→   340→      </Card>
+   341→   341→
+   342→   342→      {/* Per-method config */}
+   343→   343→      {methods.map((method, i) => (
+   344→   344→        <motion.div
+   345→   345→          key={method.id}
+   346→   346→          initial={{ opacity: 0, x: -10 }}
+   347→   347→          animate={{ opacity: 1, x: 0 }}
+   348→   348→          transition={{ duration: 0.3, delay: i * 0.05 }}
+   349→   349→        >
+   350→   350→          <Card className={method.enabled ? '' : 'opacity-60 card-hover'}>
+   351→   351→            <CardContent className="p-5">
+   352→   352→              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+   353→   353→                {/* Left: Toggle + Info */}
+   354→   354→                <div className="flex items-start gap-4">
+   355→   355→                  <div
+   356→   356→                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+   357→   357→                      method.enabled
+   358→   358→                        ? 'bg-gradient-to-br from-emerald-500 to-teal-400 text-white shadow-sm'
+   359→   359→                        : 'bg-muted text-muted-foreground'
+   360→   360→                    }`}
+   361→   361→                  >
+   362→   362→                    {method.icon}
+   363→   363→                  </div>
+   364→   364→                  <div className="space-y-1">
+   365→   365→                    <div className="flex items-center gap-3">
+   366→   366→                      <p className="font-medium">{method.label}</p>
+   367→   367→                      <Badge
+   368→   368→                        variant={method.enabled ? 'default' : 'secondary'}
+   369→   369→                        className={
+   370→   370→                          method.enabled
+   371→   371→                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-400'
+   372→   372→                            : ''
+   373→   373→                        }
+   374→   374→                      >
+   375→   375→                        {method.enabled ? 'Aktif' : 'Nonaktif'}
+   376→   376→                      </Badge>
+   377→   377→                    </div>
+   378→   378→                    <p className="text-muted-foreground text-xs">
+   379→   379→                      Biaya {method.feeRate <= 1 ? `${method.feeRate}%` : formatRp(method.feeRate)} per transaksi
+   380→   380→                    </p>
+   381→   381→                  </div>
+   382→   382→                </div>
+   383→   383→
+   384→   384→                {/* Right: Controls */}
+   385→   385→                <div className="flex items-center gap-4">
+   386→   386→                  <div className="grid grid-cols-3 gap-3">
+   387→   387→                    <div className="space-y-1">
+   388→   388→                      <Label className="text-xs text-muted-foreground">Biaya</Label>
+   389→   389→                      <Input
+   390→   390→                        type="number"
+   391→   391→                        step="0.1"
+   392→   392→                        value={method.feeRate}
+   393→   393→                        onChange={(e) =>
+   394→   394→                          updateMethod(method.id, 'feeRate', parseFloat(e.target.value) || 0)
+   395→   395→                        }
+   396→   396→                        className="h-9 text-xs border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   397→   397→                        disabled={!method.enabled}
+   398→   398→                      />
+   399→   399→                    </div>
+   400→   400→                    <div className="space-y-1">
+   401→   401→                      <Label className="text-xs text-muted-foreground">Min (Rp)</Label>
+   402→   402→                      <Input
+   403→   403→                        type="number"
+   404→   404→                        value={method.minAmount}
+   405→   405→                        onChange={(e) =>
+   406→   406→                          updateMethod(method.id, 'minAmount', parseInt(e.target.value) || 0)
+   407→   407→                        }
+   408→   408→                        className="h-9 text-xs border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   409→   409→                        disabled={!method.enabled}
+   410→   410→                      />
+   411→   411→                    </div>
+   412→   412→                    <div className="space-y-1">
+   413→   413→                      <Label className="text-xs text-muted-foreground">Maks (Rp)</Label>
+   414→   414→                      <Input
+   415→   415→                        type="number"
+   416→   416→                        value={method.maxAmount}
+   417→   417→                        onChange={(e) =>
+   418→   418→                          updateMethod(method.id, 'maxAmount', parseInt(e.target.value) || 0)
+   419→   419→                        }
+   420→   420→                        className="h-9 text-xs border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   421→   421→                        disabled={!method.enabled}
+   422→   422→                      />
+   423→   423→                    </div>
+   424→   424→                  </div>
+   425→   425→                  <Separator orientation="vertical" className="hidden h-10 lg:block" />
+   426→   426→                  <Switch
+   427→   427→                    checked={method.enabled}
+   428→   428→                    onCheckedChange={() => toggleMethod(method.id)}
+   429→   429→                  />
+   430→   430→                </div>
+   431→   431→              </div>
+   432→   432→            </CardContent>
+   433→   433→          </Card>
+   434→   434→        </motion.div>
+   435→   435→      ))}
+   436→   436→
+   437→   437→      {/* Save */}
+   438→   438→      <div className="flex justify-end">
+   439→   439→        <Button
+   440→   440→          onClick={handleSave}
+   441→   441→          disabled={saving}
+   442→   442→          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
+   443→   443→        >
+   444→   444→          {saving ? (
+   445→   445→            <RefreshCw className="h-4 w-4 animate-spin" />
+   446→   446→          ) : (
+   447→   447→            <Save className="h-4 w-4" />
+   448→   448→          )}
+   449→   449→          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+   450→   450→        </Button>
+   451→   451→      </div>
+   452→   452→    </motion.div>
+   453→   453→  );
+   454→   454→}
+   455→   455→
+   456→   456→// ── Notifikasi Tab ───────────────────────────────────────────────────────────
+   457→   457→
+   458→   458→function NotifikasiTab() {
+   459→   459→  const [notifications, setNotifications] = useState<NotificationConfig[]>([
+   460→   460→    {
+   461→   461→      id: 'email',
+   462→   462→      label: 'Email',
+   463→   463→      icon: <Mail className="h-4 w-4" />,
+   464→   464→      enabled: true,
+   465→   465→      description: 'Kirim notifikasi transaksi via email',
+   466→   466→    },
+   467→   467→    {
+   468→   468→      id: 'webhook',
+   469→   469→      label: 'Webhook',
+   470→   470→      icon: <Key className="h-4 w-4" />,
+   471→   471→      enabled: true,
+   472→   472→      description: 'Kirim event ke endpoint webhook Anda',
+   473→   473→    },
+   474→   474→    {
+   475→   475→      id: 'sms',
+   476→   476→      label: 'SMS',
+   477→   477→      icon: <MessageSquare className="h-4 w-4" />,
+   478→   478→      enabled: false,
+   479→   479→      description: 'Kirim notifikasi penting via SMS',
+   480→   480→    },
+   481→   481→  ]);
+   482→   482→
+   483→   483→  const [webhookUrl, setWebhookUrl] = useState('https://api.example.com/webhook/payment');
+   484→   484→  const [saving, setSaving] = useState(false);
+   485→   485→
+   486→   486→  const toggleNotification = (id: string) => {
+   487→   487→    setNotifications((prev) =>
+   488→   488→      prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
+   489→   489→    );
+   490→   490→  };
+   491→   491→
+   492→   492→  const handleSave = async () => {
+   493→   493→    setSaving(true);
+   494→   494→    await new Promise((r) => setTimeout(r, 1000));
+   495→   495→    setSaving(false);
+   496→   496→    toast.success('Pengaturan notifikasi berhasil disimpan');
+   497→   497→  };
+   498→   498→
+   499→   499→  return (
+   500→   500→    <motion.div
+   501→   501→      initial={{ opacity: 0, y: 10 }}
+   502→   502→      animate={{ opacity: 1, y: 0 }}
+   503→   503→      transition={{ duration: 0.3 }}
+   504→   504→      className="space-y-6"
+   505→   505→    >
+   506→   506→      {/* Notification Toggles */}
+   507→   507→      <Card className="card-hover hover-glow-border">
+   508→   508→        <CardHeader>
+   509→   509→          <div className="flex items-center gap-2">
+   510→   510→            <Bell className="h-4 w-4 text-emerald-500" />
+   511→   511→            <CardTitle className="text-base">Jenis Notifikasi</CardTitle>
+   512→   512→          </div>
+   513→   513→          <CardDescription>
+   514→   514→            Pilih kanal notifikasi yang ingin diaktifkan
+   515→   515→          </CardDescription>
+   516→   516→        </CardHeader>
+   517→   517→        <CardContent className="space-y-4">
+   518→   518→          {notifications.map((notif, i) => (
+   519→   519→            <motion.div
+   520→   520→              key={notif.id}
+   521→   521→              initial={{ opacity: 0, x: -10 }}
+   522→   522→              animate={{ opacity: 1, x: 0 }}
+   523→   523→              transition={{ duration: 0.3, delay: i * 0.05 }}
+   524→   524→            >
+   525→   525→              <div className="flex items-center justify-between rounded-xl border border-border/50 p-4 transition-colors hover:bg-muted/30">
+   526→   526→                <div className="flex items-center gap-4">
+   527→   527→                  <div
+   528→   528→                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+   529→   529→                      notif.enabled
+   530→   530→                        ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+   531→   531→                        : 'bg-muted text-muted-foreground'
+   532→   532→                    }`}
+   533→   533→                  >
+   534→   534→                    {notif.icon}
+   535→   535→                  </div>
+   536→   536→                  <div>
+   537→   537→                    <p className="font-medium text-sm">{notif.label}</p>
+   538→   538→                    <p className="text-muted-foreground text-xs">{notif.description}</p>
+   539→   539→                  </div>
+   540→   540→                </div>
+   541→   541→                <Switch
+   542→   542→                  checked={notif.enabled}
+   543→   543→                  onCheckedChange={() => toggleNotification(notif.id)}
+   544→   544→                />
+   545→   545→              </div>
+   546→   546→            </motion.div>
+   547→   547→          ))}
+   548→   548→        </CardContent>
+   549→   549→      </Card>
+   550→   550→
+   551→   551→      {/* Webhook URL */}
+   552→   552→      {notifications.find((n) => n.id === 'webhook')?.enabled && (
+   553→   553→        <motion.div
+   554→   554→          initial={{ opacity: 0, y: 10 }}
+   555→   555→          animate={{ opacity: 1, y: 0 }}
+   556→   556→          transition={{ duration: 0.3, delay: 0.2 }}
+   557→   557→        >
+   558→   558→          <Card className="card-hover hover-glow-border">
+   559→   559→            <CardHeader>
+   560→   560→              <CardTitle className="text-base">Konfigurasi Webhook</CardTitle>
+   561→   561→              <CardDescription>
+   562→   562→                Endpoint yang akan menerima event notifikasi pembayaran
+   563→   563→              </CardDescription>
+   564→   564→            </CardHeader>
+   565→   565→            <CardContent className="space-y-4">
+   566→   566→              <div className="space-y-2">
+   567→   567→                <Label htmlFor="webhookUrl">Webhook URL</Label>
+   568→   568→                <Input
+   569→   569→                  id="webhookUrl"
+   570→   570→                  value={webhookUrl}
+   571→   571→                  onChange={(e) => setWebhookUrl(e.target.value)}
+   572→   572→                  placeholder="https://api.example.com/webhook/payment"
+   573→   573→                  className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800 font-mono text-sm"
+   574→   574→                />
+   575→   575→              </div>
+   576→   576→
+   577→   577→              <Separator />
+   578→   578→
+   579→   579→              {/* Event types */}
+   580→   580→              <div>
+   581→   581→                <Label className="text-sm mb-3 block">Event yang Dikirim</Label>
+   582→   582→                <div className="flex flex-wrap gap-2">
+   583→   583→                  {[
+   584→   584→                    'payment.success',
+   585→   585→                    'payment.failed',
+   586→   586→                    'payment.expired',
+   587→   587→                    'refund.created',
+   588→   588→                    'refund.processed',
+   589→   589→                    'payout.processed',
+   590→   590→                  ].map((event) => (
+   591→   591→                    <Badge
+   592→   592→                      key={event}
+   593→   593→                      variant="outline"
+   594→   594→                      className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-default"
+   595→   595→                    >
+   596→   596→                      {event}
+   597→   597→                    </Badge>
+   598→   598→                  ))}
+   599→   599→                </div>
+   600→   600→              </div>
+   601→   601→
+   602→   602→              {/* Test webhook */}
+   603→   603→              <Button variant="outline" className="gap-2" onClick={() => toast.info('Test webhook dikirim')}>
+   604→   604→                <Bell className="h-3.5 w-3.5" />
+   605→   605→                Kirim Test Webhook
+   606→   606→              </Button>
+   607→   607→            </CardContent>
+   608→   608→          </Card>
+   609→   609→        </motion.div>
+   610→   610→      )}
+   611→   611→
+   612→   612→      {/* Save */}
+   613→   613→      <div className="flex justify-end">
+   614→   614→        <Button
+   615→   615→          onClick={handleSave}
+   616→   616→          disabled={saving}
+   617→   617→          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
+   618→   618→        >
+   619→   619→          {saving ? (
+   620→   620→            <RefreshCw className="h-4 w-4 animate-spin" />
+   621→   621→          ) : (
+   622→   622→            <Save className="h-4 w-4" />
+   623→   623→          )}
+   624→   624→          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+   625→   625→        </Button>
+   626→   626→      </div>
+   627→   627→    </motion.div>
+   628→   628→  );
+   629→   629→}
+   630→   630→
+   631→   631→// ── Keamanan Tab ──────────────────────────────────────────────────────────────
+   632→   632→
+   633→   633→function KeamananTab() {
+   634→   634→  const [passwordForm, setPasswordForm] = useState({
+   635→   635→    current: '',
+   636→   636→    newPassword: '',
+   637→   637→    confirm: '',
+   638→   638→  });
+   639→   639→  const [showCurrent, setShowCurrent] = useState(false);
+   640→   640→  const [showNew, setShowNew] = useState(false);
+   641→   641→  const [showConfirm, setShowConfirm] = useState(false);
+   642→   642→  const [twoFA, setTwoFA] = useState(false);
+   643→   643→  const [changingPassword, setChangingPassword] = useState(false);
+   644→   644→  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+   645→   645→  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+   646→   646→
+   647→   647→  const apiKey = 'prl_sk_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+   648→   648→
+   649→   649→  const maskedApiKey = `${apiKey.slice(0, 8)}${'•'.repeat(24)}${apiKey.slice(-4)}`;
+   650→   650→
+   651→   651→  const handleChangePassword = async () => {
+   652→   652→    if (!passwordForm.current || !passwordForm.newPassword || !passwordForm.confirm) {
+   653→   653→      toast.error('Semua field password harus diisi');
+   654→   654→      return;
+   655→   655→    }
+   656→   656→    if (passwordForm.newPassword !== passwordForm.confirm) {
+   657→   657→      toast.error('Password baru dan konfirmasi tidak cocok');
+   658→   658→      return;
+   659→   659→    }
+   660→   660→    if (passwordForm.newPassword.length < 8) {
+   661→   661→      toast.error('Password baru minimal 8 karakter');
+   662→   662→      return;
+   663→   663→    }
+   664→   664→
+   665→   665→    setChangingPassword(true);
+   666→   666→    await new Promise((r) => setTimeout(r, 1500));
+   667→   667→    setChangingPassword(false);
+   668→   668→    setPasswordForm({ current: '', newPassword: '', confirm: '' });
+   669→   669→    toast.success('Password berhasil diubah');
+   670→   670→  };
+   671→   671→
+   672→   672→  const handleRegenerate = async () => {
+   673→   673→    setShowRegenerateDialog(false);
+   674→   674→    toast.success('API Key baru telah digenerate');
+   675→   675→  };
+   676→   676→
+   677→   677→  const handleCopyApiKey = () => {
+   678→   678→    navigator.clipboard.writeText(apiKey);
+   679→   679→    toast.success('API Key disalin ke clipboard');
+   680→   680→  };
+   681→   681→
+   682→   682→  return (
+   683→   683→    <motion.div
+   684→   684→      initial={{ opacity: 0, y: 10 }}
+   685→   685→      animate={{ opacity: 1, y: 0 }}
+   686→   686→      transition={{ duration: 0.3 }}
+   687→   687→      className="space-y-6"
+   688→   688→    >
+   689→   689→      {/* Change Password */}
+   690→   690→      <Card className="card-hover hover-glow-border">
+   691→   691→        <CardHeader>
+   692→   692→          <div className="flex items-center gap-2">
+   693→   693→            <Shield className="h-4 w-4 text-emerald-500" />
+   694→   694→            <CardTitle className="text-base">Ubah Password</CardTitle>
+   695→   695→          </div>
+   696→   696→          <CardDescription>
+   697→   697→            Perbarui password akun Anda secara berkala untuk keamanan
+   698→   698→          </CardDescription>
+   699→   699→        </CardHeader>
+   700→   700→        <CardContent className="space-y-5">
+   701→   701→          <div className="space-y-2">
+   702→   702→            <Label htmlFor="currentPassword">Password Saat Ini</Label>
+   703→   703→            <div className="relative">
+   704→   704→              <Input
+   705→   705→                id="currentPassword"
+   706→   706→                type={showCurrent ? 'text' : 'password'}
+   707→   707→                value={passwordForm.current}
+   708→   708→                onChange={(e) =>
+   709→   709→                  setPasswordForm((f) => ({ ...f, current: e.target.value }))
+   710→   710→                }
+   711→   711→                placeholder="Masukkan password saat ini"
+   712→   712→                className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   713→   713→              />
+   714→   714→              <button
+   715→   715→                type="button"
+   716→   716→                onClick={() => setShowCurrent(!showCurrent)}
+   717→   717→                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+   718→   718→              >
+   719→   719→                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   720→   720→              </button>
+   721→   721→            </div>
+   722→   722→          </div>
+   723→   723→
+   724→   724→          <Separator />
+   725→   725→
+   726→   726→          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+   727→   727→            <div className="space-y-2">
+   728→   728→              <Label htmlFor="newPassword">Password Baru</Label>
+   729→   729→              <div className="relative">
+   730→   730→                <Input
+   731→   731→                  id="newPassword"
+   732→   732→                  type={showNew ? 'text' : 'password'}
+   733→   733→                  value={passwordForm.newPassword}
+   734→   734→                  onChange={(e) =>
+   735→   735→                    setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
+   736→   736→                  }
+   737→   737→                  placeholder="Minimal 8 karakter"
+   738→   738→                  className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   739→   739→                />
+   740→   740→                <button
+   741→   741→                  type="button"
+   742→   742→                  onClick={() => setShowNew(!showNew)}
+   743→   743→                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+   744→   744→                >
+   745→   745→                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   746→   746→                </button>
+   747→   747→              </div>
+   748→   748→            </div>
+   749→   749→            <div className="space-y-2">
+   750→   750→              <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+   751→   751→              <div className="relative">
+   752→   752→                <Input
+   753→   753→                  id="confirmPassword"
+   754→   754→                  type={showConfirm ? 'text' : 'password'}
+   755→   755→                  value={passwordForm.confirm}
+   756→   756→                  onChange={(e) =>
+   757→   757→                    setPasswordForm((f) => ({ ...f, confirm: e.target.value }))
+   758→   758→                  }
+   759→   759→                  placeholder="Ulangi password baru"
+   760→   760→                  className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+   761→   761→                />
+   762→   762→                <button
+   763→   763→                  type="button"
+   764→   764→                  onClick={() => setShowConfirm(!showConfirm)}
+   765→   765→                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+   766→   766→                >
+   767→   767→                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   768→   768→                </button>
+   769→   769→              </div>
+   770→   770→            </div>
+   771→   771→          </div>
+   772→   772→
+   773→   773→          <div className="flex justify-end">
+   774→   774→            <Button
+   775→   775→              onClick={handleChangePassword}
+   776→   776→              disabled={changingPassword}
+   777→   777→              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
+   778→   778→            >
+   779→   779→              {changingPassword ? (
+   780→   780→                <RefreshCw className="h-4 w-4 animate-spin" />
+   781→   781→              ) : (
+   782→   782→                <Shield className="h-4 w-4" />
+   783→   783→              )}
+   784→   784→              {changingPassword ? 'Mengubah...' : 'Ubah Password'}
+   785→   785→            </Button>
+   786→   786→          </div>
+   787→   787→        </CardContent>
+   788→   788→      </Card>
+   789→   789→
+   790→   790→      {/* 2FA Toggle */}
+   791→   791→      <Card className="card-hover hover-glow-border">
+   792→   792→        <CardHeader>
+   793→   793→          <CardTitle className="text-base">Autentikasi Dua Faktor (2FA)</CardTitle>
+   794→   794→          <CardDescription>
+   795→   795→            Tambahkan lapisan keamanan ekstra untuk akun Anda
+   796→   796→          </CardDescription>
+   797→   797→        </CardHeader>
+   798→   798→        <CardContent>
+   799→   799→          <div className="flex items-center justify-between rounded-xl border border-border/50 p-4 transition-colors hover:bg-muted/30">
+   800→   800→            <div className="flex items-center gap-4">
+   801→   801→              <div
+   802→   802→                className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+   803→   803→                  twoFA
+   804→   804→                    ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+   805→   805→                    : 'bg-muted text-muted-foreground'
+   806→   806→                }`}
+   807→   807→              >
+   808→   808→                {twoFA ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+   809→   809→              </div>
+   810→   810→              <div>
+   811→   811→                <p className="font-medium text-sm">
+   812→   812→                  {twoFA ? '2FA Diaktifkan' : '2FA Nonaktif'}
+   813→   813→                </p>
+   814→   814→                <p className="text-muted-foreground text-xs">
+   815→   815→                  {twoFA
+   816→   816→                    ? 'Akun Anda terlindungi dengan autentikasi dua faktor'
+   817→   817→                    : 'Aktifkan untuk meningkatkan keamanan akun'}
+   818→   818→                </p>
+   819→   819→              </div>
+   820→   820→            </div>
+   821→   821→            <Switch checked={twoFA} onCheckedChange={(checked) => {
+   822→   822→              setTwoFA(checked);
+   823→   823→              toast.success(checked ? '2FA diaktifkan' : '2FA dinonaktifkan');
+   824→   824→            }} />
+   825→   825→          </div>
+   826→   826→        </CardContent>
+   827→   827→      </Card>
+   828→   828→
+   829→   829→      {/* API Key */}
+   830→   830→      <Card className="card-hover hover-glow-border">
+   831→   831→        <CardHeader>
+   832→   832→          <div className="flex items-center gap-2">
+   833→   833→            <Key className="h-4 w-4 text-emerald-500" />
+   834→   834→            <CardTitle className="text-base">API Key</CardTitle>
+   835→   835→          </div>
+   836→   836→          <CardDescription>
+   837→   837→            Gunakan API key untuk mengakses API Pos Ril dari aplikasi Anda
+   838→   838→          </CardDescription>
+   839→   839→        </CardHeader>
+   840→   840→        <CardContent className="space-y-4">
+   841→   841→          <div className="space-y-2">
+   842→   842→            <Label>Live API Key</Label>
+   843→   843→            <div className="flex items-center gap-2">
+   844→   844→              <div className="relative flex-1">
+   845→   845→                <Input
+   846→   846→                  readOnly
+   847→   847→                  type={apiKeyVisible ? 'text' : 'password'}
+   848→   848→                  value={apiKeyVisible ? apiKey : maskedApiKey}
+   849→   849→                  className="font-mono text-sm border-emerald-200 dark:border-emerald-800 pr-10"
+   850→   850→                />
+   851→   851→                <button
+   852→   852→                  type="button"
+   853→   853→                  onClick={() => setApiKeyVisible(!apiKeyVisible)}
+   854→   854→                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+   855→   855→                >
+   856→   856→                  {apiKeyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   857→   857→                </button>
+   858→   858→              </div>
+   859→   859→              <Button
+   860→   860→                variant="outline"
+   861→   861→                size="icon"
+   862→   862→                onClick={handleCopyApiKey}
+   863→   863→                className="shrink-0"
+   864→   864→              >
+   865→   865→                <svg
+   866→   866→                  xmlns="http://www.w3.org/2000/svg"
+   867→   867→                  width="16"
+   868→   868→                  height="16"
+   869→   869→                  viewBox="0 0 24 24"
+   870→   870→                  fill="none"
+   871→   871→                  stroke="currentColor"
+   872→   872→                  strokeWidth="2"
+   873→   873→                  strokeLinecap="round"
+   874→   874→                  strokeLinejoin="round"
+   875→   875→                  className="text-emerald-600 dark:text-emerald-400"
+   876→   876→                >
+   877→   877→                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+   878→   878→                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+   879→   879→                </svg>
+   880→   880→              </Button>
+   881→   881→            </div>
+   882→   882→          </div>
+   883→   883→
+   884→   884→          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+   885→   885→            <div className="flex gap-2">
+   886→   886→              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+   887→   887→              <p className="text-xs text-amber-700 dark:text-amber-400">
+   888→   888→                Jangan bagikan API key Anda kepada siapa pun. Regenerate akan membatalkan key sebelumnya secara permanen.
+   889→   889→              </p>
+   890→   890→            </div>
+   891→   891→          </div>
+   892→   892→
+   893→   893→          <Separator />
+   894→   894→
+   895→   895→          <div className="flex items-center gap-3">
+   896→   896→            <Button
+   897→   897→              variant="destructive"
+   898→   898→              size="sm"
+   899→   899→              className="gap-2"
+   900→   900→              onClick={() => setShowRegenerateDialog(true)}
+   901→   901→            >
+   902→   902→              <RefreshCw className="h-3.5 w-3.5" />
+   903→   903→              Regenerate API Key
+   904→   904→            </Button>
+   905→   905→            <Button variant="outline" size="sm" onClick={handleCopyApiKey} className="gap-2">
+   906→   906→              <svg
+   907→   907→                xmlns="http://www.w3.org/2000/svg"
+   908→   908→                width="14"
+   909→   909→                height="14"
+   910→   910→                viewBox="0 0 24 24"
+   911→   911→                fill="none"
+   912→   912→                stroke="currentColor"
+   913→   913→                strokeWidth="2"
+   914→   914→                strokeLinecap="round"
+   915→   915→                strokeLinejoin="round"
+   916→   916→              >
+   917→   917→                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+   918→   918→                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+   919→   919→              </svg>
+   920→   920→              Salin Key
+   921→   921→            </Button>
+   922→   922→          </div>
+   923→   923→        </CardContent>
+   924→   924→      </Card>
+   925→   925→
+   926→   926→      {/* Regenerate Confirm Dialog */}
+   927→   927→      <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
+   928→   928→        <AlertDialogContent>
+   929→   929→          <AlertDialogHeader>
+   930→   930→            <AlertDialogTitle>Regenerate API Key?</AlertDialogTitle>
+   931→   931→            <AlertDialogDescription>
+   932→   932→              Tindakan ini akan membuat API key baru dan membatalkan key saat ini secara permanen.
+   933→   933→              Semua integrasi yang menggunakan key lama akan berhenti berfungsi. Tindakan ini
+   934→   934→              tidak dapat dibatalkan.
+   935→   935→            </AlertDialogDescription>
+   936→   936→          </AlertDialogHeader>
+   937→   937→          <AlertDialogFooter>
+   938→   938→            <AlertDialogCancel>Batal</AlertDialogCancel>
+   939→   939→            <AlertDialogAction
+   940→   940→              onClick={handleRegenerate}
+   941→   941→              className="bg-destructive text-white hover:bg-destructive/90"
+   942→   942→            >
+   943→   943→              Ya, Regenerate
+   944→   944→            </AlertDialogAction>
+   945→   945→          </AlertDialogFooter>
+   946→   946→        </AlertDialogContent>
+   947→   947→      </AlertDialog>
+   948→   948→    </motion.div>
+   949→   949→  );
+   950→   950→}
+   951→   951→
+   952→   952→// ── Main Settings Component ───────────────────────────────────────────────────
+   953→   953→
+   954→   954→// ── Webhook Tab ─────────────────────────────────────────────────────────────
+   955→   955→
+   956→   956→interface WebhookLog {
+   957→   957→  id: string;
+   958→   958→  eventType: string;
+   959→   959→  url: string;
+   960→   960→  statusCode: string;
+   961→   961→  responseTime: string;
+   962→   962→  timestamp: string;
+   963→   963→  status: 'success' | 'failed' | 'pending';
+   964→   964→  retryCount: number;
+   965→   965→}
+   966→   966→
+   967→   967→const MOCK_WEBHOOK_LOGS: WebhookLog[] = [
+   968→   968→  { id: 'wh_001', eventType: 'payment.success', url: 'https://tokowarung.com/api/webhook/payment', statusCode: '200', responseTime: '234ms', timestamp: '2 menit yang lalu', status: 'success', retryCount: 0 },
+   969→   969→  { id: 'wh_002', eventType: 'payment.success', url: 'https://bukakios.id/webhooks/posril', statusCode: '200', responseTime: '189ms', timestamp: '5 menit yang lalu', status: 'success', retryCount: 0 },
+   970→   970→  { id: 'wh_003', eventType: 'payment.failed', url: 'https://tokowarung.com/api/webhook/payment', statusCode: '500', responseTime: '1203ms', timestamp: '12 menit yang lalu', status: 'failed', retryCount: 2 },
+   971→   971→  { id: 'wh_004', eventType: 'refund.created', url: 'https://bukakios.id/webhooks/posril', statusCode: '200', responseTime: '312ms', timestamp: '18 menit yang lalu', status: 'success', retryCount: 0 },
+   972→   972→  { id: 'wh_005', eventType: 'payment.expired', url: 'https://warungdigital.my.id/hook', statusCode: 'timeout', responseTime: '30000ms', timestamp: '25 menit yang lalu', status: 'pending', retryCount: 3 },
+   973→   973→  { id: 'wh_006', eventType: 'payment.success', url: 'https://tokoemak.com/payments/callback', statusCode: '200', responseTime: '156ms', timestamp: '32 menit yang lalu', status: 'success', retryCount: 0 },
+   974→   974→  { id: 'wh_007', eventType: 'payout.processed', url: 'https://tokowarung.com/api/webhook/payment', statusCode: '200', responseTime: '267ms', timestamp: '45 menit yang lalu', status: 'success', retryCount: 0 },
+   975→   975→  { id: 'wh_008', eventType: 'payment.failed', url: 'https://warungdigital.my.id/hook', statusCode: '502', responseTime: '890ms', timestamp: '1 jam yang lalu', status: 'failed', retryCount: 1 },
+   976→   976→  { id: 'wh_009', eventType: 'payment.success', url: 'https://bukakios.id/webhooks/posril', statusCode: '200', responseTime: '201ms', timestamp: '1 jam yang lalu', status: 'success', retryCount: 0 },
+   977→   977→  { id: 'wh_010', eventType: 'refund.created', url: 'https://tokoemak.com/payments/callback', statusCode: '200', responseTime: '445ms', timestamp: '2 jam yang lalu', status: 'success', retryCount: 0 },
+   978→   978→];
+   979→   979→
+   980→   980→const EVENT_SUBSCRIPTIONS = [
+   981→   981→  { id: 'payment.success', label: 'Pembayaran Berhasil', description: 'Dikirim saat pembayaran berhasil' },
+   982→   982→  { id: 'payment.failed', label: 'Pembayaran Gagal', description: 'Dikirim saat pembayaran gagal' },
+   983→   983→  { id: 'payment.expired', label: 'Pembayaran Kedaluwarsa', description: 'Dikirim saat pembayaran expired' },
+   984→   984→  { id: 'refund.created', label: 'Refund Dibuat', description: 'Dikirim saat refund baru dibuat' },
+   985→   985→  { id: 'payout.processed', label: 'Payout Diproses', description: 'Dikirim saat payout berhasil diproses' },
+   986→   986→];
+   987→   987→
+   988→   988→function WebhookTab() {
+   989→   989→  const [webhookUrl, setWebhookUrl] = useState('https://tokowarung.com/api/webhook/payment');
+   990→   990→  const [secretKey, setSecretKey] = useState('whsec_ril_a1b2c3d4e5f6g7h8i9j0');
+   991→   991→  const [showSecret, setShowSecret] = useState(false);
+   992→   992→  const [webhookActive, setWebhookActive] = useState(true);
+   993→   993→  const [subscriptions, setSubscriptions] = useState<Record<string, boolean>>({
+   994→   994→    'payment.success': true,
+   995→   995→    'payment.failed': true,
+   996→   996→    'payment.expired': false,
+   997→   997→    'refund.created': true,
+   998→   998→    'payout.processed': true,
+   999→   999→  });
+  1000→  1000→  const [testLoading, setTestLoading] = useState(false);
+  1001→  1001→
+  1002→  1002→  const handleTestWebhook = async () => {
+  1003→  1003→    setTestLoading(true);
+  1004→  1004→    await new Promise((r) => setTimeout(r, 1500));
+  1005→  1005→    setTestLoading(false);
+  1006→  1006→    toast.success('Test webhook berhasil dikirim!', {
+  1007→  1007→      description: 'Payload percobaan telah dikirim ke endpoint Anda.',
+  1008→  1008→    });
+  1009→  1009→  };
+  1010→  1010→
+  1011→  1011→  const handleResend = (id: string) => {
+  1012→  1012→    toast.success(`Mengirim ulang webhook ${id}...`, {
+  1013→  1013→      description: 'Webhook akan dikirim ulang ke endpoint.',
+  1014→  1014→    });
+  1015→  1015→  };
+  1016→  1016→
+  1017→  1017→  const getEventBadge = (status: WebhookLog['status']) => {
+  1018→  1018→    const map = {
+  1019→  1019→      success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  1020→  1020→      failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  1021→  1021→      pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  1022→  1022→    };
+  1023→  1023→    return map[status];
+  1024→  1024→  };
+  1025→  1025→
+  1026→  1026→  const getEventLabel = (status: WebhookLog['status']) => {
+  1027→  1027→    const map = {
+  1028→  1028→      success: 'Berhasil',
+  1029→  1029→      failed: 'Gagal',
+  1030→  1030→      pending: 'Pending',
+  1031→  1031→    };
+  1032→  1032→    return map[status];
+  1033→  1033→  };
+  1034→  1034→
+  1035→  1035→  const getStatusCodeColor = (code: string) => {
+  1036→  1036→    if (code === '200') return 'text-emerald-600 dark:text-emerald-400';
+  1037→  1037→    if (code === 'timeout') return 'text-amber-600 dark:text-amber-400';
+  1038→  1038→    return 'text-red-600 dark:text-red-400';
+  1039→  1039→  };
+  1040→  1040→
+  1041→  1041→  const truncateUrl = (url: string, maxLen = 40) => {
+  1042→  1042→    return url.length > maxLen ? url.substring(0, maxLen) + '...' : url;
+  1043→  1043→  };
+  1044→  1044→
+  1045→  1045→  return (
+  1046→  1046→    <motion.div
+  1047→  1047→      initial={{ opacity: 0, y: 10 }}
+  1048→  1048→      animate={{ opacity: 1, y: 0 }}
+  1049→  1049→      transition={{ duration: 0.3 }}
+  1050→  1050→      className="space-y-6"
+  1051→  1051→    >
+  1052→  1052→      {/* Webhook Configuration */}
+  1053→  1053→      <Card className="card-hover hover-glow-border">
+  1054→  1054→        <CardHeader>
+  1055→  1055→          <CardTitle className="flex items-center gap-2 text-base">
+  1056→  1056→            <Globe className="h-4 w-4 text-emerald-500" />
+  1057→  1057→            Konfigurasi Webhook
+  1058→  1058→          </CardTitle>
+  1059→  1059→          <CardDescription>
+  1060→  1060→            Atur endpoint webhook untuk menerima notifikasi event secara real-time
+  1061→  1061→          </CardDescription>
+  1062→  1062→        </CardHeader>
+  1063→  1063→        <CardContent className="space-y-5">
+  1064→  1064→          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+  1065→  1065→            <div className="space-y-2">
+  1066→  1066→              <Label htmlFor="webhookUrl">URL Endpoint</Label>
+  1067→  1067→              <Input
+  1068→  1068→                id="webhookUrl"
+  1069→  1069→                value={webhookUrl}
+  1070→  1070→                onChange={(e) => setWebhookUrl(e.target.value)}
+  1071→  1071→                placeholder="https://contoh.com/api/webhook"
+  1072→  1072→                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+  1073→  1073→              />
+  1074→  1074→            </div>
+  1075→  1075→            <div className="space-y-2">
+  1076→  1076→              <Label htmlFor="secretKey">Secret Key</Label>
+  1077→  1077→              <div className="relative">
+  1078→  1078→                <Input
+  1079→  1079→                  id="secretKey"
+  1080→  1080→                  type={showSecret ? 'text' : 'password'}
+  1081→  1081→                  value={secretKey}
+  1082→  1082→                  onChange={(e) => setSecretKey(e.target.value)}
+  1083→  1083→                  className="border-emerald-200 pr-10 focus-visible:ring-emerald-500 dark:border-emerald-800"
+  1084→  1084→                />
+  1085→  1085→                <button
+  1086→  1086→                  type="button"
+  1087→  1087→                  onClick={() => setShowSecret(!showSecret)}
+  1088→  1088→                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+  1089→  1089→                >
+  1090→  1090→                  {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+  1091→  1091→                </button>
+  1092→  1092→              </div>
+  1093→  1093→            </div>
+  1094→  1094→          </div>
+  1095→  1095→          <div className="flex items-center justify-between">
+  1096→  1096→            <div>
+  1097→  1097→              <Label>Status Webhook</Label>
+  1098→  1098→              <p className="text-xs text-muted-foreground mt-1">
+  1099→  1099→                {webhookActive ? 'Webhook aktif dan siap menerima event' : 'Webhook dinonaktifkan'}
+  1100→  1100→              </p>
+  1101→  1101→            </div>
+  1102→  1102→            <Switch checked={webhookActive} onCheckedChange={setWebhookActive} />
+  1103→  1103→          </div>
+  1104→  1104→          <Button
+  1105→  1105→            onClick={handleTestWebhook}
+  1106→  1106→            disabled={testLoading || !webhookUrl}
+  1107→  1107→            className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
+  1108→  1108→          >
+  1109→  1109→            {testLoading ? (
+  1110→  1110→              <RefreshCw className="h-4 w-4 animate-spin" />
+  1111→  1111→            ) : (
+  1112→  1112→              <Send className="h-4 w-4" />
+  1113→  1113→            )}
+  1114→  1114→            {testLoading ? 'Mengirim...' : 'Kirim Test Webhook'}
+  1115→  1115→          </Button>
+  1116→  1116→        </CardContent>
+  1117→  1117→      </Card>
+  1118→  1118→
+  1119→  1119→      {/* Event Subscriptions */}
+  1120→  1120→      <Card className="card-hover hover-glow-border">
+  1121→  1121→        <CardHeader>
+  1122→  1122→          <CardTitle className="flex items-center gap-2 text-base">
+  1123→  1123→            <Zap className="h-4 w-4 text-emerald-500" />
+  1124→  1124→            Langganan Event
+  1125→  1125→          </CardTitle>
+  1126→  1126→          <CardDescription>
+  1127→  1127→            Pilih event yang ingin diterima melalui webhook
+  1128→  1128→          </CardDescription>
+  1129→  1129→        </CardHeader>
+  1130→  1130→        <CardContent className="space-y-4">
+  1131→  1131→          {EVENT_SUBSCRIPTIONS.map((event) => (
+  1132→  1132→            <div
+  1133→  1133→              key={event.id}
+  1134→  1134→              className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
+  1135→  1135→            >
+  1136→  1136→              <div className="flex items-center gap-3">
+  1137→  1137→                <Checkbox
+  1138→  1138→                  checked={subscriptions[event.id]}
+  1139→  1139→                  onCheckedChange={(checked) =>
+  1140→  1140→                    setSubscriptions((s) => ({ ...s, [event.id]: !!checked }))
+  1141→  1141→                  }
+  1142→  1142→                  className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+  1143→  1143→                />
+  1144→  1144→                <div>
+  1145→  1145→                  <p className="text-sm font-medium">{event.label}</p>
+  1146→  1146→                  <p className="text-xs text-muted-foreground">{event.description}</p>
+  1147→  1147→                </div>
+  1148→  1148→              </div>
+  1149→  1149→              <Badge variant="outline" className="font-mono text-xs">
+  1150→  1150→                {event.id}
+  1151→  1151→              </Badge>
+  1152→  1152→            </div>
+  1153→  1153→          ))}
+  1154→  1154→        </CardContent>
+  1155→  1155→      </Card>
+  1156→  1156→
+  1157→  1157→      {/* Delivery Stats */}
+  1158→  1158→      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+  1159→  1159→        <Card className="card-hover hover-glow-border">
+  1160→  1160→          <CardContent className="pt-5 pb-4 px-4">
+  1161→  1161→            <div className="flex items-center gap-2">
+  1162→  1162→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+  1163→  1163→                <Send className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+  1164→  1164→              </div>
+  1165→  1165→              <div>
+  1166→  1166→                <p className="text-xs text-muted-foreground">Total Terkirim</p>
+  1167→  1167→                <p className="text-lg font-bold">1,247</p>
+  1168→  1168→              </div>
+  1169→  1169→            </div>
+  1170→  1170→          </CardContent>
+  1171→  1171→        </Card>
+  1172→  1172→        <Card className="card-hover hover-glow-border">
+  1173→  1173→          <CardContent className="pt-5 pb-4 px-4">
+  1174→  1174→            <div className="flex items-center gap-2">
+  1175→  1175→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+  1176→  1176→                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+  1177→  1177→              </div>
+  1178→  1178→              <div>
+  1179→  1179→                <p className="text-xs text-muted-foreground">Gagal</p>
+  1180→  1180→                <p className="text-lg font-bold">23</p>
+  1181→  1181→              </div>
+  1182→  1182→            </div>
+  1183→  1183→          </CardContent>
+  1184→  1184→        </Card>
+  1185→  1185→        <Card className="card-hover hover-glow-border">
+  1186→  1186→          <CardContent className="pt-5 pb-4 px-4">
+  1187→  1187→            <div className="flex items-center gap-2">
+  1188→  1188→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+  1189→  1189→                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+  1190→  1190→              </div>
+  1191→  1191→              <div>
+  1192→  1192→                <p className="text-xs text-muted-foreground">Rata-rata Response</p>
+  1193→  1193→                <p className="text-lg font-bold">189ms</p>
+  1194→  1194→              </div>
+  1195→  1195→            </div>
+  1196→  1196→          </CardContent>
+  1197→  1197→        </Card>
+  1198→  1198→        <Card className="card-hover hover-glow-border">
+  1199→  1199→          <CardContent className="pt-5 pb-4 px-4">
+  1200→  1200→            <div className="flex items-center gap-2">
+  1201→  1201→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+  1202→  1202→                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+  1203→  1203→              </div>
+  1204→  1204→              <div>
+  1205→  1205→                <p className="text-xs text-muted-foreground">Success Rate</p>
+  1206→  1206→                <p className="text-lg font-bold">98.2%</p>
+  1207→  1207→              </div>
+  1208→  1208→            </div>
+  1209→  1209→          </CardContent>
+  1210→  1210→        </Card>
+  1211→  1211→      </div>
+  1212→  1212→
+  1213→  1213→      {/* Recent Delivery Logs */}
+  1214→  1214→      <Card className="card-hover hover-glow-border">
+  1215→  1215→        <CardHeader>
+  1216→  1216→          <CardTitle className="flex items-center gap-2 text-base">
+  1217→  1217→          <Clock className="h-4 w-4 text-emerald-500" />
+  1218→  1218→          Log Pengiriman Terbaru
+  1219→  1219→          </CardTitle>
+  1220→  1220→          <CardDescription>
+  1221→  1221→            Riwayat pengiriman webhook 10 terakhir
+  1222→  1222→          </CardDescription>
+  1223→  1223→        </CardHeader>
+  1224→  1224→        <CardContent>
+  1225→  1225→          <div className="overflow-x-auto -mx-6 px-6">
+  1226→  1226→            <Table className="table-stripe">
+  1227→  1227→              <TableHeader className="table-header-enhanced">
+  1228→  1228→                <TableRow className="border-border/50 hover:bg-transparent">
+  1229→  1229→                  <TableHead className="text-xs">Event Type</TableHead>
+  1230→  1230→                  <TableHead className="text-xs">URL</TableHead>
+  1231→  1231→                  <TableHead className="text-xs">Status Code</TableHead>
+  1232→  1232→                  <TableHead className="text-xs">Response Time</TableHead>
+  1233→  1233→                  <TableHead className="text-xs">Waktu</TableHead>
+  1234→  1234→                  <TableHead className="text-xs text-right">Aksi</TableHead>
+  1235→  1235→                </TableRow>
+  1236→  1236→              </TableHeader>
+  1237→  1237→              <TableBody>
+  1238→  1238→                {MOCK_WEBHOOK_LOGS.map((log) => (
+  1239→  1239→                  <TableRow key={log.id} className="table-row-hover">
+  1240→  1240→                    <TableCell>
+  1241→  1241→                      <div className="flex items-center gap-2">
+  1242→  1242→                        <Badge className={getEventBadge(log.status)}>
+  1243→  1243→                          {log.eventType}
+  1244→  1244→                        </Badge>
+  1245→  1245→                        <span className="text-xs text-muted-foreground">{getEventLabel(log.status)}</span>
+  1246→  1246→                      </div>
+  1247→  1247→                    </TableCell>
+  1248→  1248→                    <TableCell className="font-mono text-xs" title={log.url}>
+  1249→  1249→                      {truncateUrl(log.url)}
+  1250→  1250→                    </TableCell>
+  1251→  1251→                    <TableCell>
+  1252→  1252→                      <span className={`font-mono text-xs font-semibold ${getStatusCodeColor(log.statusCode)}`}>
+  1253→  1253→                        {log.statusCode}
+  1254→  1254→                      </span>
+  1255→  1255→                    </TableCell>
+  1256→  1256→                    <TableCell className="font-mono text-xs">{log.responseTime}</TableCell>
+  1257→  1257→                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{log.timestamp}</TableCell>
+  1258→  1258→                    <TableCell className="text-right">
+  1259→  1259→                      <div className="flex items-center justify-end gap-1">
+  1260→  1260→                        {log.retryCount > 0 && (
+  1261→  1261→                          <Badge variant="outline" className="text-xs gap-1">
+  1262→  1262→                            <RefreshCw className="h-3 w-3" />
+  1263→  1263→                            {log.retryCount}x
+  1264→  1264→                          </Badge>
+  1265→  1265→                        )}
+  1266→  1266→                        <Button
+  1267→  1267→                          variant="ghost"
+  1268→  1268→                          size="sm"
+  1269→  1269→                          className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+  1270→  1270→                          onClick={() => handleResend(log.id)}
+  1271→  1271→                        >
+  1272→  1272→                          <Send className="h-3 w-3" />
+  1273→  1273→                          Kirim Ulang
+  1274→  1274→                        </Button>
+  1275→  1275→                      </div>
+  1276→  1276→                    </TableCell>
+  1277→  1277→                  </TableRow>
+  1278→  1278→                ))}
+  1279→  1279→              </TableBody>
+  1280→  1280→            </Table>
+  1281→  1281→          </div>
+  1282→  1282→        </CardContent>
+  1283→  1283→      </Card>
+  1284→  1284→    </motion.div>
+  1285→  1285→  );
+  1286→  1286→}
+  1287→  1287→
+  1288→  1288→// ── Main Settings Component ─────────────────────────────────────────────────
+  1289→  1289→
+  1290→  1290→export default function Settings() {
+  1291→  1291→  return (
+  1292→  1292→    <div className="space-y-6 bg-mesh">
+  1293→  1293→      <PageHeader
+  1294→  1294→        title="Pengaturan"
+  1295→  1295→        description="Konfigurasi akun, webhook, dan metode pembayaran"
+  1296→  1296→        icon={SettingsIcon}
+  1297→  1297→        iconGradient="emerald"
+  1298→  1298→      />
+  1299→  1299→      <motion.div
+  1300→  1300→        initial={{ opacity: 0, y: 10 }}
+  1301→  1301→        animate={{ opacity: 1, y: 0 }}
+  1302→  1302→        transition={{ duration: 0.3 }}
+  1303→  1303→      >
+  1304→  1304→        <Card className="gradient-border">
+  1305→  1305→          <CardContent className="p-1">
+  1306→  1306→            <Tabs defaultValue="profil" className="w-full">
+  1307→  1307→              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+  1308→  1308→                <TabsTrigger
+  1309→  1309→                  value="profil"
+  1310→  1310→                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+  1311→  1311→                >
+  1312→  1312→                  <User className="h-4 w-4" />
+  1313→  1313→                  Profil
+  1314→  1314→                </TabsTrigger>
+  1315→  1315→                <TabsTrigger
+  1316→  1316→                  value="pembayaran"
+  1317→  1317→                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+  1318→  1318→                >
+  1319→  1319→                  <CreditCard className="h-4 w-4" />
+  1320→  1320→                  Pembayaran
+  1321→  1321→                </TabsTrigger>
+  1322→  1322→                <TabsTrigger
+  1323→  1323→                  value="notifikasi"
+  1324→  1324→                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+  1325→  1325→                >
+  1326→  1326→                  <Bell className="h-4 w-4" />
+  1327→  1327→                  Notifikasi
+  1328→  1328→                </TabsTrigger>
+  1329→  1329→                <TabsTrigger
+  1330→  1330→                  value="keamanan"
+  1331→  1331→                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+  1332→  1332→                >
+  1333→  1333→                  <Shield className="h-4 w-4" />
+  1334→  1334→                  Keamanan
+  1335→  1335→                </TabsTrigger>
+  1336→  1336→                <TabsTrigger
+  1337→  1337→                  value="webhook"
+  1338→  1338→                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+  1339→  1339→                >
+  1340→  1340→                  <Globe className="h-4 w-4" />
+  1341→  1341→                  Webhook
+  1342→  1342→                </TabsTrigger>
+  1343→  1343→              </TabsList>
+  1344→  1344→
+  1345→  1345→              <div className="pt-6">
+  1346→  1346→                <TabsContent value="profil">
+  1347→  1347→                  <ProfilTab />
+  1348→  1348→                </TabsContent>
+  1349→  1349→                <TabsContent value="pembayaran">
+  1350→  1350→                  <PembayaranTab />
+  1351→  1351→                </TabsContent>
+  1352→  1352→                <TabsContent value="notifikasi">
+  1353→  1353→                  <NotifikasiTab />
+  1354→  1354→                </TabsContent>
+  1355→  1355→                <TabsContent value="keamanan">
+  1356→  1356→                  <KeamananTab />
+  1357→  1357→                </TabsContent>
+  1358→  1358→                <TabsContent value="webhook">
+  1359→  1359→                  <WebhookTab />
+  1360→  1360→                </TabsContent>
+  1361→  1361→              </div>
+  1362→  1362→            </Tabs>
+  1363→  1363→          </CardContent>
+  1364→  1364→        </Card>
+  1365→  1365→      </motion.div>
+  1366→  1366→    </div>
+  1367→  1367→  );
+  1368→  1368→}
+  1369→  1369→

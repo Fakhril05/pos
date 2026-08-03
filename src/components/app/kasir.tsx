@@ -259,8 +259,9 @@ export function Kasir() {
       return json.data;
     },
     onSuccess: (data) => {
-      setPaymentStep('success');
-      const merchant = merchants.find((m) => m.id === selectedMerchant);
+      queryClient.invalidateQueries({ queryKey: ['quick-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast.success('Pembayaran berhasil!');
       setLastTx({
         invoiceNo: data.invoiceNo,
         amount: data.amount,
@@ -276,12 +277,8 @@ export function Kasir() {
         subtotal: cartTotal,
         tax,
       });
-      queryClient.invalidateQueries({ queryKey: ['quick-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast.success('Pembayaran berhasil!');
     },
     onError: (err: Error) => {
-      setPaymentStep('select');
       toast.error(err.message);
     },
   });

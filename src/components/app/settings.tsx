@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -27,6 +28,8 @@ import {
   Clock,
   Send,
   XCircle,
+  Download,
+  FileText,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,6 +54,12 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // ── Payment method types ─────────────────────────────────────────────────────
 
@@ -75,21 +84,45 @@ interface NotificationConfig {
 // ── Profil Tab ────────────────────────────────────────────────────────────────
 
 function ProfilTab() {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     businessName: 'Pos Ril Indonesia',
     email: 'admin@posril.id',
     phone: '+62 812 3456 7890',
     address: 'Jl. Sudirman No. 123, Jakarta Selatan 12190',
   });
-  const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
-    setSaving(true);
-    // Simulate save
-    await new Promise((r) => setTimeout(r, 1000));
-    setSaving(false);
-    toast.success('Profil berhasil disimpan');
+  const saveMutation = useMutation({
+    mutationFn: async (data: typeof form) => {
+      const res = await fetch('/api/settings/profil', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Gagal menyimpan profil');
+      }
+      return res.json();
+    },
+    onMutate: async (data) => {
+      // Optimistic update: UI already reflects the new values via form state
+      return { previousData: form };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings-profil'] });
+      toast.success('Profil berhasil disimpan');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Gagal menyimpan profil');
+    },
+  });
+
+  const handleSave = () => {
+    saveMutation.mutate(form);
   };
+
+  const saving = saveMutation.isPending;
 
   return (
     <motion.div
@@ -1287,7 +1320,81 @@ function WebhookTab() {
 
 // ── Main Settings Component ─────────────────────────────────────────────────
 
+// ── Export helpers ─────────────────────────────────────────────────────────
+
+const escCsv = (v: string | null | undefined) => {
+  if (!v) return '';
+  return `"${v.replace(/"/g, '""')}"`;
+};
+
+const downloadBlob = (csv: string, filename: string) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const formatRp = (n: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+// ── Main Settings Component ─────────────────────────────────────────────────
+
 export default function Settings() {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPDF = useCallback(() => {
+    setExporting(true);
+    const loadingToast = toast.loading('Menyiapkan cetak PDF...');
+    try {
+      window.print();
+      toast.success('Dialog cetak PDF dibuka', { id: loadingToast });
+    } catch {
+      toast.error('Gagal membuka dialog cetak', { id: loadingToast });
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
+  const handleExportCSV = useCallback(async () => {
+    setExporting(true);
+    const loadingToast = toast.loading('Mengunduh data transaksi...');
+    try {
+      const res = await fetch('/api/transactions?limit=1000');
+      if (!res.ok) throw new Error('Gagal mengambil data');
+      const json = await res.json();
+      const transactions = json.data || json;
+
+      const header = 'Invoice No,Merchant,Pelanggan,Jumlah,Fee,Net Amount,Metode,Channel,Status,Tanggal Bayar,Tanggal Buat';
+      const rows = transactions.map((tx: Record<string, unknown>) => {
+        const merchant = tx.merchant as Record<string, string> | null;
+        return [
+          escCsv(tx.invoiceNo as string),
+          escCsv(merchant?.name ?? (tx.merchantName as string)),
+          escCsv(tx.customerName as string),
+          tx.amount ?? 0,
+          tx.fee ?? 0,
+          tx.netAmount ?? 0,
+          escCsv(tx.paymentMethod as string),
+          escCsv(tx.paymentChannel as string),
+          escCsv(tx.status as string),
+          tx.paidAt ? new Date(tx.paidAt as string).toLocaleString('id-ID') : '',
+          tx.createdAt ? new Date(tx.createdAt as string).toLocaleString('id-ID') : '',
+        ].join(',');
+      });
+
+      const csv = [header, ...rows].join('\n');
+      downloadBlob(csv, `pengaturan-transaksi-${new Date().toISOString().slice(0, 10)}.csv`);
+      toast.success('Ekspor CSV berhasil!', { id: loadingToast });
+    } catch {
+      toast.error('Gagal mengekspor. Silakan coba lagi.', { id: loadingToast });
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
   return (
     <div className="space-y-6 bg-mesh">
       <PageHeader
@@ -1295,7 +1402,42 @@ export default function Settings() {
         description="Konfigurasi akun, webhook, dan metode pembayaran"
         icon={SettingsIcon}
         iconGradient="emerald"
-      />
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              className="btn-press gap-2 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+              disabled={exporting}
+            >
+              <Download className="h-4 w-4" />
+              Ekspor Data
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem
+              onClick={handleExportPDF}
+              className="cursor-pointer gap-2"
+            >
+              <FileText className="h-4 w-4 text-emerald-500" />
+              <div className="flex flex-col">
+                <span className="font-medium">Ekspor PDF</span>
+                <span className="text-xs text-muted-foreground">Cetak halaman sebagai PDF</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleExportCSV}
+              className="cursor-pointer gap-2"
+            >
+              <Download className="h-4 w-4 text-teal-500" />
+              <div className="flex flex-col">
+                <span className="font-medium">Ekspor CSV</span>
+                <span className="text-xs text-muted-foreground">Unduh data transaksi</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeader>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

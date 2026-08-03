@@ -802,3 +802,29 @@ Stage Summary:
 - **New Component**: PayoutDetailDrawer with Sheet, staggered animations, professional timeline
 - **Modified Component**: payouts.tsx - clickable amounts, state management, drawer integration
 - **Preserved**: All existing functionality (create dialog, table, pagination, filters, process mutation)
+
+---
+Task ID: 5
+Agent: Main
+Task: Settings API Integration, Empty States Component, Global CSS Enhancements
+
+Work Log:
+- Created API route /src/app/api/settings/profil/route.ts (GET + POST, in-memory profile store)
+- Refactored ProfilTab in settings.tsx: replaced manual useState saving with useMutation from TanStack Query
+- Added optimistic update pattern, loading state from saveMutation.isPending, error handling via onError toast
+- Added Data Export dropdown (DropdownMenu) to Settings PageHeader with "Ekspor PDF" (window.print) and "Ekspor CSV" (fetch transactions, convert to CSV, blob download)
+- Created reusable EmptyState component (/src/components/app/empty-state.tsx) with AnimatePresence stagger, dot-pattern background, icon mapping, optional action button with Plus icon for 'Tambah'
+- Integrated EmptyState into 4 table pages: transactions.tsx, customers.tsx, payment-links.tsx, merchants.tsx
+- Added 12+ new CSS utility classes to globals.css: card-gradient-border-emerald/teal, card-shine, card-spotlight, border-pulse-emerald, glass-deep, input-focus-emerald, stats-gradient-top, badge-gradient-emerald/teal/amber/rose, hover-lift-surface, hover-glow-emerald
+- Applied neon-glow to QuickStats container, hover-scale to Reports chart cards
+- Verified existing CSS classes already correctly applied: hover-glow-border, table-stripe, inset-shadow, glass-card, neon-glow, text-gradient-emerald across Header, MobileNav, Footer, PageHeader, Transactions, Payouts, Settings, CommandPalette
+- Zero lint errors confirmed
+
+Stage Summary:
+- **Settings Profil API**: New POST /api/settings/profil endpoint with in-memory storage and validation
+- **ProfilTab**: Upgraded from fake setTimeout save to real useMutation with optimistic update, loading spinner, error toasts
+- **Settings Export**: DropdownMenu with Ekspor PDF (browser print) and Ekspor CSV (fetch + blob download)
+- **EmptyState Component**: Reusable with framer-motion stagger animation, dot-pattern background, icon mapping, conditional 'Tambah' button with Plus icon
+- **CSS Utilities**: 12+ new classes for card effects, badges, animations, glassmorphism, hover states
+- **Component Enhancements**: neon-glow on QuickStats, hover-scale on Reports chart cards
+- All text in Bahasa Indonesia

@@ -36,11 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/app/page-header';
 import { AnimatedCounter } from '@/components/app/animated-counter';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+
 import {
   Table,
   TableBody,
@@ -521,7 +517,7 @@ function LiveClock() {
           Live
         </span>
       </div>
-      <span className="mt-0.5 text-xl font-bold tabular-nums tracking-wide text-white">
+      <span className="mt-0.5 text-xl font-bold tabular-nums tracking-wide text-white/90">
         {time}
       </span>
       <span className="mt-0.5 text-xs text-white/70">{date}</span>
@@ -649,12 +645,11 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.1, ease: 'easeOut' }}
             >
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Card
-                    className="card-hover hover-glow-border group relative cursor-pointer overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm hover-scale"
-                    onClick={() => setActivePage(targetPage)}
-                  >
+                <Card
+                  className="card-hover hover-glow-border group relative cursor-pointer overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm hover-scale"
+                  title={tooltip}
+                  onClick={() => setActivePage(targetPage)}
+                >
                     {/* gradient top accent */}
                     <div
                       className={`absolute left-0 right-0 top-0 h-[3px] bg-gradient-to-r ${card.gradient}`}
@@ -705,12 +700,9 @@ export default function Dashboard() {
                         </div>
                       </div>
                       {/* Navigation arrow indicator */}
-                      <ArrowUpRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/40 transition-all duration-200 group-hover:text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      <ArrowUpRight className="absolute top-4 right-4 h-4 w-4 text-white/30 transition-all duration-200 group-hover:text-white/80 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </CardContent>
                   </Card>
-                </TooltipTrigger>
-                <TooltipContent>{tooltip}</TooltipContent>
-              </Tooltip>
             </motion.div>
           );
         })}

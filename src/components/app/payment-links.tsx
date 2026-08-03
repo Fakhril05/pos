@@ -66,6 +66,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PageHeader } from '@/components/app/page-header';
 import { AnimatedCounter } from '@/components/app/animated-counter';
+import { EmptyState } from '@/components/app/empty-state';
 import {
   Sheet,
   SheetContent,
@@ -813,22 +814,15 @@ export default function PaymentLinks() {
 
       {/* ─── Cards Grid ───────────────────────────────────────────── */}
       {links.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16"
-        >
-          <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-2xl">
-            <LinkIcon className="text-muted-foreground h-8 w-8" />
-          </div>
-          <p className="mt-4 text-lg font-medium">Tidak ada link pembayaran</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {search || statusFilter !== 'all'
-              ? 'Coba ubah filter pencarian Anda'
-              : 'Buat link pembayaran pertama Anda'}
-          </p>
-        </motion.div>
+        <EmptyState
+          title="Tidak ada link pembayaran"
+          description={search || statusFilter !== 'all'
+            ? 'Coba ubah filter pencarian Anda'
+            : 'Buat link pembayaran pertama Anda'}
+          icon="payment-link"
+          actionLabel={(!search && statusFilter === 'all') ? 'Tambah' : undefined}
+          onAction={(!search && statusFilter === 'all') ? () => setCreateOpen(true) : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">

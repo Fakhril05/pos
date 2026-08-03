@@ -39,6 +39,7 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/app/page-header';
 import { AnimatedCounter } from '@/components/app/animated-counter';
+import { EmptyState } from '@/components/app/empty-state';
 import {
   Sheet,
   SheetContent,
@@ -503,17 +504,13 @@ export default function Merchants() {
           ))}
         </div>
       ) : merchants.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed"
-        >
-          <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Store className="h-7 w-7 text-muted-foreground" />
-          </div>
-          <p className="text-muted-foreground font-medium">Tidak ada merchant ditemukan</p>
-          <p className="text-sm text-muted-foreground mt-1">Coba ubah kata kunci pencarian</p>
-        </motion.div>
+        <EmptyState
+          title="Tidak ada merchant ditemukan"
+          description="Coba ubah kata kunci pencarian"
+          icon="merchant"
+          actionLabel={(!search) ? 'Tambah' : undefined}
+          onAction={(!search) ? () => setCreateOpen(true) : undefined}
+        />
       ) : (
         <motion.div
           layout

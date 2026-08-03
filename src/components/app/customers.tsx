@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/sheet';
 import { PageHeader } from '@/components/app/page-header';
 import { AnimatedCounter } from '@/components/app/animated-counter';
+import { EmptyState } from '@/components/app/empty-state';
 import {
   Table,
   TableBody,
@@ -657,18 +658,12 @@ export default function Customers() {
                   <AnimatePresence mode="popLayout">
                     {customers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-48 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                              <Users className="h-7 w-7 text-muted-foreground/50" />
-                            </div>
-                            <p className="text-muted-foreground text-sm font-medium">
-                              Tidak ada pelanggan ditemukan
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              Coba ubah kata kunci pencarian Anda
-                            </p>
-                          </div>
+                        <TableCell colSpan={6} className="p-0">
+                          <EmptyState
+                            title="Tidak ada pelanggan ditemukan"
+                            description="Coba ubah kata kunci pencarian Anda"
+                            icon="users"
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (

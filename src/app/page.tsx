@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 
-const Dashboard = dynamic(() => import('@/components/app/dashboard'), { ssr: false })
+const Dashboard = dynamic(() => import('@/components/app/dashboard-min'), { ssr: false })
 const Transactions = dynamic(() => import('@/components/app/transactions'), { ssr: false })
 const PaymentLinks = dynamic(() => import('@/components/app/payment-links'), { ssr: false })
 const Customers = dynamic(() => import('@/components/app/customers'), { ssr: false })

@@ -1177,3 +1177,138 @@
 .dark .scroll-shadow-bottom {
   box-shadow: inset 0 -12px 8px -8px rgba(0, 0, 0, 0.15);
 }
+
+/* ── Elegant Card Gradient Variants ── */
+.card-gradient-border-emerald {
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.card-gradient-border-teal {
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, #f59e0b, #0ea5e9, #3b82a2);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Card Shine Effect ── */
+@keyframes card-shine {
+  0%, 100% { background-position: -200% 0; }
+  50% { background-position: 200% 0; }
+}
+.card-shine {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(16, 185, 129, 0.06) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: card-shine 2s ease-in-out infinite;
+  pointer-events: none;
+}
+.apply-shine:hover {
+  opacity: 1;
+  filter: brightness(0.95);
+}
+
+/* ── Card Spotlight ── */
+.card-spotlight::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, transparent 8px, rgba(16,185,129,0.15) 0%, transparent 8px);
+  box-shadow: 0 0 15px 5px rgba(16,185,129,0.08);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Animated Border Pulse ── */
+@keyframes border-pulse-emerald {
+  0%, 100% { border-color: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2); }
+  50% { border-color: rgba(16, 185, 129, 0.5); box-shadow: 0 0 12px 2px rgba(16, 185, 129, 0.1); }
+}
+.border-pulse-emerald {
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  animation: border-pulse-emerald 1.5s ease-in-out infinite;
+}
+
+/* ── Glassmorphism Depth ── */
+.glass-deep {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Number Input Focus Ring ── */
+.input-focus-emerald:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+/* ── Quick Stats Gradient Top Border ── */
+.stats-gradient-top {
+  height: 2px;
+  background: linear-gradient(to right, #10b981, #14b8a6, #06b6d4);
+}
+
+/* ── Enhanced Badge Styles ── */
+.badge-gradient-emerald {
+  background: linear-gradient(135deg, #059669, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.badge-gradient-teal {
+  background: linear-gradient(135deg, #f59e0b, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.badge-gradient-amber {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.badge-gradient-rose {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Hover Lift Subtle ── */
+.hover-lift-surface {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.hover-lift-surface:active {
+  transform: scale(1.02) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* ── Hover Glow Emerald ── */
+.hover-glow-emerald {
+  transition: box-shadow 0.3s ease;
+}
+.hover-glow-emerald:hover {
+  box-shadow: 0 0 20px rgba(16,185,129,0.15), 0 0 40px rgba(16,185,129,0.1);
+}

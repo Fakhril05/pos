@@ -738,7 +738,7 @@ export default function Reports() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.08, ease: 'easeOut' }}
             >
-              <Card className="card-elevated group relative overflow-hidden shadow-sm transition-shadow hover:shadow-md">
+              <Card className="card-elevated group relative overflow-hidden shadow-sm transition-shadow hover:shadow-md hover-scale">
                 <div
                   className={`absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b ${card.gradient}`}
                 />
@@ -779,7 +779,7 @@ export default function Reports() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.08 + 0.15, ease: 'easeOut' }}
             >
-              <Card className="group relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md card-hover">
+              <Card className="group relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md card-hover hover-scale">
                 <div
                   className={`absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b ${card.gradient}`}
                 />

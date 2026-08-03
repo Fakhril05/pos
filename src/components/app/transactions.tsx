@@ -65,6 +65,7 @@ import {
 } from '@/components/ui/pagination';
 import { Separator } from '@/components/ui/separator';
 import { PageHeader } from '@/components/app/page-header';
+import { EmptyState } from '@/components/app/empty-state';
 import { toast } from 'sonner';
 import { generateReceiptHtml } from '@/lib/receipt-generator';
 
@@ -1092,17 +1093,13 @@ export default function Transactions() {
                       <TableRow>
                         <TableCell
                           colSpan={9}
-                          className="h-40 text-center"
+                          className="p-0"
                         >
-                          <div className="flex flex-col items-center gap-2">
-                            <Search className="h-8 w-8 text-muted-foreground/40" />
-                            <p className="text-muted-foreground text-sm">
-                              Tidak ada transaksi ditemukan
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              Coba ubah filter atau kata kunci pencarian
-                            </p>
-                          </div>
+                          <EmptyState
+                            title="Tidak ada transaksi ditemukan"
+                            description="Coba ubah filter atau kata kunci pencarian"
+                            icon="transaction"
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (

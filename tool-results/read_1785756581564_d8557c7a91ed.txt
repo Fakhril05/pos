@@ -1,0 +1,783 @@
+   355→    setPayDialogOpen(true);
+   356→  };
+   357→
+   358→  // Process payment
+   359→  const handlePay = () => {
+   360→    if (selectedPayment?.method === 'qris') {
+   361→      // Show QRIS screen instead of immediately submitting
+   362→      setQrisInvoice(`PR-QR-${Date.now().toString(36).toUpperCase()}`);
+   363→      setQrisExpiry(300);
+   364→      setPaymentStep('qris');
+   365→    } else {
+   366→      payMutation.mutate();
+   367→    }
+   368→  };
+   369→
+   370→  // New transaction
+   371→  const handleNewTx = () => {
+   372→    setCart([]);
+   373→    setLastTx(null);
+   374→    setPayDialogOpen(false);
+   375→    setSelectedPayment(null);
+   376→    setCustomerName('');
+   377→    setCustomerPhone('');
+   378→    setCustomerEmail('');
+   379→    setNotes('');
+   380→    setPaymentStep('select');
+   381→    setQrisExpiry(300);
+   382→    setQrisInvoice('');
+   383→  };
+   384→
+   385→  // Close pay dialog resets payment state
+   386→  const handleClosePayDialog = () => {
+   387→    setPayDialogOpen(false);
+   388→    if (!lastTx) {
+   389→      setSelectedPayment(null);
+   390→      setPaymentStep('select');
+   391→      setQrisExpiry(300);
+   392→      setQrisInvoice('');
+   393→      if (autoCompleteRef.current) {
+   394→        clearTimeout(autoCompleteRef.current);
+   395→      }
+   396→    }
+   397→  };
+   398→
+   399→  return (
+   400→    <div className="bg-mesh rounded-2xl p-4 md:p-6">
+   401→      <PageHeader
+   402→        title="Kasir"
+   403→        description="Terminal pembayaran point-of-sale"
+   404→        icon={Calculator}
+   405→        iconGradient="emerald"
+   406→      />
+   407→
+   408→      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+   409→        {/* ── Left Panel: Product Catalog ── */}
+   410→        <div className="min-w-0 flex-1">
+   411→          {/* Search & Categories */}
+   412→          <div className="card-elevated mb-4 rounded-xl p-4">
+   413→            <div className="relative mb-3">
+   414→              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+   415→              <Input
+   416→                placeholder="Cari produk..."
+   417→                value={search}
+   418→                onChange={(e) => setSearch(e.target.value)}
+   419→                className="pl-9"
+   420→              />
+   421→            </div>
+   422→            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+   423→              {CATEGORIES.map((cat) => (
+   424→                <button
+   425→                  key={cat}
+   426→                  onClick={() => setCategory(cat)}
+   427→                  className={cn(
+   428→                    'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200',
+   429→                    category === cat
+   430→                      ? 'bg-emerald-500 text-white shadow-sm'
+   431→                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+   432→                  )}
+   433→                >
+   434→                  {cat}
+   435→                </button>
+   436→              ))}
+   437→            </div>
+   438→          </div>
+   439→
+   440→          {/* Product Grid */}
+   441→          <div className="card-elevated rounded-xl p-4">
+   442→            <motion.div
+   443→              className="grid grid-cols-2 gap-3 md:grid-cols-3"
+   444→              initial="hidden"
+   445→              animate="show"
+   446→              variants={{
+   447→                hidden: {},
+   448→                show: { transition: { staggerChildren: 0.03 } },
+   449→              }}
+   450→            >
+   451→              <AnimatePresence mode="popLayout">
+   452→                {filteredProducts.map((product) => (
+   453→                  <motion.button
+   454→                    key={product.id}
+   455→                    layout
+   456→                    variants={{
+   457→                      hidden: { opacity: 0, y: 12, scale: 0.95 },
+   458→                      show: { opacity: 1, y: 0, scale: 1 },
+   459→                      exit: { opacity: 0, scale: 0.9, y: -8 },
+   460→                    }}
+   461→                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+   462→                    whileTap={{ scale: 0.95 }}
+   463→                    onClick={() => addToCart(product)}
+   464→                    className="card-hover flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-3 text-left"
+   465→                  >
+   466→                    <span className="text-2xl leading-none">{product.emoji}</span>
+   467→                    <div className="min-w-0 flex-1">
+   468→                      <p className="truncate text-sm font-medium leading-tight">{product.name}</p>
+   469→                      <p className="mt-1 text-sm font-bold text-emerald-600 dark:text-emerald-400">
+   470→                        {formatRp(product.price)}
+   471→                      </p>
+   472→                    </div>
+   473→                    <div className="flex w-full items-center justify-end">
+   474→                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+   475→                        <Plus className="h-3.5 w-3.5" />
+   476→                      </span>
+   477→                    </div>
+   478→                  </motion.button>
+   479→                ))}
+   480→              </AnimatePresence>
+   481→            </motion.div>
+   482→
+   483→            {filteredProducts.length === 0 && (
+   484→              <div className="empty-state flex flex-col items-center justify-center py-16 text-center">
+   485→                <Search className="mb-3 h-10 w-10 text-muted-foreground/40" />
+   486→                <p className="text-sm font-medium text-muted-foreground">Produk tidak ditemukan</p>
+   487→                <p className="mt-1 text-xs text-muted-foreground/60">
+   488→                  Coba kata kunci lain atau ubah kategori
+   489→                </p>
+   490→              </div>
+   491→            )}
+   492→          </div>
+   493→        </div>
+   494→
+   495→        {/* ── Right Panel: Cart (Desktop) ── */}
+   496→        <div className="hidden w-full lg:block lg:w-[380px]">
+   497→          <div className="card-elevated sticky top-24 flex h-[calc(100vh-8rem)] flex-col rounded-xl">
+   498→            <CartPanel
+   499→              cart={cart}
+   500→              cartCount={cartCount}
+   501→              cartTotal={cartTotal}
+   502→              tax={tax}
+   503→              totalWithTax={totalWithTax}
+   504→              onUpdateQty={updateQty}
+   505→              onRemove={removeFromCart}
+   506→              onClear={clearCart}
+   507→              onPay={handleOpenPay}
+   508→            />
+   509→          </div>
+   510→        </div>
+   511→      </div>
+   512→
+   513→      {/* ── Mobile Cart (Bottom Sheet) ── */}
+   514→      <div className="fixed right-0 bottom-16 left-0 z-40 lg:hidden">
+   515→        <AnimatePresence mode="wait">
+   516→          {cart.length > 0 && (
+   517→            <motion.div
+   518→              key="cart-bar"
+   519→              initial={{ y: 100 }}
+   520→              animate={{ y: 0 }}
+   521→              exit={{ y: 100 }}
+   522→              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+   523→              className="mx-3 overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl"
+   524→            >
+   525→              {/* Collapsed bar */}
+   526→              {!cartExpanded && (
+   527→                <button
+   528→                  onClick={() => setCartExpanded(true)}
+   529→                  className="flex w-full items-center justify-between px-4 py-3"
+   530→                >
+   531→                  <div className="flex items-center gap-2">
+   532→                    <div className="relative">
+   533→                      <ShoppingBag className="h-5 w-5 text-emerald-500" />
+   534→                      <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+   535→                        {cartCount}
+   536→                      </span>
+   537→                    </div>
+   538→                    <span className="text-sm font-medium">Keranjang</span>
+   539→                  </div>
+   540→                  <div className="flex items-center gap-2">
+   541→                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+   542→                      {formatRp(totalWithTax)}
+   543→                    </span>
+   544→                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+   545→                  </div>
+   546→                </button>
+   547→              )}
+   548→
+   549→              {/* Expanded cart */}
+   550→              <AnimatePresence>
+   551→                {cartExpanded && (
+   552→                  <motion.div
+   553→                    initial={{ height: 0 }}
+   554→                    animate={{ height: 'auto' }}
+   555→                    exit={{ height: 0 }}
+   556→                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+   557→                    className="overflow-hidden"
+   558→                  >
+   559→                    <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
+   560→                      <CartPanel
+   561→                        cart={cart}
+   562→                        cartCount={cartCount}
+   563→                        cartTotal={cartTotal}
+   564→                        tax={tax}
+   565→                        totalWithTax={totalWithTax}
+   566→                        onUpdateQty={updateQty}
+   567→                        onRemove={removeFromCart}
+   568→                        onClear={clearCart}
+   569→                        onPay={handleOpenPay}
+   570→                        onCollapse={() => setCartExpanded(false)}
+   571→                      />
+   572→                    </div>
+   573→                  </motion.div>
+   574→                )}
+   575→              </AnimatePresence>
+   576→            </motion.div>
+   577→          )}
+   578→        </AnimatePresence>
+   579→      </div>
+   580→
+   581→      {/* ── Payment Dialog ── */}
+   582→      <Dialog open={payDialogOpen} onOpenChange={handleClosePayDialog}>
+   583→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+   584→          <AnimatePresence mode="wait">
+   585→            {paymentStep === 'qris' ? (
+   586→              <motion.div
+   587→                key="qris"
+   588→                initial={{ opacity: 0, x: 40 }}
+   589→                animate={{ opacity: 1, x: 0 }}
+   590→                exit={{ opacity: 0, x: -40 }}
+   591→                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+   592→                className="flex flex-col items-center py-2"
+   593→              >
+   594→                <div className="mb-4 flex w-full items-center gap-3">
+   595→                  <button
+   596→                    onClick={() => {
+   597→                      setPaymentStep('select');
+   598→                      setQrisExpiry(300);
+   599→                      if (autoCompleteRef.current) {
+   600→                        clearTimeout(autoCompleteRef.current);
+   601→                      }
+   602→                    }}
+   603→                    className="btn-press flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+   604→                  >
+   605→                    <ArrowLeft className="h-4 w-4" />
+   606→                  </button>
+   607→                  <div className="flex items-center gap-2">
+   608→                    <QrCode className="h-5 w-5 text-emerald-500" />
+   609→                    <h2 className="text-lg font-semibold">Scan QRIS</h2>
+   610→                  </div>
+   611→                </div>
+   612→                <span className="sr-only">Scan kode QRIS untuk menyelesaikan pembayaran</span>
+   613→                <div className="relative mb-5">
+   614→                  <div className="gradient-border rounded-2xl">
+   615→                    <div className="rounded-2xl bg-white p-4 dark:bg-card">
+   616→                      <div className="glow-emerald-sm rounded-xl bg-white p-3 dark:bg-card">
+   617→                        <QRCodeSVG
+   618→                          value={"https://pay.posril.id/qris/" + qrisInvoice}
+   619→                          size={200}
+   620→                          className="h-[180px] w-[180px] md:h-[200px] md:w-[200px]"
+   621→                          level="M"
+   622→                          bgColor="transparent"
+   623→                          fgColor="#059669"
+   624→                        />
+   625→                      </div>
+   626→                    </div>
+   627→                  </div>
+   628→                  <div className="animate-float-slow pointer-events-none absolute -inset-2 rounded-2xl opacity-30 bg-gradient-to-t from-emerald-500/10 to-transparent" />
+   629→                </div>
+   630→                <p className="mb-1 text-2xl font-extrabold text-gradient-emerald tabular-nums">
+   631→                  {formatRp(totalWithTax)}
+   632→                </p>
+   633→                <p className="mb-4 text-xs text-muted-foreground">
+   634→                  {qrisInvoice}
+   635→                </p>
+   636→                <div className="mb-4 flex items-center gap-2">
+   637→                  {qrisExpiry === 0 ? (
+   638→                    <span className="text-sm font-semibold text-rose-500">Kadaluarsa</span>
+   639→                  ) : (
+   640→                    <span className={qrisExpiry < 60 ? 'text-sm tabular-nums font-semibold text-rose-500' : 'text-sm tabular-nums text-muted-foreground'}>
+   641→                      Berlaku {String(Math.floor(qrisExpiry / 60)).padStart(2, '0')}:{String(qrisExpiry % 60).padStart(2, '0')}
+   642→                    </span>
+   643→                  )}
+   644→                </div>
+   645→                {qrisExpiry === 0 && (
+   646→                  <Button
+   647→                    variant="outline"
+   648→                    className="btn-press mb-4"
+   649→                    onClick={() => {
+   650→                      setQrisInvoice("PR-QR-" + Date.now().toString(36).toUpperCase());
+   651→                      setQrisExpiry(300);
+   652→                    }}
+   653→                  >
+   654→                    <RefreshCw className="mr-2 h-4 w-4" />
+   655→                    Buat Kode Baru
+   656→                  </Button>
+   657→                )}
+   658→                <div className="flex items-center gap-2">
+   659→                  <span className="relative flex h-2.5 w-2.5">
+   660→                    <span className="status-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
+   661→                  </span>
+   662→                  <span className="text-sm text-muted-foreground">Menunggu pembayaran...</span>
+   663→                </div>
+   664→              </motion.div>
+   665→            ) : paymentStep === 'processing' ? (
+   666→              <motion.div
+   667→                key="processing"
+   668→                initial={{ opacity: 0, scale: 0.95 }}
+   669→                animate={{ opacity: 1, scale: 1 }}
+   670→                exit={{ opacity: 0, scale: 0.95 }}
+   671→                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+   672→                className="flex flex-col items-center justify-center py-12"
+   673→              >
+   674→                <motion.div
+   675→                  animate={{ rotate: 360 }}
+   676→                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+   677→                  className="mb-6"
+   678→                >
+   679→                  <Loader2 className="h-14 w-14 text-emerald-500" strokeWidth={2} />
+   680→                </motion.div>
+   681→                <h3 className="mb-2 text-lg font-bold">Memproses pembayaran...</h3>
+   682→                <p className="text-sm text-muted-foreground">Mohon tunggu sebentar</p>
+   683→                <div className="mt-6 h-1 w-48 overflow-hidden rounded-full bg-muted">
+   684→                  <div className="shimmer h-full w-full rounded-full" />
+   685→                </div>
+   686→              </motion.div>
+   687→            ) : lastTx ? (
+   688→              <motion.div
+   689→                key="success"
+   690→                initial={{ opacity: 0, scale: 0.9 }}
+   691→                animate={{ opacity: 1, scale: 1 }}
+   692→                exit={{ opacity: 0, scale: 0.9 }}
+   693→                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+   694→                className="flex flex-col items-center py-4"
+   695→              >
+   696→                {/* Animated checkmark */}
+   697→                <motion.div
+   698→                  initial={{ scale: 0 }}
+   699→                  animate={{ scale: 1 }}
+   700→                  transition={{
+   701→                    type: 'spring',
+   702→                    stiffness: 200,
+   703→                    damping: 15,
+   704→                    delay: 0.1,
+   705→                  }}
+   706→                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500 glow-emerald-md"
+   707→                >
+   708→                  <motion.div
+   709→                    initial={{ scale: 0, rotate: -45 }}
+   710→                    animate={{ scale: 1, rotate: 0 }}
+   711→                    transition={{
+   712→                      type: 'spring',
+   713→                      stiffness: 300,
+   714→                      damping: 20,
+   715→                      delay: 0.3,
+   716→                    }}
+   717→                  >
+   718→                    <Check className="h-10 w-10 text-white" strokeWidth={3} />
+   719→                  </motion.div>
+   720→                </motion.div>
+   721→
+   722→                <h3 className="text-lg font-bold">Pembayaran Berhasil!</h3>
+   723→                <p className="mb-6 text-sm text-muted-foreground">
+   724→                  {lastTx.invoiceNo}
+   725→                </p>
+   726→
+   727→                {/* Receipt Summary */}
+   728→                <div className="w-full rounded-xl border border-border bg-muted/30 p-4">
+   729→                  <div className="mb-3 space-y-1.5">
+   730→                    {lastTx.items.map((item) => (
+   731→                      <div
+   732→                        key={item.product.id}
+   733→                        className="flex items-center justify-between text-sm"
+   734→                      >
+   735→                        <span className="text-muted-foreground">
+   736→                          {item.qty}x {item.product.name}
+   737→                        </span>
+   738→                        <span className="font-medium">
+   739→                          {formatRp(item.product.price * item.qty)}
+   740→                        </span>
+   741→                      </div>
+   742→                    ))}
+   743→                  </div>
+   744→                  <Separator className="my-3" />
+   745→                  <div className="space-y-1.5 text-sm">
+   746→                    <div className="flex justify-between">
+   747→                      <span className="text-muted-foreground">Subtotal</span>
+   748→                      <span>{formatRp(lastTx.subtotal)}</span>
+   749→                    </div>
+   750→                    <div className="flex justify-between">
+   751→                      <span className="text-muted-foreground">Pajak (PPN 11%)</span>
+   752→                      <span>{formatRp(lastTx.tax)}</span>
+   753→                    </div>
+   754→                    <Separator className="my-2" />
+   755→                    <div className="flex justify-between text-base font-bold">
+   756→                      <span>Total</span>
+   757→                      <span className="text-emerald-600 dark:text-emerald-400">
+   758→                        {formatRp(lastTx.amount)}
+   759→                      </span>
+   760→                    </div>
+   761→                  </div>
+   762→                  <Separator className="my-3" />
+   763→                  <div className="space-y-1 text-xs text-muted-foreground">
+   764→                    <div className="flex justify-between">
+   765→                      <span>Metode</span>
+   766→                      <span className="font-medium text-foreground">
+   767→                        {lastTx.paymentChannel}
+   768→                      </span>
+   769→                    </div>
+   770→                    <div className="flex justify-between">
+   771→                      <span>Merchant</span>
+   772→                      <span className="font-medium text-foreground">
+   773→                        {lastTx.merchantName}
+   774→                      </span>
+   775→                    </div>
+   776→                    {lastTx.customerName && (
+   777→                      <div className="flex justify-between">
+   778→                        <span>Pelanggan</span>
+   779→                        <span className="font-medium text-foreground">
+   780→                          {lastTx.customerName}
+   781→                        </span>
+   782→                      </div>
+   783→                    )}
+   784→                    <div className="flex justify-between">
+   785→                      <span>Waktu</span>
+   786→                      <span className="font-medium text-foreground">
+   787→                        {new Date(lastTx.paidAt).toLocaleString('id-ID')}
+   788→                      </span>
+   789→                    </div>
+   790→                  </div>
+   791→                </div>
+   792→
+   793→                {/* Action buttons */}
+   794→                <div className="mt-6 flex w-full gap-3">
+   795→                  <Button
+   796→                    variant="outline"
+   797→                    className="btn-press flex-1"
+   798→                    onClick={printReceipt}
+   799→                  >
+   800→                    <Printer className="mr-2 h-4 w-4" />
+   801→                    Cetak Struk
+   802→                  </Button>
+   803→                  <Button
+   804→                    className="btn-press flex-1 bg-emerald-500 hover:bg-emerald-600"
+   805→                    onClick={handleNewTx}
+   806→                  >
+   807→                    <ShoppingBag className="mr-2 h-4 w-4" />
+   808→                    Transaksi Baru
+   809→                  </Button>
+   810→                </div>
+   811→              </motion.div>
+   812→            ) : (
+   813→              <motion.div
+   814→                key="form"
+   815→                initial={{ opacity: 0, y: 12 }}
+   816→                animate={{ opacity: 1, y: 0 }}
+   817→                exit={{ opacity: 0, y: -12 }}
+   818→                transition={{ duration: 0.25 }}
+   819→              >
+   820→                <DialogHeader>
+   821→                  <DialogTitle>Pembayaran</DialogTitle>
+   822→                  <DialogDescription>
+   823→                    Pilih metode pembayaran untuk melanjutkan
+   824→                  </DialogDescription>
+   825→                </DialogHeader>
+   826→
+   827→                {/* Total Amount */}
+   828→                <div className="my-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-4 text-center dark:from-emerald-500/15 dark:to-teal-500/10">
+   829→                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+   830→                    Total Pembayaran
+   831→                  </p>
+   832→                  <p className="mt-1 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 glow-emerald-sm inline-block">
+   833→                    {formatRp(totalWithTax)}
+   834→                  </p>
+   835→                  <p className="mt-1 text-xs text-muted-foreground">
+   836→                    {cartCount} item · Subtotal {formatRp(cartTotal)} + PPN {formatRp(tax)}
+   837→                  </p>
+   838→                </div>
+   839→
+   840→                {/* Merchant Selector */}
+   841→                <div className="mb-4 space-y-2">
+   842→                  <Label className="text-sm font-medium">Merchant</Label>
+   843→                  <Select value={selectedMerchant} onValueChange={setSelectedMerchant}>
+   844→                    <SelectTrigger>
+   845→                      <SelectValue placeholder="Pilih merchant..." />
+   846→                    </SelectTrigger>
+   847→                    <SelectContent>
+   848→                      {merchants
+   849→                        .filter((m) => m.status === 'active')
+   850→                        .map((m) => (
+   851→                          <SelectItem key={m.id} value={m.id}>
+   852→                            {m.name}
+   853→                          </SelectItem>
+   854→                        ))}
+   855→                    </SelectContent>
+   856→                  </Select>
+   857→                </div>
+   858→
+   859→                {/* Payment Methods */}
+   860→                <div className="mb-4 space-y-2">
+   861→                  <Label className="text-sm font-medium">Metode Pembayaran</Label>
+   862→                  <div className="grid grid-cols-2 gap-2">
+   863→                    {PAYMENT_METHODS.map((pm) => (
+   864→                      <button
+   865→                        key={pm.id}
+   866→                        type="button"
+   867→                        onClick={() => setSelectedPayment(pm)}
+   868→                        className={cn(
+   869→                          'flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all duration-200',
+   870→                          selectedPayment?.id === pm.id
+   871→                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-300'
+   872→                            : 'border-border hover:border-emerald-500/30 hover:bg-muted/50',
+   873→                        )}
+   874→                      >
+   875→                        <span
+   876→                          className={cn(
+   877→                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+   878→                            selectedPayment?.id === pm.id
+   879→                              ? 'bg-emerald-500 text-white'
+   880→                              : 'bg-muted text-muted-foreground',
+   881→                          )}
+   882→                        >
+   883→                          {pm.icon}
+   884→                        </span>
+   885→                        <div className="min-w-0 flex-1">
+   886→                          <p className="truncate text-sm font-medium">{pm.label}</p>
+   887→                          <p className="text-[10px] text-muted-foreground">
+   888→                            Admin {pm.feePercent}%
+   889→                          </p>
+   890→                        </div>
+   891→                        {selectedPayment?.id === pm.id && (
+   892→                          <motion.div
+   893→                            initial={{ scale: 0 }}
+   894→                            animate={{ scale: 1 }}
+   895→                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500"
+   896→                          >
+   897→                            <Check className="h-3 w-3 text-white" />
+   898→                          </motion.div>
+   899→                        )}
+   900→                      </button>
+   901→                    ))}
+   902→                  </div>
+   903→                </div>
+   904→
+   905→                {/* Customer Info (Optional) */}
+   906→                <div className="mb-4 space-y-3">
+   907→                  <Label className="text-sm font-medium">
+   908→                    Info Pelanggan{' '}
+   909→                    <span className="font-normal text-muted-foreground">(opsional)</span>
+   910→                  </Label>
+   911→                  <Input
+   912→                    placeholder="Nama pelanggan"
+   913→                    value={customerName}
+   914→                    onChange={(e) => setCustomerName(e.target.value)}
+   915→                  />
+   916→                  <div className="grid grid-cols-2 gap-3">
+   917→                    <Input
+   918→                      placeholder="No. Telepon"
+   919→                      value={customerPhone}
+   920→                      onChange={(e) => setCustomerPhone(e.target.value)}
+   921→                    />
+   922→                    <Input
+   923→                      placeholder="Email"
+   924→                      value={customerEmail}
+   925→                      onChange={(e) => setCustomerEmail(e.target.value)}
+   926→                      type="email"
+   927→                    />
+   928→                  </div>
+   929→                </div>
+   930→
+   931→                {/* Notes */}
+   932→                <div className="mb-4 space-y-2">
+   933→                  <Label className="text-sm font-medium">
+   934→                    Catatan{' '}
+   935→                    <span className="font-normal text-muted-foreground">(opsional)</span>
+   936→                  </Label>
+   937→                  <Textarea
+   938→                    placeholder="Tambahkan catatan..."
+   939→                    value={notes}
+   940→                    onChange={(e) => setNotes(e.target.value)}
+   941→                    rows={2}
+   942→                  />
+   943→                </div>
+   944→
+   945→                {/* Pay Button */}
+   946→                <Button
+   947→                  className="btn-press w-full bg-emerald-500 py-6 text-base font-bold hover:bg-emerald-600"
+   948→                  size="lg"
+   949→                  disabled={
+   950→                    !selectedMerchant ||
+   951→                    !selectedPayment ||
+   952→                    payMutation.isPending
+   953→                  }
+   954→                  onClick={handlePay}
+   955→                >
+   956→                  {payMutation.isPending ? (
+   957→                    <motion.span
+   958→                      animate={{ rotate: 360 }}
+   959→                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+   960→                      className="mr-2 inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent"
+   961→                    />
+   962→                  ) : null}
+   963→                  {payMutation.isPending
+   964→                    ? 'Memproses Pembayaran...'
+   965→                    : 'Proses Pembayaran'}
+   966→                </Button>
+   967→              </motion.div>
+   968→            )}
+   969→          </AnimatePresence>
+   970→        </DialogContent>
+   971→      </Dialog>
+   972→    </div>
+   973→  );
+   974→}
+   975→
+   976→// ── Cart Panel (reused for desktop & mobile) ──────────────────────────────
+   977→
+   978→function CartPanel({
+   979→  cart,
+   980→  cartCount,
+   981→  cartTotal,
+   982→  tax,
+   983→  totalWithTax,
+   984→  onUpdateQty,
+   985→  onRemove,
+   986→  onClear,
+   987→  onPay,
+   988→  onCollapse,
+   989→}: {
+   990→  cart: CartItem[];
+   991→  cartCount: number;
+   992→  cartTotal: number;
+   993→  tax: number;
+   994→  totalWithTax: number;
+   995→  onUpdateQty: (productId: string, delta: number) => void;
+   996→  onRemove: (productId: string) => void;
+   997→  onClear: () => void;
+   998→  onPay: () => void;
+   999→  onCollapse?: () => void;
+  1000→}) {
+  1001→  return (
+  1002→    <>
+  1003→      {/* Cart Header */}
+  1004→      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+  1005→        <div className="flex items-center gap-2">
+  1006→          <ShoppingBag className="h-4.5 w-4.5 text-emerald-500" />
+  1007→          <span className="text-sm font-semibold">Keranjang</span>
+  1008→          {cartCount > 0 && (
+  1009→            <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
+  1010→              {cartCount}
+  1011→            </Badge>
+  1012→          )}
+  1013→        </div>
+  1014→        <div className="flex items-center gap-1">
+  1015→          {cart.length > 0 && (
+  1016→            <button
+  1017→              onClick={onClear}
+  1018→              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+  1019→              title="Kosongkan keranjang"
+  1020→            >
+  1021→              <Trash2 className="h-3.5 w-3.5" />
+  1022→            </button>
+  1023→          )}
+  1024→          {onCollapse && (
+  1025→            <button
+  1026→              onClick={onCollapse}
+  1027→              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+  1028→            >
+  1029→              <ChevronDown className="h-4 w-4" />
+  1030→            </button>
+  1031→          )}
+  1032→        </div>
+  1033→      </div>
+  1034→
+  1035→      {/* Cart Items */}
+  1036→      <div className="flex-1 overflow-y-auto scrollbar-thin">
+  1037→        {cart.length === 0 ? (
+  1038→          <div className="empty-state flex h-full min-h-[200px] flex-col items-center justify-center px-4 py-8 text-center">
+  1039→            <ShoppingBag className="mb-3 h-12 w-12 text-muted-foreground/30" />
+  1040→            <p className="text-sm font-medium text-muted-foreground">
+  1041→              Keranjang kosong
+  1042→            </p>
+  1043→            <p className="mt-1 text-xs text-muted-foreground/60">
+  1044→              Tap produk untuk menambahkan
+  1045→            </p>
+  1046→          </div>
+  1047→        ) : (
+  1048→          <div className="divide-y divide-border p-2">
+  1049→            <AnimatePresence initial={false}>
+  1050→              {cart.map((item) => (
+  1051→                <motion.div
+  1052→                  key={item.product.id}
+  1053→                  initial={{ opacity: 0, x: 20, height: 0 }}
+  1054→                  animate={{ opacity: 1, x: 0, height: 'auto' }}
+  1055→                  exit={{ opacity: 0, x: -20, height: 0 }}
+  1056→                  transition={{ duration: 0.2 }}
+  1057→                  className="flex items-center gap-2 py-2"
+  1058→                >
+  1059→                  <span className="text-lg">{item.product.emoji}</span>
+  1060→                  <div className="min-w-0 flex-1">
+  1061→                    <p className="truncate text-sm font-medium">{item.product.name}</p>
+  1062→                    <p className="text-xs text-muted-foreground">
+  1063→                      {formatRp(item.product.price)} / item
+  1064→                    </p>
+  1065→                  </div>
+  1066→
+  1067→                  {/* Quantity Controls */}
+  1068→                  <div className="flex items-center gap-1">
+  1069→                    <button
+  1070→                      onClick={() => onUpdateQty(item.product.id, -1)}
+  1071→                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+  1072→                    >
+  1073→                      <Minus className="h-3 w-3" />
+  1074→                    </button>
+  1075→                    <span className="w-6 text-center text-sm font-semibold">
+  1076→                      {item.qty}
+  1077→                    </span>
+  1078→                    <button
+  1079→                      onClick={() => onUpdateQty(item.product.id, 1)}
+  1080→                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+  1081→                    >
+  1082→                      <Plus className="h-3 w-3" />
+  1083→                    </button>
+  1084→                  </div>
+  1085→
+  1086→                  {/* Subtotal & Remove */}
+  1087→                  <div className="flex flex-col items-end gap-1">
+  1088→                    <span className="text-sm font-semibold">
+  1089→                      {formatRp(item.product.price * item.qty)}
+  1090→                    </span>
+  1091→                    <button
+  1092→                      onClick={() => onRemove(item.product.id)}
+  1093→                      className="text-muted-foreground/60 transition-colors hover:text-destructive"
+  1094→                    >
+  1095→                      <X className="h-3.5 w-3.5" />
+  1096→                    </button>
+  1097→                  </div>
+  1098→                </motion.div>
+  1099→              ))}
+  1100→            </AnimatePresence>
+  1101→          </div>
+  1102→        )}
+  1103→      </div>
+  1104→
+  1105→      {/* Cart Summary & Pay */}
+  1106→      {cart.length > 0 && (
+  1107→        <div className="border-t border-border p-4">
+  1108→          <div className="mb-3 space-y-1.5 text-sm">
+  1109→            <div className="flex justify-between">
+  1110→              <span className="text-muted-foreground">Subtotal</span>
+  1111→              <span>{formatRp(cartTotal)}</span>
+  1112→            </div>
+  1113→            <div className="flex justify-between">
+  1114→              <span className="text-muted-foreground">Pajak (11% PPN)</span>
+  1115→              <span>{formatRp(tax)}</span>
+  1116→            </div>
+  1117→            <Separator />
+  1118→            <div className="flex justify-between text-base font-bold">
+  1119→              <span>Total</span>
+  1120→              <span className="text-emerald-600 dark:text-emerald-400">
+  1121→                {formatRp(totalWithTax)}
+  1122→              </span>
+  1123→            </div>
+  1124→          </div>
+  1125→          <Button
+  1126→            className="btn-press w-full bg-emerald-500 py-5 font-bold hover:bg-emerald-600"
+  1127→            size="lg"
+  1128→            onClick={onPay}
+  1129→          >
+  1130→            Bayar Sekarang
+  1131→          </Button>
+  1132→        </div>
+  1133→      )}
+  1134→    </>
+  1135→  );
+  1136→}
+  1137→

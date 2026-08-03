@@ -83,7 +83,7 @@ export function QuickStats() {
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
-      className="quick-stats-bar glass-card hidden md:flex items-center gap-4 px-6 py-1.5 inset-shadow smooth-corners divide-x divide-border"
+      className="quick-stats-bar glass-card neon-glow hidden md:flex items-center gap-4 px-6 py-1.5 inset-shadow smooth-corners divide-x divide-border"
     >
       <AnimatePresence>
         {items.map((item, i) => {
