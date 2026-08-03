@@ -22,6 +22,11 @@ import {
   MessageSquare,
   CheckCircle2,
   AlertTriangle,
+  Globe,
+  Zap,
+  Clock,
+  Send,
+  XCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,6 +47,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ── Payment method types ─────────────────────────────────────────────────────
 
@@ -942,6 +949,342 @@ function KeamananTab() {
 
 // ── Main Settings Component ───────────────────────────────────────────────────
 
+// ── Webhook Tab ─────────────────────────────────────────────────────────────
+
+interface WebhookLog {
+  id: string;
+  eventType: string;
+  url: string;
+  statusCode: string;
+  responseTime: string;
+  timestamp: string;
+  status: 'success' | 'failed' | 'pending';
+  retryCount: number;
+}
+
+const MOCK_WEBHOOK_LOGS: WebhookLog[] = [
+  { id: 'wh_001', eventType: 'payment.success', url: 'https://tokowarung.com/api/webhook/payment', statusCode: '200', responseTime: '234ms', timestamp: '2 menit yang lalu', status: 'success', retryCount: 0 },
+  { id: 'wh_002', eventType: 'payment.success', url: 'https://bukakios.id/webhooks/posril', statusCode: '200', responseTime: '189ms', timestamp: '5 menit yang lalu', status: 'success', retryCount: 0 },
+  { id: 'wh_003', eventType: 'payment.failed', url: 'https://tokowarung.com/api/webhook/payment', statusCode: '500', responseTime: '1203ms', timestamp: '12 menit yang lalu', status: 'failed', retryCount: 2 },
+  { id: 'wh_004', eventType: 'refund.created', url: 'https://bukakios.id/webhooks/posril', statusCode: '200', responseTime: '312ms', timestamp: '18 menit yang lalu', status: 'success', retryCount: 0 },
+  { id: 'wh_005', eventType: 'payment.expired', url: 'https://warungdigital.my.id/hook', statusCode: 'timeout', responseTime: '30000ms', timestamp: '25 menit yang lalu', status: 'pending', retryCount: 3 },
+  { id: 'wh_006', eventType: 'payment.success', url: 'https://tokoemak.com/payments/callback', statusCode: '200', responseTime: '156ms', timestamp: '32 menit yang lalu', status: 'success', retryCount: 0 },
+  { id: 'wh_007', eventType: 'payout.processed', url: 'https://tokowarung.com/api/webhook/payment', statusCode: '200', responseTime: '267ms', timestamp: '45 menit yang lalu', status: 'success', retryCount: 0 },
+  { id: 'wh_008', eventType: 'payment.failed', url: 'https://warungdigital.my.id/hook', statusCode: '502', responseTime: '890ms', timestamp: '1 jam yang lalu', status: 'failed', retryCount: 1 },
+  { id: 'wh_009', eventType: 'payment.success', url: 'https://bukakios.id/webhooks/posril', statusCode: '200', responseTime: '201ms', timestamp: '1 jam yang lalu', status: 'success', retryCount: 0 },
+  { id: 'wh_010', eventType: 'refund.created', url: 'https://tokoemak.com/payments/callback', statusCode: '200', responseTime: '445ms', timestamp: '2 jam yang lalu', status: 'success', retryCount: 0 },
+];
+
+const EVENT_SUBSCRIPTIONS = [
+  { id: 'payment.success', label: 'Pembayaran Berhasil', description: 'Dikirim saat pembayaran berhasil' },
+  { id: 'payment.failed', label: 'Pembayaran Gagal', description: 'Dikirim saat pembayaran gagal' },
+  { id: 'payment.expired', label: 'Pembayaran Kedaluwarsa', description: 'Dikirim saat pembayaran expired' },
+  { id: 'refund.created', label: 'Refund Dibuat', description: 'Dikirim saat refund baru dibuat' },
+  { id: 'payout.processed', label: 'Payout Diproses', description: 'Dikirim saat payout berhasil diproses' },
+];
+
+function WebhookTab() {
+  const [webhookUrl, setWebhookUrl] = useState('https://tokowarung.com/api/webhook/payment');
+  const [secretKey, setSecretKey] = useState('whsec_ril_a1b2c3d4e5f6g7h8i9j0');
+  const [showSecret, setShowSecret] = useState(false);
+  const [webhookActive, setWebhookActive] = useState(true);
+  const [subscriptions, setSubscriptions] = useState<Record<string, boolean>>({
+    'payment.success': true,
+    'payment.failed': true,
+    'payment.expired': false,
+    'refund.created': true,
+    'payout.processed': true,
+  });
+  const [testLoading, setTestLoading] = useState(false);
+
+  const handleTestWebhook = async () => {
+    setTestLoading(true);
+    await new Promise((r) => setTimeout(r, 1500));
+    setTestLoading(false);
+    toast.success('Test webhook berhasil dikirim!', {
+      description: 'Payload percobaan telah dikirim ke endpoint Anda.',
+    });
+  };
+
+  const handleResend = (id: string) => {
+    toast.success(`Mengirim ulang webhook ${id}...`, {
+      description: 'Webhook akan dikirim ulang ke endpoint.',
+    });
+  };
+
+  const getEventBadge = (status: WebhookLog['status']) => {
+    const map = {
+      success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+      failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+      pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    };
+    return map[status];
+  };
+
+  const getEventLabel = (status: WebhookLog['status']) => {
+    const map = {
+      success: 'Berhasil',
+      failed: 'Gagal',
+      pending: 'Pending',
+    };
+    return map[status];
+  };
+
+  const getStatusCodeColor = (code: string) => {
+    if (code === '200') return 'text-emerald-600 dark:text-emerald-400';
+    if (code === 'timeout') return 'text-amber-600 dark:text-amber-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const truncateUrl = (url: string, maxLen = 40) => {
+    return url.length > maxLen ? url.substring(0, maxLen) + '...' : url;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      {/* Webhook Configuration */}
+      <Card className="card-hover">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Globe className="h-4 w-4 text-emerald-500" />
+            Konfigurasi Webhook
+          </CardTitle>
+          <CardDescription>
+            Atur endpoint webhook untuk menerima notifikasi event secara real-time
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="webhookUrl">URL Endpoint</Label>
+              <Input
+                id="webhookUrl"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://contoh.com/api/webhook"
+                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="secretKey">Secret Key</Label>
+              <div className="relative">
+                <Input
+                  id="secretKey"
+                  type={showSecret ? 'text' : 'password'}
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
+                  className="border-emerald-200 pr-10 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecret(!showSecret)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Status Webhook</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                {webhookActive ? 'Webhook aktif dan siap menerima event' : 'Webhook dinonaktifkan'}
+              </p>
+            </div>
+            <Switch checked={webhookActive} onCheckedChange={setWebhookActive} />
+          </div>
+          <Button
+            onClick={handleTestWebhook}
+            disabled={testLoading || !webhookUrl}
+            className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
+          >
+            {testLoading ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            {testLoading ? 'Mengirim...' : 'Kirim Test Webhook'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Event Subscriptions */}
+      <Card className="card-hover">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Zap className="h-4 w-4 text-emerald-500" />
+            Langganan Event
+          </CardTitle>
+          <CardDescription>
+            Pilih event yang ingin diterima melalui webhook
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {EVENT_SUBSCRIPTIONS.map((event) => (
+            <div
+              key={event.id}
+              className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
+            >
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={subscriptions[event.id]}
+                  onCheckedChange={(checked) =>
+                    setSubscriptions((s) => ({ ...s, [event.id]: !!checked }))
+                  }
+                  className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                />
+                <div>
+                  <p className="text-sm font-medium">{event.label}</p>
+                  <p className="text-xs text-muted-foreground">{event.description}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="font-mono text-xs">
+                {event.id}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Delivery Stats */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Card className="card-hover">
+          <CardContent className="pt-5 pb-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <Send className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Terkirim</p>
+                <p className="text-lg font-bold">1,247</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="pt-5 pb-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Gagal</p>
+                <p className="text-lg font-bold">23</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="pt-5 pb-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Rata-rata Response</p>
+                <p className="text-lg font-bold">189ms</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="pt-5 pb-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Success Rate</p>
+                <p className="text-lg font-bold">98.2%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Delivery Logs */}
+      <Card className="card-hover">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+          <Clock className="h-4 w-4 text-emerald-500" />
+          Log Pengiriman Terbaru
+          </CardTitle>
+          <CardDescription>
+            Riwayat pengiriman webhook 10 terakhir
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto -mx-6 px-6">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border/50 hover:bg-transparent">
+                  <TableHead className="text-xs">Event Type</TableHead>
+                  <TableHead className="text-xs">URL</TableHead>
+                  <TableHead className="text-xs">Status Code</TableHead>
+                  <TableHead className="text-xs">Response Time</TableHead>
+                  <TableHead className="text-xs">Waktu</TableHead>
+                  <TableHead className="text-xs text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {MOCK_WEBHOOK_LOGS.map((log) => (
+                  <TableRow key={log.id} className="table-row-hover">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getEventBadge(log.status)}>
+                          {log.eventType}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{getEventLabel(log.status)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs" title={log.url}>
+                      {truncateUrl(log.url)}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`font-mono text-xs font-semibold ${getStatusCodeColor(log.statusCode)}`}>
+                        {log.statusCode}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{log.responseTime}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{log.timestamp}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {log.retryCount > 0 && (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <RefreshCw className="h-3 w-3" />
+                            {log.retryCount}x
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                          onClick={() => handleResend(log.id)}
+                        >
+                          <Send className="h-3 w-3" />
+                          Kirim Ulang
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ── Main Settings Component ─────────────────────────────────────────────────
+
 export default function Settings() {
   return (
     <div className="space-y-6">
@@ -982,6 +1325,13 @@ export default function Settings() {
                   <Shield className="h-4 w-4" />
                   Keamanan
                 </TabsTrigger>
+                <TabsTrigger
+                  value="webhook"
+                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                >
+                  <Globe className="h-4 w-4" />
+                  Webhook
+                </TabsTrigger>
               </TabsList>
 
               <div className="pt-6">
@@ -996,6 +1346,9 @@ export default function Settings() {
                 </TabsContent>
                 <TabsContent value="keamanan">
                   <KeamananTab />
+                </TabsContent>
+                <TabsContent value="webhook">
+                  <WebhookTab />
                 </TabsContent>
               </div>
             </Tabs>

@@ -380,7 +380,7 @@ function ActivityFeed() {
             Transaksi terbaru yang berhasil diproses
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="scrollbar-thin">
           {activityLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -529,7 +529,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white glow-emerald-sm">
           {/* Decorative circles */}
           <div className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/10" />
           <div className="pointer-events-none absolute -bottom-12 right-16 h-40 w-40 rounded-full bg-white/[0.07]" />
@@ -548,14 +548,14 @@ export default function Dashboard() {
             <div className="flex shrink-0 gap-3">
               <Button
                 variant="outline"
-                className="border-white/30 bg-transparent text-white hover:bg-white/15 hover:text-white"
+                className="border-white/30 bg-transparent text-white hover:bg-white/15 hover:text-white hover-lift"
                 onClick={() => setActivePage('payment-links')}
               >
                 <Link2 className="mr-2 h-4 w-4" />
                 Buat Payment Link
               </Button>
               <Button
-                className="bg-white text-emerald-700 hover:bg-white/90"
+                className="bg-white text-emerald-700 hover:bg-white/90 hover-lift"
                 onClick={() => setActivePage('transactions')}
               >
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
@@ -589,7 +589,10 @@ export default function Dashboard() {
                       <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                         {card.label}
                       </p>
-                      <p className="text-2xl font-bold tracking-tight">
+                      <p className={cn(
+                        "text-2xl font-bold tracking-tight",
+                        card.label === 'Total Pendapatan' && "gradient-text-emerald",
+                      )}>
                         {card.value}
                       </p>
                       <div

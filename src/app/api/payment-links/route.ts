@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 
+function generateRandomId(length = 12): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let result = '';
+  const randomValues = new Uint8Array(length);
+  crypto.getRandomValues(randomValues);
+  for (let i = 0; i < length; i++) {
+    result += chars[randomValues[i] % chars.length];
+  }
+  return result;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
@@ -54,6 +65,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
+      name,
       title,
       description,
       amount,
@@ -62,37 +74,55 @@ export async function POST(request: NextRequest) {
       maxQty,
       expiresAt,
     } = body as {
-      title: string;
+      name?: string;
+      title?: string;
       description?: string;
       amount: number;
-      merchantId: string;
-      type?: string;
+      merchantId?: string;
+      type?: 'single' | 'recurring' | string;
       maxQty?: number;
       expiresAt?: string;
     };
 
-    if (!title || !amount || !merchantId) {
+    const linkName = name || title;
+
+    if (!linkName || !amount) {
       return NextResponse.json(
-        { error: 'title, amount, and merchantId are required' },
+        { error: 'name (or title) and amount are required' },
         { status: 400 },
       );
     }
 
-    // Verify merchant exists
-    const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
-    if (!merchant) {
-      return NextResponse.json(
-        { error: 'Merchant not found' },
-        { status: 404 },
-      );
+    // Use provided merchantId or fall back to first active merchant
+    let resolvedMerchantId = merchantId;
+    if (!resolvedMerchantId) {
+      const defaultMerchant = await db.merchant.findFirst({
+        where: { status: 'active' },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!defaultMerchant) {
+        return NextResponse.json(
+          { error: 'No active merchant found. Please provide a merchantId.' },
+          { status: 400 },
+        );
+      }
+      resolvedMerchantId = defaultMerchant.id;
+    } else {
+      const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
+      if (!merchant) {
+        return NextResponse.json(
+          { error: 'Merchant not found' },
+          { status: 404 },
+        );
+      }
     }
 
     const paymentLink = await db.paymentLink.create({
       data: {
-        title,
+        title: linkName,
         description: description || null,
         amount: Number(amount),
-        merchantId,
+        merchantId: resolvedMerchantId,
         type: type || 'single',
         maxQty: maxQty ?? 1,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
@@ -102,7 +132,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: paymentLink }, { status: 201 });
+    const linkUrl = `https://pay.posril.id/${generateRandomId()}`;
+
+    return NextResponse.json(
+      { data: paymentLink, url: linkUrl },
+      { status: 201 },
+    );
   } catch (error) {
     console.error('[PaymentLinks POST]', error);
     return NextResponse.json(

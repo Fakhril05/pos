@@ -1,0 +1,1282 @@
+     1→'use client';
+     2→
+     3→import { useState, useCallback, useMemo, useEffect } from 'react';
+     4→import { useQuery, useQueryClient } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import {
+     7→  Search,
+     8→  Download,
+     9→  FileDown,
+    10→  X,
+    11→  Trash2,
+    12→  Filter,
+    13→  RotateCcw,
+    14→  CheckCircle2,
+    15→  Clock,
+    16→  XCircle,
+    17→  AlertTriangle,
+    18→  ArrowLeftRight,
+    19→  ChevronDown,
+    20→  Copy,
+    21→  CalendarDays,
+    22→  CreditCard,
+    23→  User,
+    24→  Store,
+    25→  Receipt,
+    26→  CircleDot,
+    27→  Printer,
+    28→} from 'lucide-react';
+    29→import { Card, CardContent } from '@/components/ui/card';
+    30→import { Button } from '@/components/ui/button';
+    31→import { Input } from '@/components/ui/input';
+    32→import { Badge } from '@/components/ui/badge';
+    33→import { Skeleton } from '@/components/ui/skeleton';
+    34→import {
+    35→  Select,
+    36→  SelectContent,
+    37→  SelectItem,
+    38→  SelectTrigger,
+    39→  SelectValue,
+    40→} from '@/components/ui/select';
+    41→import {
+    42→  Table,
+    43→  TableBody,
+    44→  TableCell,
+    45→  TableHead,
+    46→  TableHeader,
+    47→  TableRow,
+    48→} from '@/components/ui/table';
+    49→import {
+    50→  Dialog,
+    51→  DialogContent,
+    52→  DialogDescription,
+    53→  DialogFooter,
+    54→  DialogHeader,
+    55→  DialogTitle,
+    56→} from '@/components/ui/dialog';
+    57→import {
+    58→  Pagination,
+    59→  PaginationContent,
+    60→  PaginationItem,
+    61→  PaginationLink,
+    62→  PaginationNext,
+    63→  PaginationPrevious,
+    64→  PaginationEllipsis,
+    65→} from '@/components/ui/pagination';
+    66→import { Separator } from '@/components/ui/separator';
+    67→import { Checkbox } from '@/components/ui/checkbox';
+    68→import { toast } from 'sonner';
+    69→import { generateReceiptHtml } from '@/lib/receipt-generator';
+    70→
+    71→// ── Helpers ──────────────────────────────────────────────────────────────────
+    72→
+    73→const formatRp = (amount: number) =>
+    74→  new Intl.NumberFormat('id-ID', {
+    75→    style: 'currency',
+    76→    currency: 'IDR',
+    77→    minimumFractionDigits: 0,
+    78→  }).format(amount);
+    79→
+    80→const formatDate = (dateStr: string) => {
+    81→  const d = new Date(dateStr);
+    82→  return d.toLocaleDateString('id-ID', {
+    83→    day: 'numeric',
+    84→    month: 'short',
+    85→    year: 'numeric',
+    86→    hour: '2-digit',
+    87→    minute: '2-digit',
+    88→  });
+    89→};
+    90→
+    91→const formatShortDate = (dateStr: string) => {
+    92→  const d = new Date(dateStr);
+    93→  return d.toLocaleDateString('id-ID', {
+    94→    day: 'numeric',
+    95→    month: 'short',
+    96→    year: 'numeric',
+    97→  });
+    98→};
+    99→
+   100→// ── Status Config ────────────────────────────────────────────────────────────
+   101→
+   102→const STATUS_MAP: Record<
+   103→  string,
+   104→  { label: string; color: string; bgClass: string; icon: React.ElementType }
+   105→> = {
+   106→  success: {
+   107→    label: 'Berhasil',
+   108→    color: 'text-emerald-700',
+   109→    bgClass:
+   110→      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+   111→    icon: CheckCircle2,
+   112→  },
+   113→  pending: {
+   114→    label: 'Menunggu',
+   115→    color: 'text-amber-700',
+   116→    bgClass:
+   117→      'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+   118→    icon: Clock,
+   119→  },
+   120→  failed: {
+   121→    label: 'Gagal',
+   122→    color: 'text-red-700',
+   123→    bgClass:
+   124→      'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+   125→    icon: XCircle,
+   126→  },
+   127→  expired: {
+   128→    label: 'Kedaluwarsa',
+   129→    color: 'text-gray-600',
+   130→    bgClass:
+   131→      'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+   132→    icon: AlertTriangle,
+   133→  },
+   134→  refunded: {
+   135→    label: 'Refund',
+   136→    color: 'text-blue-700',
+   137→    bgClass:
+   138→      'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800',
+   139→    icon: RotateCcw,
+   140→  },
+   141→};
+   142→
+   143→// ── Types ────────────────────────────────────────────────────────────────────
+   144→
+   145→interface Transaction {
+   146→  id: string;
+   147→  invoiceNo: string;
+   148→  amount: number;
+   149→  fee: number;
+   150→  netAmount: number;
+   151→  paymentMethod: string;
+   152→  paymentChannel: string;
+   153→  status: string;
+   154→  description: string | null;
+   155→  customerName: string | null;
+   156→  customerEmail: string | null;
+   157→  customerPhone: string | null;
+   158→  paidAt: string | null;
+   159→  expiredAt: string | null;
+   160→  createdAt: string;
+   161→  updatedAt: string;
+   162→  merchant: { id: string; name: string; logo: string | null };
+   163→  customer: { id: string; name: string; email: string } | null;
+   164→}
+   165→
+   166→interface TransactionsResponse {
+   167→  data: Transaction[];
+   168→  pagination: {
+   169→    page: number;
+   170→    limit: number;
+   171→    total: number;
+   172→    totalPages: number;
+   173→  };
+   174→}
+   175→
+   176→interface StatusCount {
+   177→  status: string;
+   178→  count: number;
+   179→}
+   180→
+   181→// ── Status Badge ──────────────────────────────────────────────────────────────
+   182→
+   183→function StatusBadge({ status }: { status: string }) {
+   184→  const s = STATUS_MAP[status] ?? STATUS_MAP.pending;
+   185→  const Icon = s.icon;
+   186→  return (
+   187→    <Badge variant="outline" className={`${s.bgClass} gap-1.5 font-medium`}>
+   188→      <Icon className="h-3 w-3" />
+   189→      {s.label}
+   190→    </Badge>
+   191→  );
+   192→}
+   193→
+   194→// ── Timeline Item ────────────────────────────────────────────────────────────
+   195→
+   196→interface TimelineEvent {
+   197→  label: string;
+   198→  date: string;
+   199→  icon: React.ElementType;
+   200→  color: string;
+   201→}
+   202→
+   203→function buildTimeline(tx: Transaction): TimelineEvent[] {
+   204→  const events: TimelineEvent[] = [
+   205→    {
+   206→      label: 'Transaksi dibuat',
+   207→      date: tx.createdAt,
+   208→      icon: Receipt,
+   209→      color: 'text-emerald-500',
+   210→    },
+   211→  ];
+   212→  if (tx.paidAt) {
+   213→    events.push({
+   214→      label: 'Pembayaran diterima',
+   215→      date: tx.paidAt,
+   216→      icon: CheckCircle2,
+   217→      color: 'text-emerald-500',
+   218→    });
+   219→  }
+   220→  if (tx.expiredAt && (tx.status === 'expired' || tx.status === 'failed')) {
+   221→    events.push({
+   222→      label: 'Transaksi kedaluwarsa',
+   223→      date: tx.expiredAt,
+   224→      icon: AlertTriangle,
+   225→      color: 'text-gray-500',
+   226→    });
+   227→  }
+   228→  if (tx.status === 'failed') {
+   229→    events.push({
+   230→      label: 'Transaksi gagal',
+   231→      date: tx.updatedAt,
+   232→      icon: XCircle,
+   233→      color: 'text-red-500',
+   234→    });
+   235→  }
+   236→  if (tx.status === 'refunded') {
+   237→    events.push({
+   238→      label: 'Refund diproses',
+   239→      date: tx.updatedAt,
+   240→      icon: RotateCcw,
+   241→      color: 'text-blue-500',
+   242→    });
+   243→  }
+   244→  return events;
+   245→}
+   246→
+   247→function TimelineItem({ event, isLast }: { event: TimelineEvent; isLast: boolean }) {
+   248→  const Icon = event.icon;
+   249→  return (
+   250→    <div className="flex gap-3">
+   251→      <div className="flex flex-col items-center">
+   252→        <div
+   253→          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted ${event.color}`}
+   254→        >
+   255→          <Icon className="h-4 w-4" />
+   256→        </div>
+   257→        {!isLast && <div className="w-px flex-1 bg-border" />}
+   258→      </div>
+   259→      <div className={`pb-6 ${isLast ? 'pb-0' : ''}`}>
+   260→        <p className="text-sm font-medium">{event.label}</p>
+   261→        <p className="text-muted-foreground text-xs">{formatDate(event.date)}</p>
+   262→      </div>
+   263→    </div>
+   264→  );
+   265→}
+   266→
+   267→// ── Transaction Detail Dialog ────────────────────────────────────────────────
+   268→
+   269→function TransactionDetailDialog({
+   270→  tx,
+   271→  open,
+   272→  onOpenChange,
+   273→}: {
+   274→  tx: Transaction | null;
+   275→  open: boolean;
+   276→  onOpenChange: (v: boolean) => void;
+   277→}) {
+   278→  const queryClient = useQueryClient();
+   279→  const [refunding, setRefunding] = useState(false);
+   280→
+   281→  const timeline = useMemo(() => (tx ? buildTimeline(tx) : []), [tx]);
+   282→
+   283→  const handleRefund = async () => {
+   284→    if (!tx) return;
+   285→    setRefunding(true);
+   286→    try {
+   287→      const res = await fetch(`/api/transactions/${tx.id}`, {
+   288→        method: 'POST',
+   289→        headers: { 'Content-Type': 'application/json' },
+   290→        body: JSON.stringify({ amount: tx.amount, reason: 'Permintaan refund dari dashboard' }),
+   291→      });
+   292→      if (!res.ok) {
+   293→        const err = await res.json().catch(() => ({ error: 'Gagal memproses refund' }));
+   294→        throw new Error(err.error || 'Gagal memproses refund');
+   295→      }
+   296→      toast.success('Refund berhasil diajukan');
+   297→      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+   298→      onOpenChange(false);
+   299→    } catch (e) {
+   300→      toast.error(e instanceof Error ? e.message : 'Gagal memproses refund');
+   301→    } finally {
+   302→      setRefunding(false);
+   303→    }
+   304→  };
+   305→
+   306→  const handleCopyInvoice = () => {
+   307→    if (tx) {
+   308→      navigator.clipboard.writeText(tx.invoiceNo);
+   309→      toast.success('Nomor invoice disalin');
+   310→    }
+   311→  };
+   312→
+   313→  const handleDownloadReceipt = () => {
+   314→    if (!tx) return;
+   315→    const statusInfo = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+   316→    const html = generateReceiptHtml({
+   317→      invoiceNo: tx.invoiceNo,
+   318→      amount: tx.amount,
+   319→      fee: tx.fee,
+   320→      netAmount: tx.netAmount,
+   321→      merchantName: tx.merchant.name,
+   322→      customerName: tx.customerName || tx.customer?.name || '-',
+   323→      paymentMethod: tx.paymentMethod,
+   324→      paymentChannel: tx.paymentChannel,
+   325→      status: tx.status,
+   326→      createdAt: tx.createdAt,
+   327→      paidAt: tx.paidAt,
+   328→      description: tx.description,
+   329→      formattedAmount: formatRp(tx.amount),
+   330→      formattedFee: formatRp(tx.fee),
+   331→      formattedNetAmount: formatRp(tx.netAmount),
+   332→      formattedCreatedAt: formatDate(tx.createdAt),
+   333→      formattedPaidAt: tx.paidAt ? formatDate(tx.paidAt) : null,
+   334→      statusLabel: statusInfo.label,
+   335→    });
+   336→    const blob = new Blob([html], { type: 'text/html' });
+   337→    const url = URL.createObjectURL(blob);
+   338→    const a = document.createElement('a');
+   339→    a.href = url;
+   340→    a.download = `struk-${tx.invoiceNo}.html`;
+   341→    document.body.appendChild(a);
+   342→    a.click();
+   343→    document.body.removeChild(a);
+   344→    URL.revokeObjectURL(url);
+   345→    toast.success('Struk berhasil diunduh');
+   346→  };
+   347→
+   348→  if (!tx) return null;
+   349→
+   350→  const statusInfo = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+   351→  const StatusIcon = statusInfo.icon;
+   352→
+   353→  return (
+   354→    <Dialog open={open} onOpenChange={onOpenChange}>
+   355→      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   356→        <DialogHeader>
+   357→          <div className="flex items-center gap-3">
+   358→            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
+   359→              <Receipt className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+   360→            </div>
+   361→            <div>
+   362→              <DialogTitle className="text-base">Detail Transaksi</DialogTitle>
+   363→              <DialogDescription>
+   364→                <span className="flex items-center gap-1.5 font-mono text-xs">
+   365→                  {tx.invoiceNo}
+   366→                  <button
+   367→                    onClick={handleCopyInvoice}
+   368→                    className="inline-flex hover:text-foreground transition-colors"
+   369→                  >
+   370→                    <Copy className="h-3 w-3" />
+   371→                  </button>
+   372→                </span>
+   373→              </DialogDescription>
+   374→            </div>
+   375→          </div>
+   376→        </DialogHeader>
+   377→
+   378→        <div className="space-y-5">
+   379→          {/* Status Banner */}
+   380→          <div
+   381→            className={`flex items-center gap-3 rounded-lg border p-4 ${statusInfo.bgClass}`}
+   382→          >
+   383→            <StatusIcon className="h-5 w-5" />
+   384→            <div>
+   385→              <p className="text-sm font-semibold">Status: {statusInfo.label}</p>
+   386→              <p className="text-xs opacity-80">
+   387→                {tx.status === 'success'
+   388→                  ? 'Pembayaran telah berhasil diterima'
+   389→                  : tx.status === 'pending'
+   390→                    ? 'Menunggu pembayaran dari pelanggan'
+   391→                    : tx.status === 'failed'
+   392→                      ? 'Pembayaran gagal diproses'
+   393→                      : tx.status === 'expired'
+   394→                        ? 'Batas waktu pembayaran telah habis'
+   395→                        : 'Dana telah dikembalikan ke pelanggan'}
+   396→              </p>
+   397→            </div>
+   398→          </div>
+   399→
+   400→          {/* Amount Section */}
+   401→          <div className="rounded-lg border bg-muted/30 p-4">
+   402→            <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
+   403→              Jumlah Pembayaran
+   404→            </p>
+   405→            <p className="text-2xl font-bold tracking-tight">{formatRp(tx.amount)}</p>
+   406→            <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
+   407→              <span>
+   408→                Biaya Admin: <span className="font-medium text-foreground">{formatRp(tx.fee)}</span>
+   409→              </span>
+   410→              <span>
+   411→                Jumlah Bersih: <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatRp(tx.netAmount)}</span>
+   412→              </span>
+   413→            </div>
+   414→          </div>
+   415→
+   416→          {/* Details Grid */}
+   417→          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+   418→            <DetailItem
+   419→              icon={Store}
+   420→              label="Merchant"
+   421→              value={tx.merchant.name}
+   422→            />
+   423→            <DetailItem
+   424→              icon={User}
+   425→              label="Pelanggan"
+   426→              value={tx.customerName || tx.customer?.name || '-'}
+   427→            />
+   428→            <DetailItem
+   429→              icon={CreditCard}
+   430→              label="Metode Pembayaran"
+   431→              value={tx.paymentMethod}
+   432→            />
+   433→            <DetailItem
+   434→              icon={CircleDot}
+   435→              label="Saluran"
+   436→              value={tx.paymentChannel}
+   437→            />
+   438→            <DetailItem
+   439→              icon={CalendarDays}
+   440→              label="Tanggal Dibuat"
+   441→              value={formatDate(tx.createdAt)}
+   442→            />
+   443→            {tx.paidAt && (
+   444→              <DetailItem
+   445→                icon={CheckCircle2}
+   446→                label="Tanggal Dibayar"
+   447→                value={formatDate(tx.paidAt)}
+   448→              />
+   449→            )}
+   450→            {tx.customerEmail && (
+   451→              <DetailItem
+   452→                icon={Receipt}
+   453→                label="Email Pelanggan"
+   454→                value={tx.customerEmail}
+   455→              />
+   456→            )}
+   457→            {tx.customerPhone && (
+   458→              <DetailItem
+   459→                icon={Receipt}
+   460→                label="Telepon Pelanggan"
+   461→                value={tx.customerPhone}
+   462→              />
+   463→            )}
+   464→            {tx.description && (
+   465→              <div className="sm:col-span-2">
+   466→                <DetailItem
+   467→                  icon={Receipt}
+   468→                  label="Deskripsi"
+   469→                  value={tx.description}
+   470→                />
+   471→              </div>
+   472→            )}
+   473→          </div>
+   474→
+   475→          <Separator />
+   476→
+   477→          {/* Timeline */}
+   478→          <div>
+   479→            <h4 className="mb-3 text-sm font-semibold">Timeline</h4>
+   480→            <div>
+   481→              {timeline.map((event, idx) => (
+   482→                <TimelineItem
+   483→                  key={idx}
+   484→                  event={event}
+   485→                  isLast={idx === timeline.length - 1}
+   486→                />
+   487→              ))}
+   488→            </div>
+   489→          </div>
+   490→        </div>
+   491→
+   492→        {/* Footer Actions */
+   493→        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+   494→          <Button
+   495→            variant="outline"
+   496→            onClick={handleDownloadReceipt}
+   497→            className="w-full gap-2 sm:w-auto"
+   498→          >
+   499→            <Printer className="h-4 w-4" />
+   500→            Unduh Struk
+   501→          </Button>
+   502→          {tx.status === 'success' && (
+   503→            <Button
+   504→              variant="destructive"
+   505→              onClick={handleRefund}
+   506→              disabled={refunding}
+   507→              className="w-full gap-2 sm:w-auto"
+   508→            >
+   509→              <RotateCcw className="h-4 w-4" />
+   510→              {refunding ? 'Memproses...' : 'Proses Refund'}
+   511→            </Button>
+   512→          )}
+   513→        </DialogFooter>
+   514→      </DialogContent>
+   515→    </Dialog>
+   516→  );
+   517→}
+   518→
+   519→function DetailItem({
+   520→  icon: Icon,
+   521→  label,
+   522→  value,
+   523→}: {
+   524→  icon: React.ElementType;
+   525→  label: string;
+   526→  value: string;
+   527→}) {
+   528→  return (
+   529→    <div className="flex items-start gap-3 rounded-lg border p-3">
+   530→      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   531→        <Icon className="h-4 w-4 text-muted-foreground" />
+   532→      </div>
+   533→      <div className="min-w-0">
+   534→        <p className="text-muted-foreground text-xs">{label}</p>
+   535→        <p className="truncate text-sm font-medium">{value}</p>
+   536→      </div>
+   537→    </div>
+   538→  );
+   539→}
+   540→
+   541→// ── Loading Skeleton ─────────────────────────────────────────────────────────
+   542→
+   543→function TransactionsSkeleton() {
+   544→  return (
+   545→    <div className="space-y-6">
+   546→      {/* Filter bar skeleton */}
+   547→      <Card>
+   548→        <CardContent className="p-4">
+   549→          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+   550→            <Skeleton className="h-9 w-full lg:w-72" />
+   551→            <Skeleton className="h-9 w-full lg:w-36" />
+   552→            <Skeleton className="h-9 w-full lg:w-36" />
+   553→            <Skeleton className="h-9 w-full lg:w-36" />
+   554→            <Skeleton className="h-9 w-full lg:w-36" />
+   555→            <Skeleton className="h-9 w-full lg:w-28" />
+   556→          </div>
+   557→        </CardContent>
+   558→      </Card>
+   559→
+   560→      {/* Stats skeleton */}
+   561→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+   562→        {Array.from({ length: 5 }).map((_, i) => (
+   563→          <Skeleton key={i} className="h-20 rounded-xl" />
+   564→        ))}
+   565→      </div>
+   566→
+   567→      {/* Table skeleton */}
+   568→      <Card>
+   569→        <CardContent className="p-4">
+   570→          <div className="space-y-3">
+   571→            <Skeleton className="h-10 w-full" />
+   572→            {Array.from({ length: 8 }).map((_, i) => (
+   573→              <Skeleton key={i} className="h-14 w-full" />
+   574→            ))}
+   575→          </div>
+   576→        </CardContent>
+   577→      </Card>
+   578→
+   579→      {/* Pagination skeleton */}
+   580→      <div className="flex justify-center">
+   581→        <Skeleton className="h-9 w-72" />
+   582→      </div>
+   583→    </div>
+   584→  );
+   585→}
+   586→
+   587→// ── Pagination Helper ────────────────────────────────────────────────────────
+   588→
+   589→function getPaginationRange(current: number, total: number) {
+   590→  const delta = 2;
+   591→  const range: (number | 'dots')[] = [];
+   592→  const left = Math.max(2, current - delta);
+   593→  const right = Math.min(total - 1, current + delta);
+   594→
+   595→  range.push(1);
+   596→  if (left > 2) range.push('dots');
+   597→  for (let i = left; i <= right; i++) range.push(i);
+   598→  if (right < total - 1) range.push('dots');
+   599→  if (total > 1) range.push(total);
+   600→
+   601→  return range;
+   602→}
+   603→
+   604→// ── Main Component ───────────────────────────────────────────────────────────
+   605→
+   606→export default function Transactions() {
+   607→  const [search, setSearch] = useState('');
+   608→  const [searchInput, setSearchInput] = useState('');
+   609→  const [status, setStatus] = useState<string>('all');
+   610→  const [paymentMethod, setPaymentMethod] = useState<string>('all');
+   611→  const [dateFrom, setDateFrom] = useState('');
+   612→  const [dateTo, setDateTo] = useState('');
+   613→  const [page, setPage] = useState(1);
+   614→  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+   615→  const [dialogOpen, setDialogOpen] = useState(false);
+   616→
+   617→  const limit = 10;
+   618→
+   619→  const buildQueryParams = useCallback(
+   620→    (overrides?: { page?: number; status?: string; search?: string }) => {
+   621→      const params = new URLSearchParams();
+   622→      params.set('page', String(overrides?.page ?? page));
+   623→      params.set('limit', String(limit));
+   624→      const s = overrides?.search ?? search;
+   625→      if (s) params.set('search', s);
+   626→      const st = overrides?.status ?? status;
+   627→      if (st && st !== 'all') params.set('status', st);
+   628→      if (paymentMethod && paymentMethod !== 'all')
+   629→        params.set('paymentMethod', paymentMethod);
+   630→      if (dateFrom) params.set('dateFrom', dateFrom);
+   631→      if (dateTo) params.set('dateTo', dateTo);
+   632→      return params.toString();
+   633→    },
+   634→    [page, search, status, paymentMethod, dateFrom, dateTo],
+   635→  );
+   636→
+   637→  const { data, isLoading, error } = useQuery<TransactionsResponse>({
+   638→    queryKey: ['transactions', page, search, status, paymentMethod, dateFrom, dateTo],
+   639→    queryFn: () => {
+   640→      const qs = buildQueryParams();
+   641→      return fetch(`/api/transactions?${qs}`).then((r) => r.json());
+   642→    },
+   643→    staleTime: 15_000,
+   644→  });
+   645→
+   646→  // Fetch status counts (always use no filters except what's needed)
+   647→  const { data: statusCountsData } = useQuery<StatusCount[]>({
+   648→    queryKey: ['transactions-status-counts', search, paymentMethod, dateFrom, dateTo],
+   649→    queryFn: async () => {
+   650→      // We query the same endpoint but with different pages to get counts via pagination.total
+   651→      // More efficient: just get all statuses in parallel
+   652→      const statuses = ['success', 'pending', 'failed', 'expired', 'refunded'];
+   653→      const baseParams = new URLSearchParams();
+   654→      baseParams.set('limit', '1');
+   655→      baseParams.set('page', '1');
+   656→      if (search) baseParams.set('search', search);
+   657→      if (paymentMethod && paymentMethod !== 'all')
+   658→        baseParams.set('paymentMethod', paymentMethod);
+   659→      if (dateFrom) baseParams.set('dateFrom', dateFrom);
+   660→      if (dateTo) baseParams.set('dateTo', dateTo);
+   661→
+   662→      const results = await Promise.all(
+   663→        statuses.map(async (s) => {
+   664→          const params = new URLSearchParams(baseParams);
+   665→          params.set('status', s);
+   666→          const res = await fetch(`/api/transactions?${params.toString()}`);
+   667→          const json = await res.json();
+   668→          return { status: s, count: json.pagination?.total ?? 0 };
+   669→        }),
+   670→      );
+   671→      return results;
+   672→    },
+   673→    staleTime: 15_000,
+   674→  });
+   675→
+   676→  const transactions = data?.data ?? [];
+   677→  const pagination = data?.pagination;
+   678→
+   679→  const handleSearch = (e: React.FormEvent) => {
+   680→    e.preventDefault();
+   681→    setSearch(searchInput);
+   682→    setPage(1);
+   683→  };
+   684→
+   685→  const handleStatusFilterChange = (value: string) => {
+   686→    setStatus(value);
+   687→    setPage(1);
+   688→  };
+   689→
+   690→  const handlePaymentMethodChange = (value: string) => {
+   691→    setPaymentMethod(value);
+   692→    setPage(1);
+   693→  };
+   694→
+   695→  const handleDateFromChange = (value: string) => {
+   696→    setDateFrom(value);
+   697→    setPage(1);
+   698→  };
+   699→
+   700→  const handleDateToChange = (value: string) => {
+   701→    setDateTo(value);
+   702→    setPage(1);
+   703→  };
+   704→
+   705→  const handleStatusCardClick = (s: string) => {
+   706→    if (status === s) {
+   707→      setStatus('all');
+   708→    } else {
+   709→      setStatus(s);
+   710→    }
+   711→    setPage(1);
+   712→  };
+   713→
+   714→  const handleExportCSV = async () => {
+   715→    try {
+   716→      toast.loading('Menyiapkan file CSV...', { id: 'csv-export' });
+   717→      const qs = buildQueryParams({ page: 1 });
+   718→      const res = await fetch(`/api/transactions?export=csv&${qs}`);
+   719→      if (!res.ok) throw new Error('Gagal mengunduh CSV');
+   720→      const blob = await res.blob();
+   721→      const url = URL.createObjectURL(blob);
+   722→      const a = document.createElement('a');
+   723→      a.href = url;
+   724→      a.download = `transaksi-posril-${new Date().toISOString().slice(0, 10)}.csv`;
+   725→      document.body.appendChild(a);
+   726→      a.click();
+   727→      document.body.removeChild(a);
+   728→      URL.revokeObjectURL(url);
+   729→      toast.success('File CSV berhasil diunduh', { id: 'csv-export' });
+   730→    } catch {
+   731→      toast.error('Gagal mengunduh CSV', { id: 'csv-export' });
+   732→    }
+   733→  };
+   734→
+   735→  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+   736→  const [selectAll, setSelectAll] = useState(false);
+   737→
+   738→  // Clear selection when page or filters change
+   739→  useEffect(() => {
+   740→    setSelectedIds(new Set());
+   741→    setSelectAll(false);
+   742→  }, [page, search, status, paymentMethod, dateFrom, dateTo]);
+   743→
+   744→  const handleToggleSelect = (id: string) => {
+   745→    setSelectedIds((prev) => {
+   746→      const next = new Set(prev);
+   747→      if (next.has(id)) {
+   748→        next.delete(id);
+   749→      } else {
+   750→        next.add(id);
+   751→      }
+   752→      return next;
+   753→    });
+   754→  };
+   755→
+   756→  const handleToggleSelectAll = () => {
+   757→    if (selectAll) {
+   758→      setSelectedIds(new Set());
+   759→      setSelectAll(false);
+   760→    } else {
+   761→      setSelectedIds(new Set(transactions.map((tx) => tx.id)));
+   762→      setSelectAll(true);
+   763→    }
+   764→  };
+   765→
+   766→  const handleClearSelection = () => {
+   767→    setSelectedIds(new Set());
+   768→    setSelectAll(false);
+   769→  };
+   770→
+   771→  const handleExportSelected = async () => {
+   772→    if (selectedIds.size === 0) return;
+   773→    try {
+   774→      toast.loading('Menyiapkan file CSV...', { id: 'csv-export-selected' });
+   775→      const ids = Array.from(selectedIds).join(',');
+   776→      const res = await fetch(`/api/transactions?export=csv&ids=${ids}`);
+   777→      if (!res.ok) throw new Error('Gagal mengunduh CSV');
+   778→      const blob = await res.blob();
+   779→      const url = URL.createObjectURL(blob);
+   780→      const a = document.createElement('a');
+   781→      a.href = url;
+   782→      a.download = `transaksi-posril-terpilih-${new Date().toISOString().slice(0, 10)}.csv`;
+   783→      document.body.appendChild(a);
+   784→      a.click();
+   785→      document.body.removeChild(a);
+   786→      URL.revokeObjectURL(url);
+   787→      toast.success('File CSV berhasil diunduh', { id: 'csv-export-selected' });
+   788→    } catch {
+   789→      toast.error('Gagal mengunduh CSV', { id: 'csv-export-selected' });
+   790→    }
+   791→  };
+   792→
+   793→  const handleRowClick = (tx: Transaction) => {
+   794→    setSelectedTx(tx);
+   795→    setDialogOpen(true);
+   796→  };
+   797→
+   798→  const statusCards = [
+   799→    {
+   800→      key: 'success',
+   801→      label: 'Berhasil',
+   802→      icon: CheckCircle2,
+   803→      gradient: 'from-emerald-500 to-teal-400',
+   804→      bgLight: 'bg-emerald-50 dark:bg-emerald-950/30',
+   805→      borderColor: 'border-emerald-200 dark:border-emerald-800',
+   806→      textColor: 'text-emerald-700 dark:text-emerald-400',
+   807→    },
+   808→    {
+   809→      key: 'pending',
+   810→      label: 'Menunggu',
+   811→      icon: Clock,
+   812→      gradient: 'from-amber-500 to-orange-400',
+   813→      bgLight: 'bg-amber-50 dark:bg-amber-950/30',
+   814→      borderColor: 'border-amber-200 dark:border-amber-800',
+   815→      textColor: 'text-amber-700 dark:text-amber-400',
+   816→    },
+   817→    {
+   818→      key: 'failed',
+   819→      label: 'Gagal',
+   820→      icon: XCircle,
+   821→      gradient: 'from-red-500 to-rose-400',
+   822→      bgLight: 'bg-red-50 dark:bg-red-950/30',
+   823→      borderColor: 'border-red-200 dark:border-red-800',
+   824→      textColor: 'text-red-700 dark:text-red-400',
+   825→    },
+   826→    {
+   827→      key: 'expired',
+   828→      label: 'Kedaluwarsa',
+   829→      icon: AlertTriangle,
+   830→      gradient: 'from-gray-500 to-slate-400',
+   831→      bgLight: 'bg-gray-50 dark:bg-gray-900/30',
+   832→      borderColor: 'border-gray-200 dark:border-gray-700',
+   833→      textColor: 'text-gray-600 dark:text-gray-400',
+   834→    },
+   835→    {
+   836→      key: 'refunded',
+   837→      label: 'Refund',
+   838→      icon: RotateCcw,
+   839→      gradient: 'from-blue-500 to-sky-400',
+   840→      bgLight: 'bg-blue-50 dark:bg-blue-950/30',
+   841→      borderColor: 'border-blue-200 dark:border-blue-800',
+   842→      textColor: 'text-blue-700 dark:text-blue-400',
+   843→    },
+   844→  ];
+   845→
+   846→  const getStatusCount = (key: string) =>
+   847→    statusCountsData?.find((s) => s.status === key)?.count ?? 0;
+   848→
+   849→  const pageRange = useMemo(() => {
+   850→    if (!pagination) return [];
+   851→    return getPaginationRange(pagination.page, pagination.totalPages);
+   852→  }, [pagination]);
+   853→
+   854→  if (isLoading) return <TransactionsSkeleton />;
+   855→  if (error || !data) {
+   856→    return (
+   857→      <div className="flex flex-col items-center justify-center gap-3 py-20">
+   858→        <XCircle className="h-10 w-10 text-muted-foreground" />
+   859→        <p className="text-muted-foreground">
+   860→          Gagal memuat data transaksi. Silakan coba lagi.
+   861→        </p>
+   862→        <Button
+   863→          variant="outline"
+   864→          onClick={() =>
+   865→            window.location.reload()
+   866→          }
+   867→        >
+   868→          Coba Lagi
+   869→        </Button>
+   870→      </div>
+   871→    );
+   872→  }
+   873→
+   874→  return (
+   875→    <div className="space-y-5">
+   876→      {/* ─── Filter Bar ─────────────────────────────────────────────── */}
+   877→      <motion.div
+   878→        initial={{ opacity: 0, y: -10 }}
+   879→        animate={{ opacity: 1, y: 0 }}
+   880→        transition={{ duration: 0.3 }}
+   881→      >
+   882→        <Card className="shadow-sm card-hover">
+   883→          <CardContent className="p-4">
+   884→            <form
+   885→              onSubmit={handleSearch}
+   886→              className="flex flex-col gap-3 lg:flex-row lg:items-center"
+   887→            >
+   888→              {/* Search */}
+   889→              <div className="relative flex-1 lg:max-w-xs">
+   890→                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   891→                <Input
+   892→                  placeholder="Cari invoice, pelanggan, merchant..."
+   893→                  value={searchInput}
+   894→                  onChange={(e) => setSearchInput(e.target.value)}
+   895→                  className="pl-9"
+   896→                />
+   897→              </div>
+   898→
+   899→              {/* Status Filter */}
+   900→              <Select
+   901→                value={status}
+   902→                onValueChange={handleStatusFilterChange}
+   903→              >
+   904→                <SelectTrigger className="w-full lg:w-40">
+   905→                  <SelectValue placeholder="Semua Status" />
+   906→                </SelectTrigger>
+   907→                <SelectContent>
+   908→                  <SelectItem value="all">Semua Status</SelectItem>
+   909→                  <SelectItem value="success">Berhasil</SelectItem>
+   910→                  <SelectItem value="pending">Menunggu</SelectItem>
+   911→                  <SelectItem value="failed">Gagal</SelectItem>
+   912→                  <SelectItem value="expired">Kedaluwarsa</SelectItem>
+   913→                  <SelectItem value="refunded">Refund</SelectItem>
+   914→                </SelectContent>
+   915→              </Select>
+   916→
+   917→              {/* Payment Method Filter */}
+   918→              <Select
+   919→                value={paymentMethod}
+   920→                onValueChange={handlePaymentMethodChange}
+   921→              >
+   922→                <SelectTrigger className="w-full lg:w-44">
+   923→                  <SelectValue placeholder="Metode Pembayaran" />
+   924→                </SelectTrigger>
+   925→                <SelectContent>
+   926→                  <SelectItem value="all">Semua Metode</SelectItem>
+   927→                  <SelectItem value="QRIS">QRIS</SelectItem>
+   928→                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+   929→                  <SelectItem value="E-Wallet">E-Wallet</SelectItem>
+   930→                  <SelectItem value="Virtual Account">Virtual Account</SelectItem>
+   931→                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+   932→                </SelectContent>
+   933→              </Select>
+   934→
+   935→              {/* Date From */}
+   936→              <Input
+   937→                type="date"
+   938→                value={dateFrom}
+   939→                onChange={(e) => handleDateFromChange(e.target.value)}
+   940→                className="w-full lg:w-40"
+   941→                placeholder="Dari tanggal"
+   942→              />
+   943→
+   944→              {/* Date To */}
+   945→              <Input
+   946→                type="date"
+   947→                value={dateTo}
+   948→                onChange={(e) => handleDateToChange(e.target.value)}
+   949→                className="w-full lg:w-40"
+   950→                placeholder="Sampai tanggal"
+   951→              />
+   952→
+   953→              {/* Export Button */}
+   954→              <Button
+   955→                type="button"
+   956→                variant="outline"
+   957→                onClick={handleExportCSV}
+   958→                className="w-full gap-2 lg:w-auto btn-press"
+   959→              >
+   960→                <Download className="h-4 w-4" />
+   961→                <span className="hidden sm:inline">Ekspor CSV</span>
+   962→              </Button>
+   963→            </form>
+   964→          </CardContent>
+   965→        </Card>
+   966→      </motion.div>
+   967→
+   968→      {/* ─── Stats Summary Bar ──────────────────────────────────────── */}
+   969→      <motion.div
+   970→        initial={{ opacity: 0, y: 10 }}
+   971→        animate={{ opacity: 1, y: 0 }}
+   972→        transition={{ duration: 0.3, delay: 0.1 }}
+   973→      >
+   974→        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+   975→          {statusCards.map((card) => {
+   976→            const count = getStatusCount(card.key);
+   977→            const isActive = status === card.key;
+   978→            const Icon = card.icon;
+   979→            return (
+   980→              <motion.button
+   981→                key={card.key}
+   982→                whileHover={{ scale: 1.02 }}
+   983→                whileTap={{ scale: 0.98 }}
+   984→                onClick={() => handleStatusCardClick(card.key)}
+   985→                className={`group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 ${
+   986→                  isActive
+   987→                    ? `${card.bgLight} ${card.borderColor} ring-2 ring-offset-1 ring-offset-background ${card.textColor.replace('text-', 'ring-')}`
+   988→                    : 'bg-card hover:border-border/80 hover:shadow-sm'
+   989→                }`}
+   990→              >
+   991→                <div className="flex items-center justify-between">
+   992→                  <div className="flex items-center gap-2.5">
+   993→                    <div
+   994→                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+   995→                        isActive ? `bg-gradient-to-br ${card.gradient}` : 'bg-muted'
+   996→                      }`}
+   997→                    >
+   998→                      <Icon
+   999→                        className={`h-4 w-4 ${
+  1000→                          isActive ? 'text-white' : 'text-muted-foreground'
+  1001→                        }`}
+  1002→                      />
+  1003→                    </div>
+  1004→                    <div>
+  1005→                      <p className="text-lg font-bold leading-none">{count}</p>
+  1006→                      <p
+  1007→                        className={`text-xs mt-1 ${
+  1008→                          isActive ? card.textColor : 'text-muted-foreground'
+  1009→                        }`}
+  1010→                      >
+  1011→                        {card.label}
+  1012→                      </p>
+  1013→                    </div>
+  1014→                  </div>
+  1015→                  {isActive && (
+  1016→                    <div
+  1017→                      className={`h-2 w-2 rounded-full bg-gradient-to-br ${card.gradient}`}
+  1018→                    />
+  1019→                  )}
+  1020→                </div>
+  1021→              </motion.button>
+  1022→            );
+  1023→          })}
+  1024→        </div>
+  1025→      </motion.div>
+  1026→
+  1027→      {/* ─── Transactions Table ──────────────────────────────────────── */}
+  1028→      <motion.div
+  1029→        initial={{ opacity: 0, y: 10 }}
+  1030→        animate={{ opacity: 1, y: 0 }}
+  1031→        transition={{ duration: 0.3, delay: 0.2 }}
+  1032→      >
+  1033→        <Card className="shadow-sm card-hover">
+  1034→          <CardContent className="p-0">
+  1035→            {/* Table Header Info */}
+  1036→            <div className="flex items-center justify-between border-b px-4 py-3">
+  1037→              <div className="flex items-center gap-2">
+  1038→                <ArrowLeftRight className="h-4 w-4 text-emerald-500" />
+  1039→                <h3 className="text-sm font-semibold">Daftar Transaksi</h3>
+  1040→                <span className="text-muted-foreground text-xs">
+  1041→                  ({pagination?.total?.toLocaleString('id-ID')} transaksi)
+  1042→                </span>
+  1043→              </div>
+  1044→              <div className="text-muted-foreground text-xs">
+  1045→                Halaman {pagination?.page} dari {pagination?.totalPages}
+  1046→              </div>
+  1047→            </div>
+  1048→
+  1049→            {/* Table */}
+  1050→            <div className="overflow-x-auto">
+  1051→              <Table>
+  1052→                <TableHeader>
+  1053→                  <TableRow className="hover:bg-transparent">
+  1054→                    <TableHead className="w-10 pl-4">
+  1055→                      <Checkbox
+  1056→                        checked={selectAll}
+  1057→                        onCheckedChange={handleToggleSelectAll}
+  1058→                        className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500"
+  1059→                      />
+  1060→                    </TableHead>
+  1061→                    <TableHead>Invoice</TableHead>
+  1062→                    <TableHead>Merchant</TableHead>
+  1063→                    <TableHead>Pelanggan</TableHead>
+  1064→                    <TableHead className="text-right">Jumlah</TableHead>
+  1065→                    <TableHead className="text-right">Biaya</TableHead>
+  1066→                    <TableHead>Metode</TableHead>
+  1067→                    <TableHead>Saluran</TableHead>
+  1068→                    <TableHead>Status</TableHead>
+  1069→                    <TableHead>Tanggal</TableHead>
+  1070→                  </TableRow>
+  1071→                </TableHeader>
+  1072→                <TableBody>
+  1073→                  <AnimatePresence mode="popLayout">
+  1074→                    {transactions.length === 0 ? (
+  1075→                      <TableRow>
+  1076→                        <TableCell
+  1077→                          colSpan={10}
+  1078→                          className="h-40 text-center"
+  1079→                        >
+  1080→                          <div className="flex flex-col items-center gap-2 dot-pattern rounded-lg p-4">
+  1081→                            <Search className="h-8 w-8 text-muted-foreground/40" />
+  1082→                            <p className="text-muted-foreground text-sm">
+  1083→                              Tidak ada transaksi ditemukan
+  1084→                            </p>
+  1085→                            <p className="text-muted-foreground text-xs">
+  1086→                              Coba ubah filter atau kata kunci pencarian
+  1087→                            </p>
+  1088→                          </div>
+  1089→                        </TableCell>
+  1090→                      </TableRow>
+  1091→                    ) : (
+  1092→                      transactions.map((tx) => (
+  1093→                        <motion.tr
+  1094→                          key={tx.id}
+  1095→                          initial={{ opacity: 0, x: -8 }}
+  1096→                          animate={{ opacity: 1, x: 0 }}
+  1097→                          exit={{ opacity: 0, x: 8 }}
+  1098→                          transition={{ duration: 0.2 }}
+  1099→                          className={`group border-b transition-colors last:border-0 table-row-hover ${selectedIds.has(tx.id) ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 'cursor-pointer hover:bg-muted/50'}`}
+  1100→                          onClick={() => handleRowClick(tx)}
+  1101→                        >
+  1102→                          <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+  1103→                            <Checkbox
+  1104→                              checked={selectedIds.has(tx.id)}
+  1105→                              onCheckedChange={() => handleToggleSelect(tx.id)}
+  1106→                              className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500"
+  1107→                            />
+  1108→                          </TableCell>
+  1109→                          <TableCell className="pl-4">
+  1110→                            <span className="font-mono text-xs font-medium">
+  1111→                              {tx.invoiceNo}
+  1112→                            </span>
+  1113→                          </TableCell>
+  1114→                          <TableCell>
+  1115→                            <div className="flex items-center gap-2">
+  1116→                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
+  1117→                                <Store className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+  1118→                              </div>
+  1119→                              <span className="max-w-[120px] truncate text-sm">
+  1120→                                {tx.merchant.name}
+  1121→                              </span>
+  1122→                            </div>
+  1123→                          </TableCell>
+  1124→                          <TableCell>
+  1125→                            <span className="text-sm">
+  1126→                              {tx.customerName ||
+  1127→                                tx.customer?.name ||
+  1128→                                '-'}
+  1129→                            </span>
+  1130→                          </TableCell>
+  1131→                          <TableCell className="text-right">
+  1132→                            <span className="text-sm font-semibold">
+  1133→                              {formatRp(tx.amount)}
+  1134→                            </span>
+  1135→                          </TableCell>
+  1136→                          <TableCell className="text-right">
+  1137→                            <span className="text-muted-foreground text-xs">
+  1138→                              {formatRp(tx.fee)}
+  1139→                            </span>
+  1140→                          </TableCell>
+  1141→                          <TableCell>
+  1142→                            <div className="flex items-center gap-1.5">
+  1143→                              <CreditCard className="h-3 w-3 text-muted-foreground" />
+  1144→                              <span className="text-xs">{tx.paymentMethod}</span>
+  1145→                            </div>
+  1146→                          </TableCell>
+  1147→                          <TableCell>
+  1148→                            <span className="text-xs text-muted-foreground">
+  1149→                              {tx.paymentChannel}
+  1150→                            </span>
+  1151→                          </TableCell>
+  1152→                          <TableCell>
+  1153→                            <StatusBadge status={tx.status} />
+  1154→                          </TableCell>
+  1155→                          <TableCell>
+  1156→                            <span className="text-xs text-muted-foreground">
+  1157→                              {formatShortDate(tx.createdAt)}
+  1158→                            </span>
+  1159→                          </TableCell>
+  1160→                        </motion.tr>
+  1161→                      ))
+  1162→                    )}
+  1163→                  </AnimatePresence>
+  1164→                </TableBody>
+  1165→              </Table>
+  1166→            </div>
+  1167→
+  1168→            {/* Pagination */}
+  1169→            {pagination && pagination.totalPages > 1 && (
+  1170→              <div className="flex items-center justify-between border-t px-4 py-3">
+  1171→                <p className="text-muted-foreground text-xs">
+  1172→                  Menampilkan {(pagination.page - 1) * pagination.limit + 1}
+  1173→                  –{Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
+  1174→                  dari {pagination.total} transaksi
+  1175→                </p>
+  1176→                <Pagination>
+  1177→                  <PaginationContent>
+  1178→                    <PaginationItem>
+  1179→                      <PaginationPrevious
+  1180→                        href="#"
+  1181→                        onClick={(e) => {
+  1182→                          e.preventDefault();
+  1183→                          if (pagination.page > 1) setPage(pagination.page - 1);
+  1184→                        }}
+  1185→                        className={
+  1186→                          pagination.page <= 1
+  1187→                            ? 'pointer-events-none opacity-50'
+  1188→                            : 'cursor-pointer'
+  1189→                        }
+  1190→                      />
+  1191→                    </PaginationItem>
+  1192→                    {pageRange.map((p, idx) =>
+  1193→                      p === 'dots' ? (
+  1194→                        <PaginationItem key={`dots-${idx}`}>
+  1195→                          <PaginationEllipsis />
+  1196→                        </PaginationItem>
+  1197→                      ) : (
+  1198→                        <PaginationItem key={p}>
+  1199→                          <PaginationLink
+  1200→                            href="#"
+  1201→                            isActive={pagination.page === p}
+  1202→                            onClick={(e) => {
+  1203→                              e.preventDefault();
+  1204→                              setPage(p as number);
+  1205→                            }}
+  1206→                            className="cursor-pointer"
+  1207→                          >
+  1208→                            {p}
+  1209→                          </PaginationLink>
+  1210→                        </PaginationItem>
+  1211→                      ),
+  1212→                    )}
+  1213→                    <PaginationItem>
+  1214→                      <PaginationNext
+  1215→                        href="#"
+  1216→                        onClick={(e) => {
+  1217→                          e.preventDefault();
+  1218→                          if (pagination.page < pagination.totalPages)
+  1219→                            setPage(pagination.page + 1);
+  1220→                        }}
+  1221→                        className={
+  1222→                          pagination.page >= pagination.totalPages
+  1223→                            ? 'pointer-events-none opacity-50'
+  1224→                            : 'cursor-pointer'
+  1225→                        }
+  1226→                      />
+  1227→                    </PaginationItem>
+  1228→                  </PaginationContent>
+  1229→                </Pagination>
+  1230→              </div>
+  1231→            )}
+  1232→          </CardContent>
+  1233→        </Card>
+  1234→
+  1235→        {/* ─── Bulk Action Bar ──────────────────────────────────── */}
+  1236→        <AnimatePresence>
+  1237→          {selectedIds.size > 0 && (
+  1238→            <motion.div
+  1239→              initial={{ opacity: 0, y: 20 }}
+  1240→              animate={{ opacity: 1, y: 0 }}
+  1241→              exit={{ opacity: 0, y: 20 }}
+  1242→              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+  1243→              className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+  1244→            >
+  1245→              <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-3 shadow-lg shadow-emerald-500/25 dark:border-emerald-700 dark:from-emerald-700 dark:to-emerald-600 dark:shadow-emerald-900/30">
+  1246→                <span className="text-sm font-medium text-white">
+  1247→                  {selectedIds.size} transaksi dipilih
+  1248→                </span>
+  1249→                <div className="h-5 w-px bg-white/30" />
+  1250→                <Button
+  1251→                  size="sm"
+  1252→                  onClick={handleExportSelected}
+  1253→                  className="gap-1.5 bg-white/20 text-white hover:bg-white/30 border-0"
+  1254→                >
+  1255→                  <FileDown className="h-3.5 w-3.5" />
+  1256→                  Ekspor Terpilih
+  1257→                </Button>
+  1258→                <Button
+  1259→                  size="sm"
+  1260→                  variant="ghost"
+  1261→                  onClick={handleClearSelection}
+  1262→                  className="gap-1.5 text-white/80 hover:bg-white/10 hover:text-white"
+  1263→                >
+  1264→                  <Trash2 className="h-3.5 w-3.5" />
+  1265→                  Hapus Pilihan
+  1266→                </Button>
+  1267→              </div>
+  1268→            </motion.div>
+  1269→          )}
+  1270→        </AnimatePresence>
+  1271→      </motion.div>
+  1272→
+  1273→      {/* ─── Detail Dialog ───────────────────────────────────────────── */}
+  1274→      <TransactionDetailDialog
+  1275→        tx={selectedTx}
+  1276→        open={dialogOpen}
+  1277→        onOpenChange={setDialogOpen}
+  1278→      />
+  1279→    </div>
+  1280→  );
+  1281→}
+  1282→

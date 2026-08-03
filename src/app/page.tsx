@@ -1,12 +1,15 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/stores/app-store'
 import { Sidebar } from '@/components/app/sidebar'
 import { Header } from '@/components/app/header'
 import { MobileNav } from '@/components/app/mobile-nav'
 import { QuickStats } from '@/components/app/quick-stats'
 import { LoadingBar } from '@/components/app/loading-bar'
+import { KeyboardShortcutsOverlay } from '@/components/app/keyboard-shortcuts'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 
 const Dashboard = dynamic(() => import('@/components/app/dashboard'), { ssr: false })
@@ -29,10 +32,73 @@ const pageComponents: Record<string, React.ComponentType> = {
   settings: Settings,
 }
 
+const PAGE_KEYS: Record<string, string> = {
+  '1': 'dashboard',
+  '2': 'transactions',
+  '3': 'payment-links',
+  '4': 'customers',
+  '5': 'merchants',
+  '6': 'payouts',
+  '7': 'reports',
+  '8': 'settings',
+}
+
 export default function Home() {
-  const { activePage, sidebarOpen } = useAppStore()
+  const { activePage, sidebarOpen, setActivePage } = useAppStore()
+  const { theme, setTheme } = useTheme()
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   const ActiveComponent = pageComponents[activePage]
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      // Don't capture if modifier keys are held (except for Cmd+K)
+      if (e.ctrlKey || e.altKey || e.metaKey) return
+
+      const key = e.key
+
+      // Number keys 1-8 for page navigation
+      if (PAGE_KEYS[key]) {
+        e.preventDefault()
+        setActivePage(PAGE_KEYS[key] as Parameters<typeof setActivePage>[0])
+        return
+      }
+
+      // D - toggle theme
+      if (key === 'd' || key === 'D') {
+        e.preventDefault()
+        setTheme(theme === 'dark' ? 'light' : 'dark')
+        return
+      }
+
+      // N - go to payment links
+      if (key === 'n' || key === 'N') {
+        e.preventDefault()
+        setActivePage('payment-links')
+        return
+      }
+
+      // T - go to transactions
+      if (key === 't' || key === 'T') {
+        e.preventDefault()
+        setActivePage('transactions')
+        return
+      }
+
+      // ? - toggle shortcuts overlay
+      if (key === '?') {
+        e.preventDefault()
+        setShortcutsOpen((prev) => !prev)
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [setActivePage, theme, setTheme])
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,6 +143,7 @@ export default function Home() {
         </footer>
       </motion.main>
       <MobileNav />
+      <KeyboardShortcutsOverlay open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   )
 }

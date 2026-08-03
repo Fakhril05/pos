@@ -317,3 +317,165 @@ Stage Summary:
 8. **Enhancement:** Add keyboard shortcuts for common actions beyond ⌘K
 9. **Enhancement:** Add transaction refund reason input (currently uses default text)
 10. **Enhancement:** Improve mobile landscape layout for table pages
+---
+Task ID: 2-a
+Agent: Transactions Enhancements
+Task: Fix CSV export and add bulk actions to transactions table
+
+Work Log:
+- Added imports: `Checkbox` from `@/components/ui/checkbox`, `FileDown`, `X`, `Trash2` from `lucide-react`, `useEffect` from React
+- Fixed `handleExportCSV` to use fetch + blob download approach instead of `window.open` (now triggers proper file download with filename `transaksi-posril-YYYY-MM-DD.csv`, with loading/success/error toasts)
+- Added `selectedIds` (Set<string>) and `selectAll` (boolean) state for bulk selection
+- Added `useEffect` to clear selection on page/filter changes (page, search, status, paymentMethod, dateFrom, dateTo)
+- Added `handleToggleSelect(id)`, `handleToggleSelectAll()`, `handleClearSelection()` handlers
+- Added `handleExportSelected()` to export only selected transactions via fetch + blob with `?export=csv&ids=...` query param
+- Added checkbox column as first column in table header with select-all functionality (emerald-styled when checked)
+- Added checkbox per table row with `stopPropagation` on click to prevent row detail dialog from opening
+- Added emerald highlight background on selected rows (`bg-emerald-50/50` / `dark:bg-emerald-950/20`)
+- Updated empty state colspan from 9 to 10 to account for new checkbox column
+- Added floating bulk action bar with `AnimatePresence` + `motion.div` (slides up from bottom), emerald gradient styling, showing: selected count, "Ekspor Terpilih" button (FileDown icon), "Hapus Pilihan" button (Trash2 icon)
+- Ran `bun run lint` — zero errors
+
+Stage Summary:
+- **CSV export fixed** — now uses fetch + blob approach for proper file download with progress toasts
+- **Bulk actions added** — checkbox selection per row, select-all in header, floating action bar with export and clear
+- **1 file modified:** `src/components/app/transactions.tsx`
+- **ESLint:** zero errors
+---
+Task ID: 2-b
+Agent: Subagent (Webhook Logs + Keyboard Shortcuts)
+Task: Add Webhook Delivery Logs tab in Settings and Keyboard Shortcuts overlay
+
+Work Log:
+- **Webhook Tab in Settings:** Added new `WebhookTab` component inside `settings.tsx` with:
+  - Webhook Configuration Card: URL input, masked secret key with show/hide toggle, active/inactive Switch toggle
+  - Event Subscription Toggles: 5 events (payment.success, payment.failed, payment.expired, refund.created, payout.processed) with Checkbox and description
+  - Delivery Stats: 4 stat cards (Total Terkirim 1,247, Gagal 23, Rata-rata Response 189ms, Success Rate 98.2%) with colored icon containers
+  - Recent Delivery Logs Table: 10 mock webhook logs with columns for Event Type (colored badges), URL (truncated), Status Code (colored), Response Time, Timestamp (Bahasa Indonesia time-ago), and Kirim Ulang action button
+  - Test Webhook Button: Sends simulated test payload with loading state and success toast
+  - New TabsTrigger with Globe icon and value="webhook" added to Settings tabs
+  - New imports: Globe, Zap, Clock, Send, XCircle from lucide-react; Table, Checkbox from UI
+- **Keyboard Shortcuts Overlay:** Created `/src/components/app/keyboard-shortcuts.tsx` with:
+  - Dialog-based overlay with emerald gradient keyboard icon header
+  - 14 shortcuts displayed in a 2-column grid with Kbd-styled key combos
+  - Staggered motion entrance animation per shortcut card
+  - Internal `?` key listener to open the overlay (disabled when already open)
+  - Kbd component with monospace, border, rounded, shadow styling
+- **Page.tsx Integration:** Updated `page.tsx` with:
+  - Imported `KeyboardShortcutsOverlay` and `useTheme`
+  - Added `shortcutsOpen` state and `setActivePage` from store
+  - Added `useEffect` with global keyboard listener (only fires when no input/textarea/select focused):
+    - Keys 1-8: Navigate to Dashboard, Transaksi, Payment Links, Pelanggan, Merchant, Payout, Laporan, Pengaturan
+    - D: Toggle dark/light mode
+    - N: Navigate to payment links page
+    - T: Navigate to transactions page
+    - ?: Toggle shortcuts overlay
+  - Rendered `<KeyboardShortcutsOverlay>` at the bottom of the component tree
+- **ESLint:** Zero errors
+
+Stage Summary:
+- **1 new file created:** `src/components/app/keyboard-shortcuts.tsx`
+- **2 files modified:** `src/components/app/settings.tsx` (+~340 lines for WebhookTab), `src/app/page.tsx` (keyboard shortcut listener + overlay integration)
+- **New Settings tab:** "Webhook" with full configuration, event subscriptions, delivery stats, and delivery logs table
+- **Keyboard shortcuts:** 14 shortcuts (number navigation, theme toggle, page shortcuts, help overlay) all guarded against input focus
+- **ESLint:** zero errors
+---
+Task ID: 2-c
+Agent: Sub-agent (general-purpose)
+Task: Payment link analytics section + enhanced styling across all pages
+
+Work Log:
+- Added conversion analytics section to payment-links.tsx with 3 summary cards (Total Klik: 15,847, Konversi: 24.3%, Pendapatan Link: Rp 189.450.000) using emerald theme, Eye/TrendingUp/DollarSign icons, stat-card-gradient borders, and card-hover class
+- Added Top Performing Links table (5 mock rows) with columns: Nama Link, Klik, Konversi, Pendapatan, Status badge
+- Analytics section inserted after filter bar and before summary bar, with staggered framer-motion entrance animations
+- Updated POST handler in /api/payment-links/route.ts: accepts `name` or `title`, made `merchantId` optional (falls back to first active merchant), accepts 'recurring' type, generates unique link URL `https://pay.posril.id/{randomId}` using crypto.getRandomValues
+- Added 8 new CSS utility classes to globals.css: stat-card-gradient (gradient border via mask), glow-emerald-sm/md (emerald box shadows), text-balance, badge-pulse (opacity pulse animation), hover-lift (subtle translateY on hover), gradient-text-emerald (text clip gradient), scrollbar-thin (thin custom scrollbar), dot-pattern (radial gradient dot overlay)
+- Applied new classes across components:
+  - glow-emerald-sm on dashboard welcome banner
+  - hover-lift on dashboard welcome banner action buttons
+  - gradient-text-emerald on Total Pendapatan KPI value
+  - scrollbar-thin on activity feed CardContent
+  - stat-card-gradient on quick-stats bar items
+  - badge-pulse on pending transaction count in quick-stats
+  - dot-pattern on transactions empty state container
+- Verified zero lint errors with `bun run lint`
+
+Stage Summary:
+- **Payment link analytics**: Conversion analytics cards + top performing links table with mock data and motion animations
+- **API enhancement**: POST /api/payment-links now accepts `name`, optional `merchantId`, and returns generated payment URL
+- **8 new CSS utilities**: stat-card-gradient, glow-emerald-sm/md, text-balance, badge-pulse, hover-lift, gradient-text-emerald, scrollbar-thin, dot-pattern
+- **Cross-component styling**: New classes applied to dashboard, quick-stats, and transactions components
+- All changes pass lint with zero errors
+
+---
+Task ID: 8
+Agent: Main Coordinator (Cron Review Round 4)
+Task: QA assessment, CSV export fix, bulk actions, webhook tab, keyboard shortcuts, receipt download, payment link analytics, enhanced styling
+
+Work Log:
+- **QA Testing:** Tested all 8 pages via agent-browser — zero console errors across all pages
+- **CSV Export Fix:** Changed from window.open() to fetch+blob approach with loading/success/error toasts
+- **Bulk Actions:** Added checkbox column, select-all, floating bulk action bar with export/clear in transactions table
+- **Webhook Tab:** New Settings tab with URL config, secret key, event subscriptions, delivery stats (4 KPIs), delivery logs table (10 mock entries)
+- **Keyboard Shortcuts:** Created keyboard-shortcuts.tsx overlay (14 shortcuts), integrated global keyboard listener in page.tsx (1-8 pages, D=theme, N=payment links, T=transactions, ?=overlay)
+- **Payment Link Analytics:** Added conversion analytics section (3 KPI cards + top performing links table) with mock data
+- **Receipt Download:** Created receipt-generator.ts utility, added Unduh Struk button in transaction detail dialog (generates HTML receipt with Pos Ril branding)
+- **8 New CSS Utilities:** stat-card-gradient, glow-emerald-sm/md, text-balance, badge-pulse, hover-lift, gradient-text-emerald, scrollbar-thin, dot-pattern
+- **Cross-component styling:** Applied new utilities to dashboard (glow, gradient text, hover-lift), quick-stats (gradient border, badge pulse), transactions (dot-pattern empty state)
+- **API Enhancement:** POST /api/payment-links now generates unique URLs with crypto.getRandomValues
+- ESLint: zero errors
+
+Stage Summary:
+- **7 new features** added: CSV export fix, bulk actions, webhook tab, keyboard shortcuts, payment link analytics, receipt download, enhanced CSS utilities
+- **2 new files:** keyboard-shortcuts.tsx, receipt-generator.ts
+- **8 modified files:** transactions.tsx, settings.tsx, page.tsx, payment-links.tsx, dashboard.tsx, quick-stats.tsx, globals.css, api/payment-links/route.ts
+- **Total pages:** 8 (Dashboard, Transactions, Payment Links, Customers, Merchants, Payouts, Reports, Settings)
+- **Total settings tabs:** 5 (Profil, Pembayaran, Notifikasi, Webhook, Keamanan)
+- **ESLint:** zero errors
+- **QA:** All 8 pages verified with zero runtime errors
+
+## Current Project Status Assessment
+
+### What's Working (Verified ✅)
+- All 8 pages render correctly: Dashboard, Transactions, Payment Links, Customers, Merchants, Payouts, Reports, Settings
+- 15 API routes with full CRUD operations
+- Database with 10 merchants, 15 customers, 200 transactions, 20 payment links, 15 payouts, 5 notifications
+- Dark/light mode toggle (D keyboard shortcut)
+- Responsive design (mobile-first) with mobile bottom navigation bar
+- Sidebar collapse/expand with smooth animations
+- Command Palette (⌘K/Ctrl+K) for quick navigation
+- Welcome banner with glow-emerald-sm effect and hover-lift buttons
+- Live activity feed with WebSocket real-time transaction streaming + scrollbar-thin
+- Glassmorphism KPI cards with gradient-text-emerald on revenue, stat-card-gradient borders
+- Quick Stats real-time metrics bar with gradient borders and badge-pulse on pending count
+- Sticky footer with branding
+- **NEW:** CSV export with fetch+blob download (with loading toast)
+- **NEW:** Transaction bulk selection (checkboxes, select-all, floating action bar, export selected)
+- **NEW:** Webhook tab in Settings (URL config, secret key, event subscriptions, delivery stats, 10 delivery logs)
+- **NEW:** Keyboard shortcuts overlay (14 shortcuts, ? to open, 1-8 page nav, D theme, N/T quick nav)
+- **NEW:** Receipt download (Unduh Struk) in transaction detail dialog (generates branded HTML receipt)
+- **NEW:** Payment link analytics (3 conversion KPI cards + top performing links table)
+- **NEW:** 8 additional CSS utilities (stat-card-gradient, glow-emerald, badge-pulse, hover-lift, etc.)
+- ESLint: zero errors
+
+### Architecture
+- `/src/app/page.tsx` - SPA with client-side routing, global keyboard shortcuts, KeyboardShortcutsOverlay
+- `/src/components/app/*.tsx` - 18 component files
+- `/src/lib/receipt-generator.ts` - HTML receipt generation utility
+- `/src/hooks/use-socket.ts` - WebSocket hook
+- `/src/app/api/*/route.ts` - 15+ API route files
+- `/src/stores/app-store.ts` - Zustand store
+- `/src/lib/db.ts` - Prisma client
+- `/mini-services/notification-service/` - WebSocket service on port 3004
+
+### Unresolved Issues / Next Phase Recommendations
+1. **Medium Priority:** Add 2FA implementation with QR code setup
+2. **Medium Priority:** Add refund reason input (currently uses default text)
+3. **Low Priority:** Add more sophisticated analytics (conversion funnels, cohort analysis)
+4. **Low Priority:** Add multi-currency support
+5. **Low Priority:** Add merchant self-service onboarding flow
+6. **Enhancement:** Improve mobile landscape layout for table pages
+7. **Enhancement:** Add bulk status change actions in transactions
+8. **Enhancement:** Add CSV export for reports page
+9. **Enhancement:** Dark mode-specific chart color refinements for reports page
+10. **Enhancement:** Add keyboard shortcut hints in sidebar items

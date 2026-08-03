@@ -63,6 +63,7 @@ export function QuickStats() {
       icon: Clock,
       color: 'text-amber-500',
       highlight: (data?.pendingTransactions ?? 0) > 0,
+      pulse: true,
     },
     {
       label: 'Keberhasilan',
@@ -93,7 +94,7 @@ export function QuickStats() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="quick-stat-item flex items-center gap-1.5"
+              className="quick-stat-item stat-card-gradient flex items-center gap-1.5 rounded-md px-2 py-1"
             >
               <Icon className={`h-3 w-3 ${item.color}`} />
               <span className="text-[10px] text-muted-foreground leading-none">
@@ -103,7 +104,7 @@ export function QuickStats() {
                 'highlight' in item && item.highlight
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-foreground'
-              }`}>
+              }${'pulse' in item && item.pulse && (data?.pendingTransactions ?? 0) > 0 ? ' badge-pulse' : ''}`}>
                 {isLoading ? (
                   <span className="inline-block h-3 w-10 rounded skeleton-card" />
                 ) : (

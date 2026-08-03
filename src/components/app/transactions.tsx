@@ -21,6 +21,7 @@ import {
   Store,
   Receipt,
   CircleDot,
+  Printer,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@ import {
 } from '@/components/ui/pagination';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { generateReceiptHtml } from '@/lib/receipt-generator';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -448,20 +450,57 @@ function TransactionDetailDialog({
           </div>
         </div>
 
-        {/* Footer with Refund button */}
-        {tx.status === 'success' && (
-          <DialogFooter>
+        {/* Footer with actions */}
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+          <Button variant="outline" onClick={() => {
+            if (!tx) return;
+            const si = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+            const html = generateReceiptHtml({
+              invoiceNo: tx.invoiceNo,
+              amount: tx.amount,
+              fee: tx.fee,
+              netAmount: tx.netAmount,
+              merchantName: tx.merchant.name,
+              customerName: tx.customerName || tx.customer?.name || '-',
+              paymentMethod: tx.paymentMethod,
+              paymentChannel: tx.paymentChannel,
+              status: tx.status,
+              createdAt: tx.createdAt,
+              paidAt: tx.paidAt,
+              description: tx.description,
+              formattedAmount: formatRp(tx.amount),
+              formattedFee: formatRp(tx.fee),
+              formattedNetAmount: formatRp(tx.netAmount),
+              formattedCreatedAt: formatDate(tx.createdAt),
+              formattedPaidAt: tx.paidAt ? formatDate(tx.paidAt) : null,
+              statusLabel: si.label,
+            });
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `struk-${tx.invoiceNo}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success('Struk berhasil diunduh');
+          }} className="w-full gap-2 sm:w-auto">
+            <Printer className="h-4 w-4" />
+            Unduh Struk
+          </Button>
+          {tx.status === 'success' && (
             <Button
               variant="destructive"
               onClick={handleRefund}
               disabled={refunding}
-              className="gap-2"
+              className="w-full gap-2 sm:w-auto"
             >
               <RotateCcw className="h-4 w-4" />
               {refunding ? 'Memproses...' : 'Proses Refund'}
             </Button>
-          </DialogFooter>
-        )}
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -18,6 +18,9 @@ import {
   Tag,
   LinkIcon,
   MoreHorizontal,
+  Eye,
+  TrendingUp,
+  DollarSign,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -199,6 +202,134 @@ function TypeBadge({ type }: { type: string }) {
       <Tag className="mr-1 h-3 w-3" />
       Sekali Pakai
     </Badge>
+  );
+}
+
+// ── Mock analytics data ───────────────────────────────────────────────
+
+const analyticsSummary = [
+  {
+    label: 'Total Klik',
+    value: '15,847',
+    icon: Eye,
+    theme: 'emerald' as const,
+  },
+  {
+    label: 'Konversi',
+    value: '24.3%',
+    icon: TrendingUp,
+    theme: 'emerald' as const,
+    change: '+3.2%',
+  },
+  {
+    label: 'Pendapatan Link',
+    value: 'Rp 189.450.000',
+    icon: DollarSign,
+    theme: 'emerald' as const,
+  },
+];
+
+const topPerformingLinks = [
+  { name: 'Pembayaran Tiket Konser JKT48', clicks: 3842, conversion: '31.2%', revenue: 'Rp 48.200.000', status: 'active' },
+  { name: 'Donasi Bencana Alam', clicks: 2915, conversion: '28.7%', revenue: 'Rp 35.800.000', status: 'active' },
+  { name: 'Langganan Premium Bulanan', clicks: 2543, conversion: '26.4%', revenue: 'Rp 42.100.000', status: 'active' },
+  { name: 'Pendaftaran Seminar Digital', clicks: 2187, conversion: '22.1%', revenue: 'Rp 31.500.000', status: 'active' },
+  { name: 'Pembayaran Sewa Gedung', clicks: 1860, conversion: '19.8%', revenue: 'Rp 31.850.000', status: 'expired' },
+];
+
+// ── Analytics Section ────────────────────────────────────────────────────────
+
+function AnalyticsSection() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.15 }}
+      className="space-y-6"
+    >
+      {/* Analytics Summary Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {analyticsSummary.map((item, i) => {
+          const Icon = item.icon;
+          return (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 15, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.35, delay: 0.18 + i * 0.08, ease: 'easeOut' }}
+            >
+              <Card className="card-hover stat-card-gradient bg-card border-border/60 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1.5">
+                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                        {item.label}
+                      </p>
+                      <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                        {item.value}
+                      </p>
+                      {item.change && (
+                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          {item.change} vs periode lalu
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
+                      <Icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Top Performing Links Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.42 }}
+      >
+        <Card className="card-hover border-border/60 shadow-sm">
+          <CardContent className="p-5">
+            <h3 className="mb-4 text-base font-semibold">Link Terbaik</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="pb-3 pr-4 font-medium text-muted-foreground text-xs uppercase tracking-wide">Nama Link</th>
+                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">Klik</th>
+                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">Konversi</th>
+                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">Pendapatan</th>
+                    <th className="pb-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topPerformingLinks.map((row, idx) => (
+                    <motion.tr
+                      key={idx}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.25, delay: 0.48 + idx * 0.06 }}
+                      className="border-b last:border-0 table-row-hover"
+                    >
+                      <td className="py-3 pr-4 font-medium">{row.name}</td>
+                      <td className="py-3 pr-4 text-right tabular-nums">{row.clicks.toLocaleString('id-ID')}</td>
+                      <td className="py-3 pr-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">{row.conversion}</td>
+                      <td className="py-3 pr-4 text-right tabular-nums">{row.revenue}</td>
+                      <td className="py-3">
+                        <StatusBadge status={row.status} />
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -516,6 +647,9 @@ export default function PaymentLinks() {
           </SelectContent>
         </Select>
       </motion.div>
+
+      {/* ─── Analytics Section ────────────────────────────────────── */}
+      <AnalyticsSection />
 
       {/* ─── Summary bar ──────────────────────────────────────────── */}
       <motion.div
