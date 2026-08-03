@@ -23,7 +23,11 @@ import {
   Users,
   ArrowUpRight,
   ArrowDownRight,
+  Link2,
+  Activity,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAppStore } from '@/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -35,6 +39,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import {
   ChartContainer,
   ChartTooltip,
@@ -52,6 +57,20 @@ const formatRp = (amount: number) =>
     currency: 'IDR',
     minimumFractionDigits: 0,
   }).format(amount);
+
+const formatTimeAgo = (dateStr: string): string => {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days} hari lalu`;
+  if (hours > 0) return `${hours} jam lalu`;
+  if (minutes > 0) return `${minutes} menit lalu`;
+  return 'Baru saja';
+};
 
 const formatCompact = (amount: number) => {
   if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}M`;
@@ -101,6 +120,17 @@ interface PaymentMethodDist {
   method: string;
   count: number;
   amount: number;
+}
+
+interface ActivityTransaction {
+  id: string;
+  invoiceNo: string;
+  amount: number;
+  status: string;
+  customerName: string | null;
+  createdAt: string;
+  merchant: { id: string; name: string; logo: string | null };
+  customer: { id: string; name: string; email: string } | null;
 }
 
 interface DashboardData {
@@ -278,9 +308,139 @@ function DashboardSkeleton() {
   );
 }
 
+// ── Activity Feed ───────────────────────────────────────────────────────────
+
+const statusDotColors: Record<string, string> = {
+  success: 'bg-emerald-500',
+  pending: 'bg-amber-500',
+  failed: 'bg-red-500',
+  expired: 'bg-gray-400',
+  refunded: 'bg-blue-500',
+};
+
+function ActivityFeed() {
+  const { setActivePage } = useAppStore();
+
+  const { data: activityData, isLoading: activityLoading } = useQuery<{
+    data: ActivityTransaction[];
+  }>({
+    queryKey: ['activity-feed'],
+    queryFn: () =>
+      fetch('/api/transactions?limit=8&status=success').then((r) => r.json()),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+
+  const items = activityData?.data?.slice(0, 6) ?? [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.8 }}
+    >
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-emerald-500" />
+              <CardTitle className="text-base">Aktivitas Terkini</CardTitle>
+            </div>
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </span>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            Transaksi terbaru yang berhasil diproses
+          </p>
+        </CardHeader>
+        <CardContent>
+          {activityLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Belum ada aktivitas terkini.
+            </p>
+          ) : (
+            <div className="relative space-y-0">
+              {/* Vertical connecting line */}
+              <div className="absolute bottom-0 left-[11px] top-2 w-px bg-border" />
+
+              {items.map((tx, idx) => (
+                <motion.div
+                  key={tx.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.8 + idx * 0.07 }}
+                  className="group relative flex gap-4 rounded-lg p-2.5 transition-colors hover:bg-muted/50"
+                >
+                  {/* Timeline dot */}
+                  <div className="relative z-10 mt-1 flex shrink-0 items-start justify-center">
+                    <div
+                      className={cn(
+                        'h-3 w-3 rounded-full ring-4 ring-background',
+                        statusDotColors[tx.status] ?? 'bg-gray-400'
+                      )}
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div className="min-w-0 flex-1 pb-3">
+                    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
+                      <p className="text-sm">
+                        <span className="font-semibold">{tx.merchant.name}</span>
+                        <span className="text-muted-foreground"> — </span>
+                        <span className="text-muted-foreground">
+                          {tx.customer?.name ?? tx.customerName ?? 'Pelanggan'
+                            .split(' ')
+                            .slice(0, 2)
+                            .join(' ')}
+                        </span>
+                      </p>
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        +{formatRp(tx.amount)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {formatTimeAgo(tx.createdAt)}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* View all link */}
+          <div className="mt-2 border-t pt-3">
+            <button
+              onClick={() => setActivePage('transactions')}
+              className="text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+            >
+              Lihat Semua →
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { setActivePage } = useAppStore();
+
   const { data, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
     queryFn: () => fetch('/api/dashboard').then((r) => r.json()),
@@ -326,6 +486,49 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* ─── Welcome Banner ──────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white">
+          {/* Decorative circles */}
+          <div className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-12 right-16 h-40 w-40 rounded-full bg-white/[0.07]" />
+          <div className="pointer-events-none absolute left-1/2 -top-4 h-24 w-24 rounded-full bg-white/[0.05]" />
+          <div className="pointer-events-none absolute bottom-2 left-8 h-16 w-16 rounded-full bg-white/[0.06]" />
+
+          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-lg">
+              <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
+                Selamat Datang, Admin Ril 👋
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
+                Kelola semua transaksi dan pantau pertumbuhan bisnis Anda dari satu tempat.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-3">
+              <Button
+                variant="outline"
+                className="border-white/30 bg-transparent text-white hover:bg-white/15 hover:text-white"
+                onClick={() => setActivePage('payment-links')}
+              >
+                <Link2 className="mr-2 h-4 w-4" />
+                Buat Payment Link
+              </Button>
+              <Button
+                className="bg-white text-emerald-700 hover:bg-white/90"
+                onClick={() => setActivePage('transactions')}
+              >
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                Lihat Transaksi
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* ─── KPI Cards ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpiCards.map((card, i) => {
@@ -338,12 +541,12 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.1, ease: 'easeOut' }}
             >
-              <Card className="group relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
-                {/* gradient left accent */}
+              <Card className="group relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm transition-all hover:shadow-md">
+                {/* gradient top accent */}
                 <div
-                  className={`absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b ${card.gradient}`}
+                  className={`absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r ${card.gradient}`}
                 />
-                <CardContent className="p-5 pl-6">
+                <CardContent className="p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
@@ -352,30 +555,35 @@ export default function Dashboard() {
                       <p className="text-2xl font-bold tracking-tight">
                         {card.value}
                       </p>
-                      <div className="flex items-center gap-1">
+                      <div
+                        className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 ${
+                          isPositive
+                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
+                            : 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
+                        }`}
+                      >
                         {isPositive ? (
-                          <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
+                          <ArrowUpRight className="h-3 w-3" />
                         ) : (
-                          <ArrowDownRight className="h-3.5 w-3.5 text-red-500" />
+                          <ArrowDownRight className="h-3 w-3" />
                         )}
-                        <span
-                          className={`text-xs font-semibold ${
-                            isPositive
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-red-600 dark:text-red-400'
-                          }`}
-                        >
+                        <span className="text-xs font-semibold">
                           {Math.abs(card.change)}%
                         </span>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-xs opacity-70">
                           vs bulan lalu
                         </span>
                       </div>
                     </div>
-                    <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm`}
-                    >
-                      <Icon className="h-5 w-5 text-white" />
+                    <div className="relative">
+                      <div
+                        className={`absolute inset-0 rounded-xl bg-gradient-to-br ${card.gradient} blur-xl opacity-30`}
+                      />
+                      <div
+                        className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm`}
+                      >
+                        <Icon className="h-5 w-5 text-white" />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -661,6 +869,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* ─── Live Activity Feed ───────────────────────────────────── */}
+      <ActivityFeed />
     </div>
   );
 }

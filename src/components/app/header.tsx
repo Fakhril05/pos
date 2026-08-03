@@ -15,7 +15,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useTheme } from 'next-themes'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { CommandPalette } from '@/components/app/command-palette'
 
 const pageTitles: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -31,6 +33,7 @@ const pageTitles: Record<string, string> = {
 export function Header() {
   const { activePage, toggleSidebar, sidebarOpen } = useAppStore()
   const { theme, setTheme } = useTheme()
+  const [commandOpen, setCommandOpen] = useState(false)
 
   return (
     <motion.header
@@ -64,12 +67,14 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Search */}
+        {/* Search — opens Command Palette */}
         <div className="relative hidden lg:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Cari transaksi, merchant..."
-            className="w-64 pl-9"
+            readOnly
+            placeholder="Cari transaksi, merchant... ⌘K"
+            className="w-64 cursor-pointer pl-9"
+            onClick={() => setCommandOpen(true)}
           />
         </div>
 
@@ -145,6 +150,8 @@ export function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
     </motion.header>
   )
 }

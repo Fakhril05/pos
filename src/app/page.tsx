@@ -39,9 +39,9 @@ export default function Home() {
         initial={false}
         animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="pt-16"
+        className="flex min-h-[calc(100vh-4rem)] flex-col pt-16"
       >
-        <div className="p-4 md:p-6 lg:p-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={activePage}
@@ -54,6 +54,16 @@ export default function Home() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <footer className="mt-auto border-t border-border py-4 px-4 md:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-1 sm:flex-row">
+            <span className="text-xs text-muted-foreground">
+              © 2026 Pos Ril. Semua hak dilindungi.
+            </span>
+            <span className="text-xs text-muted-foreground">
+              v2.0.0 · Dibuat dengan ❤️ di Indonesia
+            </span>
+          </div>
+        </footer>
       </motion.main>
     </div>
   )
