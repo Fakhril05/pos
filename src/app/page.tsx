@@ -142,13 +142,13 @@ export default function Home() {
             </motion.div>
           </AnimatePresence>
         </div>
-        <footer className="mt-auto border-t border-border py-4 px-4 md:px-6 lg:px-8">
+        <footer className="mt-auto border-t border-border py-4 px-4 md:px-6 lg:px-8 inset-shadow">
           <div className="flex flex-col items-center justify-between gap-1 sm:flex-row">
             <span className="text-xs text-muted-foreground">
               © 2026 Pos Ril. Semua hak dilindungi.
             </span>
             <span className="text-xs text-muted-foreground">
-              v2.0.0 · Dibuat dengan ❤️ di Indonesia
+              <span className="text-gradient-emerald">v2.1.0</span> · Dibuat dengan <span className="animate-breathe">❤️</span> di Indonesia
             </span>
           </div>
         </footer>

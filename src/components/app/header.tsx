@@ -113,7 +113,7 @@ export function Header() {
       initial={false}
       animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6 glass-card"
+      className="fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6 glass-card neon-glow"
     >
       <div className="flex items-center gap-4">
         <Button
@@ -134,7 +134,7 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         {/* Search — opens Command Palette */}
-        <div className="relative hidden lg:block">
+        <div className="relative hidden lg:block inset-shadow">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             readOnly
@@ -175,7 +175,7 @@ export function Header() {
               </AnimatePresence>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-0">
+          <DropdownMenuContent align="end" className="w-80 p-0 smooth-corners">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-muted-foreground" />

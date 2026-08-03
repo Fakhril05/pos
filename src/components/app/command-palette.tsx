@@ -91,7 +91,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
   }, [setOpen])
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} className="max-w-lg">
+    <CommandDialog open={open} onOpenChange={setOpen} className="max-w-lg neon-glow">
       <CommandInput placeholder="Cari halaman, perintah... ⌘K" />
       <CommandList>
         <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-// GET single payment link
+// GET single payment link with enriched data
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -15,6 +15,9 @@ export async function GET(
         transactions: {
           take: 10,
           orderBy: { createdAt: 'desc' },
+          include: {
+            merchant: { select: { id: true, name: true, logo: true } },
+          },
         },
         _count: { select: { transactions: true } },
       },
@@ -27,7 +30,36 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: paymentLink });
+    // Calculate total revenue from successful transactions
+    const allSuccessfulTx = await db.transaction.findMany({
+      where: {
+        paymentLinkId: id,
+        status: 'success',
+      },
+      select: { netAmount: true },
+    });
+    const totalRevenue = allSuccessfulTx.reduce(
+      (sum, tx) => sum + tx.netAmount,
+      0,
+    );
+
+    // Calculate conversion rate (soldQty / maxQty * 100)
+    const conversionRate =
+      paymentLink.maxQty > 0
+        ? (paymentLink.soldQty / paymentLink.maxQty) * 100
+        : 0;
+
+    // Calculate success rate of transactions
+    const totalTxCount = paymentLink._count.transactions;
+    const successTxCount = allSuccessfulTx.length;
+    const successRate = totalTxCount > 0 ? (successTxCount / totalTxCount) * 100 : 0;
+
+    return NextResponse.json({
+      data: paymentLink,
+      totalRevenue,
+      conversionRate: Math.round(conversionRate * 10) / 10,
+      successRate: Math.round(successRate * 10) / 10,
+    });
   } catch (error) {
     console.error('[PaymentLink GET]', error);
     return NextResponse.json(

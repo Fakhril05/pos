@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -27,6 +27,8 @@ import {
   ArrowDownRight,
   Link2,
   Activity,
+  Wallet,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app-store';
@@ -34,6 +36,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/app/page-header';
 import { AnimatedCounter } from '@/components/app/animated-counter';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -479,6 +486,49 @@ function ActivityFeed() {
   );
 }
 
+// ── Live Clock Widget ───────────────────────────────────────────────────────
+
+const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const BULAN = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+function LiveClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const time = now.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const date = `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
+
+  return (
+    <div className="glass-card flex flex-col items-end rounded-xl px-4 py-2.5 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+        </span>
+        <span className="text-[10px] font-medium uppercase tracking-wider text-white/70">
+          Live
+        </span>
+      </div>
+      <span className="mt-0.5 text-xl font-bold tabular-nums tracking-wide text-white">
+        {time}
+      </span>
+      <span className="mt-0.5 text-xs text-white/70">{date}</span>
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -568,6 +618,7 @@ export default function Dashboard() {
                 Kelola semua transaksi dan pantau pertumbuhan bisnis Anda dari satu tempat.
               </p>
             </div>
+            <LiveClock />
           </div>
         </div>
       </motion.div>
@@ -577,6 +628,20 @@ export default function Dashboard() {
         {kpiCards.map((card, i) => {
           const Icon = card.icon;
           const isPositive = card.change >= 0;
+          const tooltipMap: Record<string, string> = {
+            'Total Pendapatan': 'Lihat Laporan',
+            'Total Transaksi': 'Lihat Transaksi',
+            'Tingkat Keberhasilan': 'Lihat Transaksi',
+            'Rata-rata Transaksi': 'Lihat Laporan',
+          };
+          const navMap: Record<string, 'reports' | 'transactions'> = {
+            'Total Pendapatan': 'reports',
+            'Total Transaksi': 'transactions',
+            'Tingkat Keberhasilan': 'transactions',
+            'Rata-rata Transaksi': 'reports',
+          };
+          const tooltip = tooltipMap[card.label] ?? '';
+          const targetPage = navMap[card.label];
           return (
             <motion.div
               key={card.label}
@@ -584,58 +649,68 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.1, ease: 'easeOut' }}
             >
-              <Card className="card-hover hover-glow-border group relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm">
-                {/* gradient top accent */}
-                <div
-                  className={`absolute left-0 right-0 top-0 h-[3px] bg-gradient-to-r ${card.gradient}`}
-                />
-                <CardContent className="p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                        {card.label}
-                      </p>
-                      <AnimatedCounter
-                        value={card.rawValue}
-                        formatFn={'formatFn' in card && card.formatFn ? card.formatFn : undefined}
-                        className={cn(
-                          "text-2xl font-bold tracking-tight tabular-nums",
-                          card.label === 'Total Pendapatan' && "gradient-text-emerald",
-                        )}
-                      />
-                      <div
-                        className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 ${
-                          isPositive
-                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
-                            : 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
-                        }`}
-                      >
-                        {isPositive ? (
-                          <ArrowUpRight className="h-3 w-3" />
-                        ) : (
-                          <ArrowDownRight className="h-3 w-3" />
-                        )}
-                        <span className="text-xs font-semibold">
-                          {Math.abs(card.change)}%
-                        </span>
-                        <span className="text-xs opacity-70">
-                          vs bulan lalu
-                        </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Card
+                    className="card-hover hover-glow-border group relative cursor-pointer overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm hover-scale"
+                    onClick={() => setActivePage(targetPage)}
+                  >
+                    {/* gradient top accent */}
+                    <div
+                      className={`absolute left-0 right-0 top-0 h-[3px] bg-gradient-to-r ${card.gradient}`}
+                    />
+                    <CardContent className="p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            {card.label}
+                          </p>
+                          <AnimatedCounter
+                            value={card.rawValue}
+                            formatFn={'formatFn' in card && card.formatFn ? card.formatFn : undefined}
+                            className={cn(
+                              "text-2xl font-bold tracking-tight tabular-nums",
+                              card.label === 'Total Pendapatan' && "gradient-text-emerald",
+                            )}
+                          />
+                          <div
+                            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 ${
+                              isPositive
+                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                : 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
+                            }`}
+                          >
+                            {isPositive ? (
+                              <ArrowUpRight className="h-3 w-3" />
+                            ) : (
+                              <ArrowDownRight className="h-3 w-3" />
+                            )}
+                            <span className="text-xs font-semibold">
+                              {Math.abs(card.change)}%
+                            </span>
+                            <span className="text-xs opacity-70">
+                              vs bulan lalu
+                            </span>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <div
+                            className={`absolute inset-0 rounded-xl bg-gradient-to-br ${card.gradient} blur-xl opacity-30`}
+                          />
+                          <div
+                            className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm`}
+                          >
+                            <Icon className="h-5 w-5 text-white" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="relative">
-                      <div
-                        className={`absolute inset-0 rounded-xl bg-gradient-to-br ${card.gradient} blur-xl opacity-30`}
-                      />
-                      <div
-                        className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm`}
-                      >
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                      {/* Navigation arrow indicator */}
+                      <ArrowUpRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/40 transition-all duration-200 group-hover:text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent>{tooltip}</TooltipContent>
+              </Tooltip>
             </motion.div>
           );
         })}
@@ -751,6 +826,17 @@ export default function Dashboard() {
               <p className="text-muted-foreground text-sm">5 transaksi terakhir</p>
             </CardHeader>
             <CardContent className="px-2 pb-4">
+              {data.recentTransactions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Wallet className="h-16 w-16 text-muted-foreground/20" />
+                  <p className="mt-4 text-sm font-medium text-muted-foreground">
+                    Belum ada transaksi
+                  </p>
+                  <p className="mt-1 max-w-xs text-xs text-muted-foreground/70">
+                    Transaksi akan muncul di sini saat pelanggan melakukan pembayaran
+                  </p>
+                </div>
+              ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -779,6 +865,7 @@ export default function Dashboard() {
                   ))}
                 </TableBody>
               </Table>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -804,7 +891,11 @@ export default function Dashboard() {
                 return (
                   <div
                     key={merchant.id}
-                    className="flex items-center gap-4 rounded-lg p-3 transition-all duration-200 hover:bg-muted/60 hover:shadow-sm hover-scale"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActivePage('merchants')}
+                    onKeyDown={(e) => { if (e.key === 'Enter') setActivePage('merchants'); }}
+                    className="group/merchant flex cursor-pointer items-center gap-4 rounded-lg p-3 transition-all duration-200 hover:bg-muted/60 hover:shadow-sm hover-scale"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 text-sm font-bold text-white shadow-sm">
                       {idx + 1}
@@ -824,10 +915,20 @@ export default function Dashboard() {
                           {merchant.totalTx} tx
                         </span>
                       </div>
+                      {/* Thin progress bar under sales amount */}
+                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-emerald-500/60 transition-all duration-700"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold tabular-nums">
-                      {formatRp(merchant.totalSales)}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-semibold tabular-nums">
+                        {formatRp(merchant.totalSales)}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/0 transition-all duration-200 group-hover/merchant:text-emerald-500 group-hover/merchant:translate-x-0.5" />
+                    </div>
                   </div>
                 );
               })}

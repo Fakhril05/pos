@@ -83,7 +83,7 @@ export function QuickStats() {
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
-      className="quick-stats-bar glass-card hidden md:flex items-center gap-4 px-6 py-1.5"
+      className="quick-stats-bar glass-card hidden md:flex items-center gap-4 px-6 py-1.5 inset-shadow smooth-corners divide-x divide-border"
     >
       <AnimatePresence>
         {items.map((item, i) => {
@@ -94,7 +94,7 @@ export function QuickStats() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="quick-stat-item stat-card-gradient hover-scale flex items-center gap-1.5 rounded-md px-2 py-1"
+              className="quick-stat-item stat-card-gradient hover-scale ripple flex items-center gap-1.5 rounded-md px-2 py-1"
             >
               <Icon className={`h-3 w-3 ${item.color}`} />
               <span className="text-[10px] text-muted-foreground leading-none">

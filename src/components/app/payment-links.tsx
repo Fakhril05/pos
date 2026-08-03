@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -21,6 +21,8 @@ import {
   Eye,
   TrendingUp,
   DollarSign,
+  CreditCard,
+  Receipt,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +65,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PageHeader } from '@/components/app/page-header';
+import { AnimatedCounter } from '@/components/app/animated-counter';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Pagination,
   PaginationContent,
@@ -97,7 +116,92 @@ const isExpired = (link: PaymentLinkItem) => {
   return false;
 };
 
+const formatDateTime = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const statusBadgeClass: Record<string, string> = {
+  success: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+  pending: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-400 dark:border-yellow-800',
+  failed: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+  expired: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+};
+
+const statusLabel: Record<string, string> = {
+  success: 'Berhasil',
+  pending: 'Menunggu',
+  failed: 'Gagal',
+  expired: 'Kedaluwarsa',
+};
+
+const methodBadgeClass: Record<string, string> = {
+  qris: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+  ewallet: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800',
+  bank_transfer: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800',
+  credit_card: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+};
+
+const methodLabel: Record<string, string> = {
+  qris: 'QRIS',
+  ewallet: 'E-Wallet',
+  bank_transfer: 'Transfer Bank',
+  credit_card: 'Kartu Kredit',
+};
+
+const drawerStatusBadgeClass: Record<string, string> = {
+  active: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+  inactive: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+  expired: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+};
+
+const drawerStatusLabel: Record<string, string> = {
+  active: 'Aktif',
+  inactive: 'Nonaktif',
+  expired: 'Kedaluwarsa',
+};
+
 // ── Types ────────────────────────────────────────────────────────────────────
+
+interface TransactionDetailItem {
+  id: string;
+  invoiceNo: string;
+  amount: number;
+  netAmount: number;
+  fee: number;
+  paymentMethod: string;
+  paymentChannel: string;
+  status: string;
+  customerName: string | null;
+  customerEmail: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  merchant: { id: string; name: string; logo: string | null };
+}
+
+interface PaymentLinkDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  merchantId: string;
+  status: string;
+  type: string;
+  maxQty: number;
+  soldQty: number;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  merchant: { id: string; name: string; logo: string | null };
+  transactions: TransactionDetailItem[];
+  _count: { transactions: number };
+}
 
 interface PaymentLinkItem {
   id: string;
@@ -388,6 +492,8 @@ export default function PaymentLinks() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLink, setSelectedLink] = useState<PaymentLinkItem | null>(null);
+  const [selectedPaymentLinkId, setSelectedPaymentLinkId] = useState<string | null>(null);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [form, setForm] = useState<FormData>(emptyForm);
 
   // ─── Queries ─────────────────────────────────────────────────────────
@@ -415,6 +521,25 @@ export default function PaymentLinks() {
   });
 
   const merchants = merchantsData?.data ?? [];
+
+  // ─── Detail query for drawer ────────────────────────────────────────
+  const {
+    data: detailData,
+    isLoading: detailLoading,
+  } = useQuery<{
+    data: PaymentLinkDetail;
+    totalRevenue: number;
+    conversionRate: number;
+    successRate: number;
+  }>({
+    queryKey: ['payment-link-detail', selectedPaymentLinkId],
+    queryFn: () =>
+      fetch(`/api/payment-links/${selectedPaymentLinkId}`).then((r) => r.json()),
+    enabled: !!selectedPaymentLinkId && detailSheetOpen,
+    staleTime: 10_000,
+  });
+
+  const detail = detailData?.data;
 
   // Client-side status filtering (API doesn't support status filter directly)
   const filteredData = data?.data.filter((link) => {
@@ -530,11 +655,24 @@ export default function PaymentLinks() {
   }, []);
 
   const handleCopyLink = useCallback((link: PaymentLinkItem) => {
-    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${link.id}`;
+    const url = `https://pay.posril.id/${link.id}`;
     navigator.clipboard.writeText(url).then(() => {
       toast.success('Tautan berhasil disalin ke clipboard');
     });
   }, []);
+
+  const openDetailSheet = useCallback((linkId: string) => {
+    setSelectedPaymentLinkId(linkId);
+    setDetailSheetOpen(true);
+  }, []);
+
+  const handleCopyDetailLink = useCallback(() => {
+    if (!selectedPaymentLinkId) return;
+    const url = `https://pay.posril.id/${selectedPaymentLinkId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('Tautan berhasil disalin ke clipboard');
+    });
+  }, [selectedPaymentLinkId]);
 
   const handleSubmitCreate = useCallback(() => {
     if (!form.title || !form.amount || !form.merchantId) {
@@ -771,7 +909,10 @@ export default function PaymentLinks() {
 
                       {/* Title + merchant */}
                       <div className="mt-3 space-y-1">
-                        <h3 className="truncate text-base font-semibold leading-tight">
+                        <h3
+                          className="cursor-pointer truncate text-base font-semibold leading-tight text-emerald-600 hover:underline dark:text-emerald-400"
+                          onClick={() => openDetailSheet(link.id)}
+                        >
                           {link.title}
                         </h3>
                         <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
@@ -1222,6 +1363,246 @@ export default function PaymentLinks() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ─── Payment Link Detail Sheet Drawer ────────────────────────── */}
+      <Sheet open={detailSheetOpen} onOpenChange={(open) => {
+        setDetailSheetOpen(open);
+        if (!open) setSelectedPaymentLinkId(null);
+      }}>
+        <SheetContent side="right" className="w-full sm:max-w-lg p-0 overflow-hidden">
+          {detailLoading ? (
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex items-center gap-4">
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-36" />
+              <div className="grid grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                ))}
+              </div>
+              <Separator />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+              <Separator />
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            </div>
+          ) : detail ? (
+            <div className="flex h-full flex-col">
+              {/* ── Drawer Header ────────────────────────────────────── */}
+              <SheetHeader className="border-b px-6 py-5 shrink-0">
+                <div className="flex items-start justify-between gap-3 pr-6">
+                  <div className="min-w-0 flex-1">
+                    <SheetTitle className="text-lg leading-snug">{detail.title}</SheetTitle>
+                    {detail.description && (
+                      <SheetDescription className="mt-1 line-clamp-2">{detail.description}</SheetDescription>
+                    )}
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={drawerStatusBadgeClass[detail.status] || drawerStatusBadgeClass.active}
+                  >
+                    {drawerStatusLabel[detail.status] || 'Aktif'}
+                  </Badge>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5 text-xs">
+                    <LinkIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">https://pay.posril.id/{detail.id}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={handleCopyDetailLink}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="text-muted-foreground mt-2 flex items-center gap-1.5 text-xs">
+                  <CalendarDays className="h-3 w-3" />
+                  <span>Dibuat {formatDate(detail.createdAt)}</span>
+                </div>
+              </SheetHeader>
+
+              {/* ── Scrollable Content ──────────────────────────────── */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin">
+                <div className="space-y-6 p-6">
+                  {/* ── Stats Cards ──────────────────────────────────── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.05 }}
+                    className="grid grid-cols-3 gap-3"
+                  >
+                    {/* Total Pendapatan */}
+                    <div className="card-elevated rounded-xl p-3.5">
+                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-400">
+                        <DollarSign className="h-4 w-4 text-white" />
+                      </div>
+                      <p className="text-muted-foreground text-[11px] font-medium">Total Pendapatan</p>
+                      <p className="mt-0.5 text-sm font-bold">
+                        <AnimatedCounter
+                          value={detailData?.totalRevenue ?? 0}
+                          formatFn={(v) => formatRp(v)}
+                          duration={800}
+                          className="text-emerald-600 dark:text-emerald-400"
+                        />
+                      </p>
+                    </div>
+
+                    {/* Total Terjual */}
+                    <div className="card-elevated rounded-xl p-3.5">
+                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-400">
+                        <Layers className="h-4 w-4 text-white" />
+                      </div>
+                      <p className="text-muted-foreground text-[11px] font-medium">Total Terjual</p>
+                      <p className="mt-0.5 text-sm font-bold">
+                        <AnimatedCounter
+                          value={detail.soldQty}
+                          duration={800}
+                        />
+                      </p>
+                    </div>
+
+                    {/* Tingkat Konversi */}
+                    <div className="card-elevated rounded-xl p-3.5">
+                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-400">
+                        <TrendingUp className="h-4 w-4 text-white" />
+                      </div>
+                      <p className="text-muted-foreground text-[11px] font-medium">Tingkat Konversi</p>
+                      <p className="mt-0.5 text-sm font-bold">
+                        <AnimatedCounter
+                          value={detailData?.conversionRate ?? 0}
+                          suffix="%"
+                          duration={800}
+                          className="text-amber-600 dark:text-amber-400"
+                        />
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  {/* ── Progress Bar ──────────────────────────────────── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground font-medium">Proses Penjualan</span>
+                      <span className="font-semibold">
+                        {detail.soldQty} / {detail.maxQty} terjual
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Progress
+                        value={detail.maxQty > 0 ? Math.min(100, (detail.soldQty / detail.maxQty) * 100) : 0}
+                        className="h-2.5"
+                      />
+                    </div>
+                  </motion.div>
+
+                  <Separator />
+
+                  {/* ── Transaction History ──────────────────────────── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
+                    className="space-y-3"
+                  >
+                    <h4 className="flex items-center gap-2 text-sm font-semibold">
+                      <Receipt className="h-4 w-4 text-emerald-500" />
+                      Riwayat Transaksi
+                    </h4>
+
+                    {detail.transactions.length === 0 ? (
+                      <div className="empty-state flex flex-col items-center justify-center rounded-xl py-10">
+                        <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-2xl">
+                          <CreditCard className="text-muted-foreground h-6 w-6" />
+                        </div>
+                        <p className="mt-3 text-sm font-medium">Belum ada transaksi untuk link ini</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-lg border">
+                        <Table className="text-xs">
+                          <TableHeader className="table-header-enhanced">
+                            <TableRow>
+                              <TableHead>Invoice</TableHead>
+                              <TableHead>Pelanggan</TableHead>
+                              <TableHead className="text-right">Jumlah</TableHead>
+                              <TableHead>Metode</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Tanggal</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {detail.transactions.map((tx) => (
+                              <TableRow key={tx.id} className="table-row-hover">
+                                <TableCell className="font-medium">{tx.invoiceNo}</TableCell>
+                                <TableCell>{tx.customerName || '-'}</TableCell>
+                                <TableCell className="text-right tabular-nums">{formatRp(tx.amount)}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className={methodBadgeClass[tx.paymentMethod] || ''}
+                                  >
+                                    {methodLabel[tx.paymentMethod] || tx.paymentMethod}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className={statusBadgeClass[tx.status] || ''}
+                                  >
+                                    {statusLabel[tx.status] || tx.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {formatDateTime(tx.createdAt)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* ── Action Buttons Footer ─────────────────────────────── */}
+              <div className="border-t px-6 py-4 shrink-0">
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleCopyDetailLink}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 btn-press"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Salin Link
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 btn-press"
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Buat Transaksi
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-// GET single payout
+// GET single payout with merchant info and status timeline
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -11,7 +11,9 @@ export async function GET(
     const payout = await db.payout.findUnique({
       where: { id },
       include: {
-        merchant: true,
+        merchant: {
+          select: { id: true, name: true, email: true, logo: true },
+        },
       },
     });
 
@@ -22,7 +24,41 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: payout });
+    // Build status timeline
+    const timeline: { status: string; at: string; label: string }[] = [];
+
+    const statusLabelMap: Record<string, string> = {
+      pending: 'Menunggu',
+      processing: 'Diproses',
+      completed: 'Berhasil',
+      failed: 'Gagal',
+    };
+
+    // All payouts start as pending
+    const createdAt = new Date(payout.createdAt);
+    timeline.push({ status: 'pending', at: createdAt.toISOString(), label: statusLabelMap.pending });
+
+    if (payout.status === 'processing' || payout.status === 'completed' || payout.status === 'failed') {
+      // Add processing step (mock: createdAt + 1 day)
+      const processingAt = new Date(createdAt);
+      processingAt.setDate(processingAt.getDate() + 1);
+      timeline.push({ status: 'processing', at: processingAt.toISOString(), label: statusLabelMap.processing });
+    }
+
+    if (payout.status === 'completed' && payout.processedAt) {
+      timeline.push({ status: 'completed', at: new Date(payout.processedAt).toISOString(), label: statusLabelMap.completed });
+    }
+
+    if (payout.status === 'failed' && payout.processedAt) {
+      timeline.push({ status: 'failed', at: new Date(payout.processedAt).toISOString(), label: statusLabelMap.failed });
+    }
+
+    return NextResponse.json({
+      data: {
+        ...payout,
+        timeline,
+      },
+    });
   } catch (error) {
     console.error('[Payout GET]', error);
     return NextResponse.json(

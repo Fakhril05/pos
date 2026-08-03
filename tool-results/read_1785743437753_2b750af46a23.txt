@@ -1,0 +1,982 @@
+     1→'use client';
+     2→
+     3→import { useState, useMemo, useCallback } from 'react';
+     4→import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import { toast } from 'sonner';
+     7→import {
+     8→  Search,
+     9→  ShoppingBag,
+    10→  Plus,
+    11→  Minus,
+    12→  Trash2,
+    13→  X,
+    14→  Check,
+    15→  Printer,
+    16→  ChevronUp,
+    17→  ChevronDown,
+    18→  QrCode,
+    19→  Wallet,
+    20→  CreditCard,
+    21→  Building2,
+    22→  Calculator,
+    23→} from 'lucide-react';
+    24→import { Button } from '@/components/ui/button';
+    25→import { Input } from '@/components/ui/input';
+    26→import { Label } from '@/components/ui/label';
+    27→import { Textarea } from '@/components/ui/textarea';
+    28→import { Badge } from '@/components/ui/badge';
+    29→import { Separator } from '@/components/ui/separator';
+    30→import {
+    31→  Dialog,
+    32→  DialogContent,
+    33→  DialogHeader,
+    34→  DialogTitle,
+    35→  DialogDescription,
+    36→} from '@/components/ui/dialog';
+    37→import {
+    38→  Select,
+    39→  SelectContent,
+    40→  SelectItem,
+    41→  SelectTrigger,
+    42→  SelectValue,
+    43→} from '@/components/ui/select';
+    44→import { ScrollArea } from '@/components/ui/scroll-area';
+    45→import { PageHeader } from '@/components/app/page-header';
+    46→import { cn } from '@/lib/utils';
+    47→import { generateReceiptHtml } from '@/lib/receipt-generator';
+    48→
+    49→// ── Helpers ──────────────────────────────────────────────────────────────
+    50→
+    51→const formatRp = (amount: number) =>
+    52→  new Intl.NumberFormat('id-ID', {
+    53→    style: 'currency',
+    54→    currency: 'IDR',
+    55→    minimumFractionDigits: 0,
+    56→  }).format(amount);
+    57→
+    58→// ── Product Data ─────────────────────────────────────────────────────────
+    59→
+    60→type Category = 'Semua' | 'Makanan' | 'Minuman' | 'Snack' | 'Lainnya';
+    61→
+    62→interface Product {
+    63→  id: string;
+    64→  name: string;
+    65→  price: number;
+    66→  category: Exclude<Category, 'Semua'>;
+    67→  emoji: string;
+    68→}
+    69→
+    70→const PRODUCTS: Product[] = [
+    71→  { id: 'p1', name: 'Nasi Goreng Spesial', price: 25000, category: 'Makanan', emoji: '🍛' },
+    72→  { id: 'p2', name: 'Mie Ayam Bakso', price: 20000, category: 'Makanan', emoji: '🍜' },
+    73→  { id: 'p3', name: 'Sate Ayam', price: 30000, category: 'Makanan', emoji: '🍢' },
+    74→  { id: 'p4', name: 'Es Teh Manis', price: 8000, category: 'Minuman', emoji: '🧊' },
+    75→  { id: 'p5', name: 'Es Jeruk', price: 10000, category: 'Minuman', emoji: '🍊' },
+    76→  { id: 'p6', name: 'Kopi Susu', price: 15000, category: 'Minuman', emoji: '☕' },
+    77→  { id: 'p7', name: 'Keripik Singkong', price: 12000, category: 'Snack', emoji: '🥔' },
+    78→  { id: 'p8', name: 'Pisang Goreng', price: 10000, category: 'Snack', emoji: '🍌' },
+    79→  { id: 'p9', name: 'Tahu Crispy', price: 8000, category: 'Snack', emoji: '🧈' },
+    80→  { id: 'p10', name: 'Paket Hemat A', price: 35000, category: 'Lainnya', emoji: '🍱' },
+    81→  { id: 'p11', name: 'Paket Hemat B', price: 45000, category: 'Lainnya', emoji: '🥘' },
+    82→  { id: 'p12', name: 'Menu Premium', price: 55000, category: 'Lainnya', emoji: '🥩' },
+    83→  { id: 'p13', name: 'Ayam Geprek', price: 22000, category: 'Makanan', emoji: '🍗' },
+    84→  { id: 'p14', name: 'Jus Alpukat', price: 18000, category: 'Minuman', emoji: '🥑' },
+    85→  { id: 'p15', name: 'Cireng Isi', price: 10000, category: 'Snack', emoji: '🫓' },
+    86→];
+    87→
+    88→const CATEGORIES: Category[] = ['Semua', 'Makanan', 'Minuman', 'Snack', 'Lainnya'];
+    89→
+    90→// ── Payment Methods ───────────────────────────────────────────────────────
+    91→
+    92→interface PaymentMethod {
+    93→  id: string;
+    94→  method: string;
+    95→  channel: string;
+    96→  label: string;
+    97→  icon: React.ReactNode;
+    98→  feePercent: number;
+    99→}
+   100→
+   101→const PAYMENT_METHODS: PaymentMethod[] = [
+   102→  { id: 'qris', method: 'qris', channel: 'QRIS', label: 'QRIS', icon: <QrCode className="h-5 w-5" />, feePercent: 0.7 },
+   103→  { id: 'gopay', method: 'ewallet', channel: 'GoPay', label: 'GoPay', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
+   104→  { id: 'ovo', method: 'ewallet', channel: 'OVO', label: 'OVO', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
+   105→  { id: 'dana', method: 'ewallet', channel: 'Dana', label: 'Dana', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
+   106→  { id: 'shopeepay', method: 'ewallet', channel: 'ShopeePay', label: 'ShopeePay', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
+   107→  { id: 'bank_transfer', method: 'bank_transfer', channel: 'Bank Transfer', label: 'Bank Transfer', icon: <Building2 className="h-5 w-5" />, feePercent: 1.5 },
+   108→  { id: 'credit_card', method: 'credit_card', channel: 'Kartu Kredit', label: 'Kartu Kredit', icon: <CreditCard className="h-5 w-5" />, feePercent: 2.9 },
+   109→];
+   110→
+   111→// ── Cart Types ────────────────────────────────────────────────────────────
+   112→
+   113→interface CartItem {
+   114→  product: Product;
+   115→  qty: number;
+   116→}
+   117→
+   118→// ── Component ─────────────────────────────────────────────────────────────
+   119→
+   120→export function Kasir() {
+   121→  const queryClient = useQueryClient();
+   122→
+   123→  // State
+   124→  const [search, setSearch] = useState('');
+   125→  const [category, setCategory] = useState<Category>('Semua');
+   126→  const [cart, setCart] = useState<CartItem[]>([]);
+   127→  const [payDialogOpen, setPayDialogOpen] = useState(false);
+   128→  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
+   129→  const [customerName, setCustomerName] = useState('');
+   130→  const [customerPhone, setCustomerPhone] = useState('');
+   131→  const [customerEmail, setCustomerEmail] = useState('');
+   132→  const [notes, setNotes] = useState('');
+   133→  const [selectedMerchant, setSelectedMerchant] = useState('');
+   134→  const [cartExpanded, setCartExpanded] = useState(false);
+   135→  const [lastTx, setLastTx] = useState<{
+   136→    invoiceNo: string;
+   137→    amount: number;
+   138→    fee: number;
+   139→    netAmount: number;
+   140→    paymentMethod: string;
+   141→    paymentChannel: string;
+   142→    createdAt: string;
+   143→    paidAt: string;
+   144→    customerName: string | null;
+   145→    merchantName: string;
+   146→    items: CartItem[];
+   147→    subtotal: number;
+   148→    tax: number;
+   149→  } | null>(null);
+   150→
+   151→  // Fetch merchants for dropdown
+   152→  const { data: merchantsData } = useQuery({
+   153→    queryKey: ['merchants-list-pos'],
+   154→    queryFn: async () => {
+   155→      const res = await fetch('/api/merchants?limit=100');
+   156→      const json = await res.json();
+   157→      return json.data as { id: string; name: string; status: string }[];
+   158→    },
+   159→  });
+   160→
+   161→  const merchants = merchantsData ?? [];
+   162→
+   163→  // Filtered products
+   164→  const filteredProducts = useMemo(() => {
+   165→    return PRODUCTS.filter((p) => {
+   166→      const matchCategory = category === 'Semua' || p.category === category;
+   167→      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+   168→      return matchCategory && matchSearch;
+   169→    });
+   170→  }, [category, search]);
+   171→
+   172→  // Cart calculations
+   173→  const cartTotal = useMemo(() => {
+   174→    return cart.reduce((sum, item) => sum + item.product.price * item.qty, 0);
+   175→  }, [cart]);
+   176→
+   177→  const cartCount = useMemo(() => {
+   178→    return cart.reduce((sum, item) => sum + item.qty, 0);
+   179→  }, [cart]);
+   180→
+   181→  const tax = Math.round(cartTotal * 0.11);
+   182→  const totalWithTax = cartTotal + tax;
+   183→
+   184→  // Add to cart
+   185→  const addToCart = useCallback(
+   186→    (product: Product) => {
+   187→      setCart((prev) => {
+   188→        const existing = prev.find((item) => item.product.id === product.id);
+   189→        if (existing) {
+   190→          return prev.map((item) =>
+   191→            item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item,
+   192→          );
+   193→        }
+   194→        return [...prev, { product, qty: 1 }];
+   195→      });
+   196→      toast.success(`${product.name} ditambahkan ke keranjang`);
+   197→    },
+   198→    [],
+   199→  );
+   200→
+   201→  // Update quantity
+   202→  const updateQty = useCallback((productId: string, delta: number) => {
+   203→    setCart((prev) =>
+   204→      prev
+   205→        .map((item) =>
+   206→          item.product.id === productId ? { ...item, qty: Math.max(0, item.qty + delta) } : item,
+   207→        )
+   208→        .filter((item) => item.qty > 0),
+   209→    );
+   210→  }, []);
+   211→
+   212→  // Remove from cart
+   213→  const removeFromCart = useCallback((productId: string) => {
+   214→    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+   215→  }, []);
+   216→
+   217→  // Clear cart
+   218→  const clearCart = useCallback(() => {
+   219→    setCart([]);
+   220→    setLastTx(null);
+   221→  }, []);
+   222→
+   223→  // Payment mutation
+   224→  const payMutation = useMutation({
+   225→    mutationFn: async () => {
+   226→      if (!selectedMerchant) throw new Error('Pilih merchant terlebih dahulu');
+   227→      if (!selectedPayment) throw new Error('Pilih metode pembayaran');
+   228→
+   229→      const res = await fetch('/api/quick-pay', {
+   230→        method: 'POST',
+   231→        headers: { 'Content-Type': 'application/json' },
+   232→        body: JSON.stringify({
+   233→          merchantId: selectedMerchant,
+   234→          amount: totalWithTax,
+   235→          paymentMethod: selectedPayment.method,
+   236→          paymentChannel: selectedPayment.channel,
+   237→          customerName: customerName || undefined,
+   238→          customerEmail: customerEmail || undefined,
+   239→          customerPhone: customerPhone || undefined,
+   240→          description: notes || undefined,
+   241→          items: cart.map((item) => ({
+   242→            name: item.product.name,
+   243→            qty: item.qty,
+   244→            price: item.product.price,
+   245→          })),
+   246→        }),
+   247→      });
+   248→
+   249→      const json = await res.json();
+   250→      if (!res.ok) throw new Error(json.error || 'Gagal memproses pembayaran');
+   251→      return json.data;
+   252→    },
+   253→    onSuccess: (data) => {
+   254→      const merchant = merchants.find((m) => m.id === selectedMerchant);
+   255→      setLastTx({
+   256→        invoiceNo: data.invoiceNo,
+   257→        amount: data.amount,
+   258→        fee: data.fee,
+   259→        netAmount: data.netAmount,
+   260→        paymentMethod: data.paymentMethod,
+   261→        paymentChannel: data.paymentChannel,
+   262→        createdAt: data.createdAt,
+   263→        paidAt: data.paidAt,
+   264→        customerName: data.customerName,
+   265→        merchantName: merchant?.name ?? 'Unknown',
+   266→        items: [...cart],
+   267→        subtotal: cartTotal,
+   268→        tax,
+   269→      });
+   270→      queryClient.invalidateQueries({ queryKey: ['quick-stats'] });
+   271→      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+   272→      toast.success('Pembayaran berhasil!');
+   273→    },
+   274→    onError: (err: Error) => {
+   275→      toast.error(err.message);
+   276→    },
+   277→  });
+   278→
+   279→  // Print receipt
+   280→  const printReceipt = useCallback(() => {
+   281→    if (!lastTx) return;
+   282→    const html = generateReceiptHtml({
+   283→      invoiceNo: lastTx.invoiceNo,
+   284→      amount: lastTx.amount,
+   285→      fee: lastTx.fee,
+   286→      netAmount: lastTx.netAmount,
+   287→      merchantName: lastTx.merchantName,
+   288→      customerName: lastTx.customerName ?? 'Umum',
+   289→      paymentMethod: lastTx.paymentMethod,
+   290→      paymentChannel: lastTx.paymentChannel,
+   291→      status: 'success',
+   292→      createdAt: lastTx.createdAt,
+   293→      paidAt: lastTx.paidAt,
+   294→      description: `Kasir POS - ${lastTx.items.length} item`,
+   295→      formattedAmount: formatRp(lastTx.amount),
+   296→      formattedFee: formatRp(lastTx.fee),
+   297→      formattedNetAmount: formatRp(lastTx.netAmount),
+   298→      formattedCreatedAt: new Date(lastTx.createdAt).toLocaleString('id-ID'),
+   299→      formattedPaidAt: lastTx.paidAt
+   300→        ? new Date(lastTx.paidAt).toLocaleString('id-ID')
+   301→        : null,
+   302→      statusLabel: 'Berhasil',
+   303→    });
+   304→    const win = window.open('', '_blank');
+   305→    if (win) {
+   306→      win.document.write(html);
+   307→      win.document.close();
+   308→      win.focus();
+   309→      win.print();
+   310→    }
+   311→  }, [lastTx]);
+   312→
+   313→  // Open pay dialog
+   314→  const handleOpenPay = () => {
+   315→    if (cart.length === 0) return;
+   316→    setPayDialogOpen(true);
+   317→  };
+   318→
+   319→  // Process payment
+   320→  const handlePay = () => {
+   321→    payMutation.mutate();
+   322→  };
+   323→
+   324→  // New transaction
+   325→  const handleNewTx = () => {
+   326→    setCart([]);
+   327→    setLastTx(null);
+   328→    setPayDialogOpen(false);
+   329→    setSelectedPayment(null);
+   330→    setCustomerName('');
+   331→    setCustomerPhone('');
+   332→    setCustomerEmail('');
+   333→    setNotes('');
+   334→  };
+   335→
+   336→  // Close pay dialog resets payment state
+   337→  const handleClosePayDialog = () => {
+   338→    setPayDialogOpen(false);
+   339→    if (!lastTx) {
+   340→      setSelectedPayment(null);
+   341→    }
+   342→  };
+   343→
+   344→  return (
+   345→    <div className="bg-mesh rounded-2xl p-4 md:p-6">
+   346→      <PageHeader
+   347→        title="Kasir"
+   348→        description="Terminal pembayaran point-of-sale"
+   349→        icon={Calculator}
+   350→        iconGradient="emerald"
+   351→      />
+   352→
+   353→      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+   354→        {/* ── Left Panel: Product Catalog ── */}
+   355→        <div className="min-w-0 flex-1">
+   356→          {/* Search & Categories */}
+   357→          <div className="card-elevated mb-4 rounded-xl p-4">
+   358→            <div className="relative mb-3">
+   359→              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+   360→              <Input
+   361→                placeholder="Cari produk..."
+   362→                value={search}
+   363→                onChange={(e) => setSearch(e.target.value)}
+   364→                className="pl-9"
+   365→              />
+   366→            </div>
+   367→            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+   368→              {CATEGORIES.map((cat) => (
+   369→                <button
+   370→                  key={cat}
+   371→                  onClick={() => setCategory(cat)}
+   372→                  className={cn(
+   373→                    'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200',
+   374→                    category === cat
+   375→                      ? 'bg-emerald-500 text-white shadow-sm'
+   376→                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+   377→                  )}
+   378→                >
+   379→                  {cat}
+   380→                </button>
+   381→              ))}
+   382→            </div>
+   383→          </div>
+   384→
+   385→          {/* Product Grid */}
+   386→          <div className="card-elevated rounded-xl p-4">
+   387→            <motion.div
+   388→              className="grid grid-cols-2 gap-3 md:grid-cols-3"
+   389→              initial="hidden"
+   390→              animate="show"
+   391→              variants={{
+   392→                hidden: {},
+   393→                show: { transition: { staggerChildren: 0.03 } },
+   394→              }}
+   395→            >
+   396→              <AnimatePresence mode="popLayout">
+   397→                {filteredProducts.map((product) => (
+   398→                  <motion.button
+   399→                    key={product.id}
+   400→                    layout
+   401→                    variants={{
+   402→                      hidden: { opacity: 0, y: 12, scale: 0.95 },
+   403→                      show: { opacity: 1, y: 0, scale: 1 },
+   404→                      exit: { opacity: 0, scale: 0.9, y: -8 },
+   405→                    }}
+   406→                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+   407→                    whileTap={{ scale: 0.95 }}
+   408→                    onClick={() => addToCart(product)}
+   409→                    className="card-hover flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-3 text-left"
+   410→                  >
+   411→                    <span className="text-2xl leading-none">{product.emoji}</span>
+   412→                    <div className="min-w-0 flex-1">
+   413→                      <p className="truncate text-sm font-medium leading-tight">{product.name}</p>
+   414→                      <p className="mt-1 text-sm font-bold text-emerald-600 dark:text-emerald-400">
+   415→                        {formatRp(product.price)}
+   416→                      </p>
+   417→                    </div>
+   418→                    <div className="flex w-full items-center justify-end">
+   419→                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+   420→                        <Plus className="h-3.5 w-3.5" />
+   421→                      </span>
+   422→                    </div>
+   423→                  </motion.button>
+   424→                ))}
+   425→              </AnimatePresence>
+   426→            </motion.div>
+   427→
+   428→            {filteredProducts.length === 0 && (
+   429→              <div className="empty-state flex flex-col items-center justify-center py-16 text-center">
+   430→                <Search className="mb-3 h-10 w-10 text-muted-foreground/40" />
+   431→                <p className="text-sm font-medium text-muted-foreground">Produk tidak ditemukan</p>
+   432→                <p className="mt-1 text-xs text-muted-foreground/60">
+   433→                  Coba kata kunci lain atau ubah kategori
+   434→                </p>
+   435→              </div>
+   436→            )}
+   437→          </div>
+   438→        </div>
+   439→
+   440→        {/* ── Right Panel: Cart (Desktop) ── */}
+   441→        <div className="hidden w-full lg:block lg:w-[380px]">
+   442→          <div className="card-elevated sticky top-24 flex h-[calc(100vh-8rem)] flex-col rounded-xl">
+   443→            <CartPanel
+   444→              cart={cart}
+   445→              cartCount={cartCount}
+   446→              cartTotal={cartTotal}
+   447→              tax={tax}
+   448→              totalWithTax={totalWithTax}
+   449→              onUpdateQty={updateQty}
+   450→              onRemove={removeFromCart}
+   451→              onClear={clearCart}
+   452→              onPay={handleOpenPay}
+   453→            />
+   454→          </div>
+   455→        </div>
+   456→      </div>
+   457→
+   458→      {/* ── Mobile Cart (Bottom Sheet) ── */}
+   459→      <div className="fixed right-0 bottom-16 left-0 z-40 lg:hidden">
+   460→        <AnimatePresence mode="wait">
+   461→          {cart.length > 0 && (
+   462→            <motion.div
+   463→              key="cart-bar"
+   464→              initial={{ y: 100 }}
+   465→              animate={{ y: 0 }}
+   466→              exit={{ y: 100 }}
+   467→              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+   468→              className="mx-3 overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl"
+   469→            >
+   470→              {/* Collapsed bar */}
+   471→              {!cartExpanded && (
+   472→                <button
+   473→                  onClick={() => setCartExpanded(true)}
+   474→                  className="flex w-full items-center justify-between px-4 py-3"
+   475→                >
+   476→                  <div className="flex items-center gap-2">
+   477→                    <div className="relative">
+   478→                      <ShoppingBag className="h-5 w-5 text-emerald-500" />
+   479→                      <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+   480→                        {cartCount}
+   481→                      </span>
+   482→                    </div>
+   483→                    <span className="text-sm font-medium">Keranjang</span>
+   484→                  </div>
+   485→                  <div className="flex items-center gap-2">
+   486→                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+   487→                      {formatRp(totalWithTax)}
+   488→                    </span>
+   489→                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+   490→                  </div>
+   491→                </button>
+   492→              )}
+   493→
+   494→              {/* Expanded cart */}
+   495→              <AnimatePresence>
+   496→                {cartExpanded && (
+   497→                  <motion.div
+   498→                    initial={{ height: 0 }}
+   499→                    animate={{ height: 'auto' }}
+   500→                    exit={{ height: 0 }}
+   501→                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+   502→                    className="overflow-hidden"
+   503→                  >
+   504→                    <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
+   505→                      <CartPanel
+   506→                        cart={cart}
+   507→                        cartCount={cartCount}
+   508→                        cartTotal={cartTotal}
+   509→                        tax={tax}
+   510→                        totalWithTax={totalWithTax}
+   511→                        onUpdateQty={updateQty}
+   512→                        onRemove={removeFromCart}
+   513→                        onClear={clearCart}
+   514→                        onPay={handleOpenPay}
+   515→                        onCollapse={() => setCartExpanded(false)}
+   516→                      />
+   517→                    </div>
+   518→                  </motion.div>
+   519→                )}
+   520→              </AnimatePresence>
+   521→            </motion.div>
+   522→          )}
+   523→        </AnimatePresence>
+   524→      </div>
+   525→
+   526→      {/* ── Payment Dialog ── */}
+   527→      <Dialog open={payDialogOpen} onOpenChange={handleClosePayDialog}>
+   528→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+   529→          <AnimatePresence mode="wait">
+   530→            {lastTx ? (
+   531→              /* ── Success State ── */
+   532→              <motion.div
+   533→                key="success"
+   534→                initial={{ opacity: 0, scale: 0.9 }}
+   535→                animate={{ opacity: 1, scale: 1 }}
+   536→                exit={{ opacity: 0, scale: 0.9 }}
+   537→                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+   538→                className="flex flex-col items-center py-4"
+   539→              >
+   540→                {/* Animated checkmark */}
+   541→                <motion.div
+   542→                  initial={{ scale: 0 }}
+   543→                  animate={{ scale: 1 }}
+   544→                  transition={{
+   545→                    type: 'spring',
+   546→                    stiffness: 200,
+   547→                    damping: 15,
+   548→                    delay: 0.1,
+   549→                  }}
+   550→                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500 glow-emerald-md"
+   551→                >
+   552→                  <motion.div
+   553→                    initial={{ scale: 0, rotate: -45 }}
+   554→                    animate={{ scale: 1, rotate: 0 }}
+   555→                    transition={{
+   556→                      type: 'spring',
+   557→                      stiffness: 300,
+   558→                      damping: 20,
+   559→                      delay: 0.3,
+   560→                    }}
+   561→                  >
+   562→                    <Check className="h-10 w-10 text-white" strokeWidth={3} />
+   563→                  </motion.div>
+   564→                </motion.div>
+   565→
+   566→                <h3 className="text-lg font-bold">Pembayaran Berhasil!</h3>
+   567→                <p className="mb-6 text-sm text-muted-foreground">
+   568→                  {lastTx.invoiceNo}
+   569→                </p>
+   570→
+   571→                {/* Receipt Summary */}
+   572→                <div className="w-full rounded-xl border border-border bg-muted/30 p-4">
+   573→                  <div className="mb-3 space-y-1.5">
+   574→                    {lastTx.items.map((item) => (
+   575→                      <div
+   576→                        key={item.product.id}
+   577→                        className="flex items-center justify-between text-sm"
+   578→                      >
+   579→                        <span className="text-muted-foreground">
+   580→                          {item.qty}x {item.product.name}
+   581→                        </span>
+   582→                        <span className="font-medium">
+   583→                          {formatRp(item.product.price * item.qty)}
+   584→                        </span>
+   585→                      </div>
+   586→                    ))}
+   587→                  </div>
+   588→                  <Separator className="my-3" />
+   589→                  <div className="space-y-1.5 text-sm">
+   590→                    <div className="flex justify-between">
+   591→                      <span className="text-muted-foreground">Subtotal</span>
+   592→                      <span>{formatRp(lastTx.subtotal)}</span>
+   593→                    </div>
+   594→                    <div className="flex justify-between">
+   595→                      <span className="text-muted-foreground">Pajak (PPN 11%)</span>
+   596→                      <span>{formatRp(lastTx.tax)}</span>
+   597→                    </div>
+   598→                    <Separator className="my-2" />
+   599→                    <div className="flex justify-between text-base font-bold">
+   600→                      <span>Total</span>
+   601→                      <span className="text-emerald-600 dark:text-emerald-400">
+   602→                        {formatRp(lastTx.amount)}
+   603→                      </span>
+   604→                    </div>
+   605→                  </div>
+   606→                  <Separator className="my-3" />
+   607→                  <div className="space-y-1 text-xs text-muted-foreground">
+   608→                    <div className="flex justify-between">
+   609→                      <span>Metode</span>
+   610→                      <span className="font-medium text-foreground">
+   611→                        {lastTx.paymentChannel}
+   612→                      </span>
+   613→                    </div>
+   614→                    <div className="flex justify-between">
+   615→                      <span>Merchant</span>
+   616→                      <span className="font-medium text-foreground">
+   617→                        {lastTx.merchantName}
+   618→                      </span>
+   619→                    </div>
+   620→                    {lastTx.customerName && (
+   621→                      <div className="flex justify-between">
+   622→                        <span>Pelanggan</span>
+   623→                        <span className="font-medium text-foreground">
+   624→                          {lastTx.customerName}
+   625→                        </span>
+   626→                      </div>
+   627→                    )}
+   628→                    <div className="flex justify-between">
+   629→                      <span>Waktu</span>
+   630→                      <span className="font-medium text-foreground">
+   631→                        {new Date(lastTx.paidAt).toLocaleString('id-ID')}
+   632→                      </span>
+   633→                    </div>
+   634→                  </div>
+   635→                </div>
+   636→
+   637→                {/* Action buttons */}
+   638→                <div className="mt-6 flex w-full gap-3">
+   639→                  <Button
+   640→                    variant="outline"
+   641→                    className="btn-press flex-1"
+   642→                    onClick={printReceipt}
+   643→                  >
+   644→                    <Printer className="mr-2 h-4 w-4" />
+   645→                    Cetak Struk
+   646→                  </Button>
+   647→                  <Button
+   648→                    className="btn-press flex-1 bg-emerald-500 hover:bg-emerald-600"
+   649→                    onClick={handleNewTx}
+   650→                  >
+   651→                    <ShoppingBag className="mr-2 h-4 w-4" />
+   652→                    Transaksi Baru
+   653→                  </Button>
+   654→                </div>
+   655→              </motion.div>
+   656→            ) : (
+   657→              /* ── Payment Form ── */
+   658→              <motion.div
+   659→                key="form"
+   660→                initial={{ opacity: 0, y: 12 }}
+   661→                animate={{ opacity: 1, y: 0 }}
+   662→                exit={{ opacity: 0, y: -12 }}
+   663→                transition={{ duration: 0.25 }}
+   664→              >
+   665→                <DialogHeader>
+   666→                  <DialogTitle>Pembayaran</DialogTitle>
+   667→                  <DialogDescription>
+   668→                    Pilih metode pembayaran untuk melanjutkan
+   669→                  </DialogDescription>
+   670→                </DialogHeader>
+   671→
+   672→                {/* Total Amount */}
+   673→                <div className="my-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-4 text-center dark:from-emerald-500/15 dark:to-teal-500/10">
+   674→                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+   675→                    Total Pembayaran
+   676→                  </p>
+   677→                  <p className="mt-1 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 glow-emerald-sm inline-block">
+   678→                    {formatRp(totalWithTax)}
+   679→                  </p>
+   680→                  <p className="mt-1 text-xs text-muted-foreground">
+   681→                    {cartCount} item · Subtotal {formatRp(cartTotal)} + PPN {formatRp(tax)}
+   682→                  </p>
+   683→                </div>
+   684→
+   685→                {/* Merchant Selector */}
+   686→                <div className="mb-4 space-y-2">
+   687→                  <Label className="text-sm font-medium">Merchant</Label>
+   688→                  <Select value={selectedMerchant} onValueChange={setSelectedMerchant}>
+   689→                    <SelectTrigger>
+   690→                      <SelectValue placeholder="Pilih merchant..." />
+   691→                    </SelectTrigger>
+   692→                    <SelectContent>
+   693→                      {merchants
+   694→                        .filter((m) => m.status === 'active')
+   695→                        .map((m) => (
+   696→                          <SelectItem key={m.id} value={m.id}>
+   697→                            {m.name}
+   698→                          </SelectItem>
+   699→                        ))}
+   700→                    </SelectContent>
+   701→                  </Select>
+   702→                </div>
+   703→
+   704→                {/* Payment Methods */}
+   705→                <div className="mb-4 space-y-2">
+   706→                  <Label className="text-sm font-medium">Metode Pembayaran</Label>
+   707→                  <div className="grid grid-cols-2 gap-2">
+   708→                    {PAYMENT_METHODS.map((pm) => (
+   709→                      <button
+   710→                        key={pm.id}
+   711→                        type="button"
+   712→                        onClick={() => setSelectedPayment(pm)}
+   713→                        className={cn(
+   714→                          'flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all duration-200',
+   715→                          selectedPayment?.id === pm.id
+   716→                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-300'
+   717→                            : 'border-border hover:border-emerald-500/30 hover:bg-muted/50',
+   718→                        )}
+   719→                      >
+   720→                        <span
+   721→                          className={cn(
+   722→                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+   723→                            selectedPayment?.id === pm.id
+   724→                              ? 'bg-emerald-500 text-white'
+   725→                              : 'bg-muted text-muted-foreground',
+   726→                          )}
+   727→                        >
+   728→                          {pm.icon}
+   729→                        </span>
+   730→                        <div className="min-w-0 flex-1">
+   731→                          <p className="truncate text-sm font-medium">{pm.label}</p>
+   732→                          <p className="text-[10px] text-muted-foreground">
+   733→                            Admin {pm.feePercent}%
+   734→                          </p>
+   735→                        </div>
+   736→                        {selectedPayment?.id === pm.id && (
+   737→                          <motion.div
+   738→                            initial={{ scale: 0 }}
+   739→                            animate={{ scale: 1 }}
+   740→                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500"
+   741→                          >
+   742→                            <Check className="h-3 w-3 text-white" />
+   743→                          </motion.div>
+   744→                        )}
+   745→                      </button>
+   746→                    ))}
+   747→                  </div>
+   748→                </div>
+   749→
+   750→                {/* Customer Info (Optional) */}
+   751→                <div className="mb-4 space-y-3">
+   752→                  <Label className="text-sm font-medium">
+   753→                    Info Pelanggan{' '}
+   754→                    <span className="font-normal text-muted-foreground">(opsional)</span>
+   755→                  </Label>
+   756→                  <Input
+   757→                    placeholder="Nama pelanggan"
+   758→                    value={customerName}
+   759→                    onChange={(e) => setCustomerName(e.target.value)}
+   760→                  />
+   761→                  <div className="grid grid-cols-2 gap-3">
+   762→                    <Input
+   763→                      placeholder="No. Telepon"
+   764→                      value={customerPhone}
+   765→                      onChange={(e) => setCustomerPhone(e.target.value)}
+   766→                    />
+   767→                    <Input
+   768→                      placeholder="Email"
+   769→                      value={customerEmail}
+   770→                      onChange={(e) => setCustomerEmail(e.target.value)}
+   771→                      type="email"
+   772→                    />
+   773→                  </div>
+   774→                </div>
+   775→
+   776→                {/* Notes */}
+   777→                <div className="mb-4 space-y-2">
+   778→                  <Label className="text-sm font-medium">
+   779→                    Catatan{' '}
+   780→                    <span className="font-normal text-muted-foreground">(opsional)</span>
+   781→                  </Label>
+   782→                  <Textarea
+   783→                    placeholder="Tambahkan catatan..."
+   784→                    value={notes}
+   785→                    onChange={(e) => setNotes(e.target.value)}
+   786→                    rows={2}
+   787→                  />
+   788→                </div>
+   789→
+   790→                {/* Pay Button */}
+   791→                <Button
+   792→                  className="btn-press w-full bg-emerald-500 py-6 text-base font-bold hover:bg-emerald-600"
+   793→                  size="lg"
+   794→                  disabled={
+   795→                    !selectedMerchant ||
+   796→                    !selectedPayment ||
+   797→                    payMutation.isPending
+   798→                  }
+   799→                  onClick={handlePay}
+   800→                >
+   801→                  {payMutation.isPending ? (
+   802→                    <motion.span
+   803→                      animate={{ rotate: 360 }}
+   804→                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+   805→                      className="mr-2 inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent"
+   806→                    />
+   807→                  ) : null}
+   808→                  {payMutation.isPending
+   809→                    ? 'Memproses Pembayaran...'
+   810→                    : 'Proses Pembayaran'}
+   811→                </Button>
+   812→              </motion.div>
+   813→            )}
+   814→          </AnimatePresence>
+   815→        </DialogContent>
+   816→      </Dialog>
+   817→    </div>
+   818→  );
+   819→}
+   820→
+   821→// ── Cart Panel (reused for desktop & mobile) ──────────────────────────────
+   822→
+   823→function CartPanel({
+   824→  cart,
+   825→  cartCount,
+   826→  cartTotal,
+   827→  tax,
+   828→  totalWithTax,
+   829→  onUpdateQty,
+   830→  onRemove,
+   831→  onClear,
+   832→  onPay,
+   833→  onCollapse,
+   834→}: {
+   835→  cart: CartItem[];
+   836→  cartCount: number;
+   837→  cartTotal: number;
+   838→  tax: number;
+   839→  totalWithTax: number;
+   840→  onUpdateQty: (productId: string, delta: number) => void;
+   841→  onRemove: (productId: string) => void;
+   842→  onClear: () => void;
+   843→  onPay: () => void;
+   844→  onCollapse?: () => void;
+   845→}) {
+   846→  return (
+   847→    <>
+   848→      {/* Cart Header */}
+   849→      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+   850→        <div className="flex items-center gap-2">
+   851→          <ShoppingBag className="h-4.5 w-4.5 text-emerald-500" />
+   852→          <span className="text-sm font-semibold">Keranjang</span>
+   853→          {cartCount > 0 && (
+   854→            <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
+   855→              {cartCount}
+   856→            </Badge>
+   857→          )}
+   858→        </div>
+   859→        <div className="flex items-center gap-1">
+   860→          {cart.length > 0 && (
+   861→            <button
+   862→              onClick={onClear}
+   863→              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+   864→              title="Kosongkan keranjang"
+   865→            >
+   866→              <Trash2 className="h-3.5 w-3.5" />
+   867→            </button>
+   868→          )}
+   869→          {onCollapse && (
+   870→            <button
+   871→              onClick={onCollapse}
+   872→              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+   873→            >
+   874→              <ChevronDown className="h-4 w-4" />
+   875→            </button>
+   876→          )}
+   877→        </div>
+   878→      </div>
+   879→
+   880→      {/* Cart Items */}
+   881→      <div className="flex-1 overflow-y-auto scrollbar-thin">
+   882→        {cart.length === 0 ? (
+   883→          <div className="empty-state flex h-full min-h-[200px] flex-col items-center justify-center px-4 py-8 text-center">
+   884→            <ShoppingBag className="mb-3 h-12 w-12 text-muted-foreground/30" />
+   885→            <p className="text-sm font-medium text-muted-foreground">
+   886→              Keranjang kosong
+   887→            </p>
+   888→            <p className="mt-1 text-xs text-muted-foreground/60">
+   889→              Tap produk untuk menambahkan
+   890→            </p>
+   891→          </div>
+   892→        ) : (
+   893→          <div className="divide-y divide-border p-2">
+   894→            <AnimatePresence initial={false}>
+   895→              {cart.map((item) => (
+   896→                <motion.div
+   897→                  key={item.product.id}
+   898→                  initial={{ opacity: 0, x: 20, height: 0 }}
+   899→                  animate={{ opacity: 1, x: 0, height: 'auto' }}
+   900→                  exit={{ opacity: 0, x: -20, height: 0 }}
+   901→                  transition={{ duration: 0.2 }}
+   902→                  className="flex items-center gap-2 py-2"
+   903→                >
+   904→                  <span className="text-lg">{item.product.emoji}</span>
+   905→                  <div className="min-w-0 flex-1">
+   906→                    <p className="truncate text-sm font-medium">{item.product.name}</p>
+   907→                    <p className="text-xs text-muted-foreground">
+   908→                      {formatRp(item.product.price)} / item
+   909→                    </p>
+   910→                  </div>
+   911→
+   912→                  {/* Quantity Controls */}
+   913→                  <div className="flex items-center gap-1">
+   914→                    <button
+   915→                      onClick={() => onUpdateQty(item.product.id, -1)}
+   916→                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+   917→                    >
+   918→                      <Minus className="h-3 w-3" />
+   919→                    </button>
+   920→                    <span className="w-6 text-center text-sm font-semibold">
+   921→                      {item.qty}
+   922→                    </span>
+   923→                    <button
+   924→                      onClick={() => onUpdateQty(item.product.id, 1)}
+   925→                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+   926→                    >
+   927→                      <Plus className="h-3 w-3" />
+   928→                    </button>
+   929→                  </div>
+   930→
+   931→                  {/* Subtotal & Remove */}
+   932→                  <div className="flex flex-col items-end gap-1">
+   933→                    <span className="text-sm font-semibold">
+   934→                      {formatRp(item.product.price * item.qty)}
+   935→                    </span>
+   936→                    <button
+   937→                      onClick={() => onRemove(item.product.id)}
+   938→                      className="text-muted-foreground/60 transition-colors hover:text-destructive"
+   939→                    >
+   940→                      <X className="h-3.5 w-3.5" />
+   941→                    </button>
+   942→                  </div>
+   943→                </motion.div>
+   944→              ))}
+   945→            </AnimatePresence>
+   946→          </div>
+   947→        )}
+   948→      </div>
+   949→
+   950→      {/* Cart Summary & Pay */}
+   951→      {cart.length > 0 && (
+   952→        <div className="border-t border-border p-4">
+   953→          <div className="mb-3 space-y-1.5 text-sm">
+   954→            <div className="flex justify-between">
+   955→              <span className="text-muted-foreground">Subtotal</span>
+   956→              <span>{formatRp(cartTotal)}</span>
+   957→            </div>
+   958→            <div className="flex justify-between">
+   959→              <span className="text-muted-foreground">Pajak (11% PPN)</span>
+   960→              <span>{formatRp(tax)}</span>
+   961→            </div>
+   962→            <Separator />
+   963→            <div className="flex justify-between text-base font-bold">
+   964→              <span>Total</span>
+   965→              <span className="text-emerald-600 dark:text-emerald-400">
+   966→                {formatRp(totalWithTax)}
+   967→              </span>
+   968→            </div>
+   969→          </div>
+   970→          <Button
+   971→            className="btn-press w-full bg-emerald-500 py-5 font-bold hover:bg-emerald-600"
+   972→            size="lg"
+   973→            onClick={onPay}
+   974→          >
+   975→            Bayar Sekarang
+   976→          </Button>
+   977→        </div>
+   978→      )}
+   979→    </>
+   980→  );
+   981→}
+   982→

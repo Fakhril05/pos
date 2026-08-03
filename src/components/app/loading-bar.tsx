@@ -39,7 +39,7 @@ export function LoadingBar() {
 
   return (
     <div
-      className="nprogress-bar"
+      className="nprogress-bar neon-glow"
       style={{
         width: `${width}%`,
         opacity,

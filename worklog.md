@@ -780,3 +780,25 @@ Stage Summary:
 8. **Enhancement:** Add print stylesheet for better receipt printing
 9. **Enhancement:** Add sound effects on POS payment success
 10. **Enhancement:** Offline mode for Kasir (PWA support)
+
+---
+Task ID: 5
+Agent: Main
+Task: Add Payout detail drawer to the payouts page
+
+Work Log:
+- Enhanced GET /api/payouts/[id] route to include merchant name/email and computed status timeline
+- Status timeline logic: pending payouts get 1 step, processing/completed get 2-3 steps, failed get 2 steps with mocked processing timestamp
+- Added PayoutDetailDrawer component using shadcn/ui Sheet (side='right')
+- Drawer sections: Amount (gradient emerald), Bank Info (card-elevated with masked account), Merchant Info, Status Timeline (vertical with pulse-ring), Notes (conditional)
+- Made payout amount and net amount clickable in table with emerald text + hover:underline
+- Added selectedPayoutId state, useQuery for detail fetching, and action buttons (Proses/Selesaikan + Tutup)
+- Used framer-motion stagger entrance animations for drawer sections
+- All text in Bahasa Indonesia, emerald/green theme consistent
+- Zero ESLint errors, successful compilation
+
+Stage Summary:
+- **Enhanced API**: /api/payouts/[id] GET now returns merchant info + status timeline array
+- **New Component**: PayoutDetailDrawer with Sheet, staggered animations, professional timeline
+- **Modified Component**: payouts.tsx - clickable amounts, state management, drawer integration
+- **Preserved**: All existing functionality (create dialog, table, pagination, filters, process mutation)

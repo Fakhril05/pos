@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -20,6 +20,9 @@ import {
   CreditCard,
   Building2,
   Calculator,
+  ArrowLeft,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +48,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PageHeader } from '@/components/app/page-header';
 import { cn } from '@/lib/utils';
 import { generateReceiptHtml } from '@/lib/receipt-generator';
+import { QRCodeSVG } from 'qrcode.react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -132,6 +136,10 @@ export function Kasir() {
   const [notes, setNotes] = useState('');
   const [selectedMerchant, setSelectedMerchant] = useState('');
   const [cartExpanded, setCartExpanded] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'select' | 'qris' | 'processing' | 'success'>('select');
+  const [qrisExpiry, setQrisExpiry] = useState(300); // 5 minutes
+  const [qrisInvoice, setQrisInvoice] = useState('');
+  const autoCompleteRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [lastTx, setLastTx] = useState<{
     invoiceNo: string;
     amount: number;
@@ -251,6 +259,7 @@ export function Kasir() {
       return json.data;
     },
     onSuccess: (data) => {
+      setPaymentStep('success');
       const merchant = merchants.find((m) => m.id === selectedMerchant);
       setLastTx({
         invoiceNo: data.invoiceNo,
@@ -272,6 +281,7 @@ export function Kasir() {
       toast.success('Pembayaran berhasil!');
     },
     onError: (err: Error) => {
+      setPaymentStep('select');
       toast.error(err.message);
     },
   });
@@ -310,6 +320,38 @@ export function Kasir() {
     }
   }, [lastTx]);
 
+  // QRIS countdown timer
+  useEffect(() => {
+    if (paymentStep !== 'qris') return;
+    const timer = setInterval(() => {
+      setQrisExpiry((prev) => {
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [paymentStep]);
+
+  // QRIS auto-complete simulation (5-8 seconds)
+  useEffect(() => {
+    if (paymentStep !== 'qris') return;
+    const delay = 5000 + Math.random() * 3000;
+    autoCompleteRef.current = setTimeout(() => {
+      setPaymentStep('processing');
+      // After 2s processing, actually submit
+      setTimeout(() => {
+        payMutation.mutate();
+      }, 2000);
+    }, delay);
+    return () => {
+      if (autoCompleteRef.current) {
+        clearTimeout(autoCompleteRef.current);
+      }
+    };
+  }, [paymentStep]);
+
   // Open pay dialog
   const handleOpenPay = () => {
     if (cart.length === 0) return;
@@ -318,7 +360,14 @@ export function Kasir() {
 
   // Process payment
   const handlePay = () => {
-    payMutation.mutate();
+    if (selectedPayment?.method === 'qris') {
+      // Show QRIS screen instead of immediately submitting
+      setQrisInvoice(`PR-QR-${Date.now().toString(36).toUpperCase()}`);
+      setQrisExpiry(300);
+      setPaymentStep('qris');
+    } else {
+      payMutation.mutate();
+    }
   };
 
   // New transaction
@@ -331,6 +380,9 @@ export function Kasir() {
     setCustomerPhone('');
     setCustomerEmail('');
     setNotes('');
+    setPaymentStep('select');
+    setQrisExpiry(300);
+    setQrisInvoice('');
   };
 
   // Close pay dialog resets payment state
@@ -338,6 +390,12 @@ export function Kasir() {
     setPayDialogOpen(false);
     if (!lastTx) {
       setSelectedPayment(null);
+      setPaymentStep('select');
+      setQrisExpiry(300);
+      setQrisInvoice('');
+      if (autoCompleteRef.current) {
+        clearTimeout(autoCompleteRef.current);
+      }
     }
   };
 
@@ -527,8 +585,109 @@ export function Kasir() {
       <Dialog open={payDialogOpen} onOpenChange={handleClosePayDialog}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <AnimatePresence mode="wait">
-            {lastTx ? (
-              /* ── Success State ── */
+            {paymentStep === 'qris' ? (
+              <motion.div
+                key="qris"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="flex flex-col items-center py-2"
+              >
+                <div className="mb-4 flex w-full items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setPaymentStep('select');
+                      setQrisExpiry(300);
+                      if (autoCompleteRef.current) {
+                        clearTimeout(autoCompleteRef.current);
+                      }
+                    }}
+                    className="btn-press flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-emerald-500" />
+                    <h2 className="text-lg font-semibold">Scan QRIS</h2>
+                  </div>
+                </div>
+                <span className="sr-only">Scan kode QRIS untuk menyelesaikan pembayaran</span>
+                <div className="relative mb-5">
+                  <div className="gradient-border rounded-2xl">
+                    <div className="rounded-2xl bg-white p-4 dark:bg-card">
+                      <div className="glow-emerald-sm rounded-xl bg-white p-3 dark:bg-card">
+                        <QRCodeSVG
+                          value={"https://pay.posril.id/qris/" + qrisInvoice}
+                          size={200}
+                          className="h-[180px] w-[180px] md:h-[200px] md:w-[200px]"
+                          level="M"
+                          bgColor="transparent"
+                          fgColor="#059669"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="animate-float-slow pointer-events-none absolute -inset-2 rounded-2xl opacity-30 bg-gradient-to-t from-emerald-500/10 to-transparent" />
+                </div>
+                <p className="mb-1 text-2xl font-extrabold text-gradient-emerald tabular-nums">
+                  {formatRp(totalWithTax)}
+                </p>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  {qrisInvoice}
+                </p>
+                <div className="mb-4 flex items-center gap-2">
+                  {qrisExpiry === 0 ? (
+                    <span className="text-sm font-semibold text-rose-500">Kadaluarsa</span>
+                  ) : (
+                    <span className={qrisExpiry < 60 ? 'text-sm tabular-nums font-semibold text-rose-500' : 'text-sm tabular-nums text-muted-foreground'}>
+                      Berlaku {String(Math.floor(qrisExpiry / 60)).padStart(2, '0')}:{String(qrisExpiry % 60).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+                {qrisExpiry === 0 && (
+                  <Button
+                    variant="outline"
+                    className="btn-press mb-4"
+                    onClick={() => {
+                      setQrisInvoice("PR-QR-" + Date.now().toString(36).toUpperCase());
+                      setQrisExpiry(300);
+                    }}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Buat Kode Baru
+                  </Button>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="status-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
+                  </span>
+                  <span className="text-sm text-muted-foreground">Menunggu pembayaran...</span>
+                </div>
+              </motion.div>
+            ) : paymentStep === 'processing' ? (
+              <motion.div
+                key="processing"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="flex flex-col items-center justify-center py-12"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                  className="mb-6"
+                >
+                  <Loader2 className="h-14 w-14 text-emerald-500" strokeWidth={2} />
+                </motion.div>
+                <h3 className="mb-2 text-lg font-bold">Memproses pembayaran...</h3>
+                <p className="text-sm text-muted-foreground">Mohon tunggu sebentar</p>
+                <div className="mt-6 h-1 w-48 overflow-hidden rounded-full bg-muted">
+                  <div className="shimmer h-full w-full rounded-full" />
+                </div>
+              </motion.div>
+            ) : lastTx ? (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -654,7 +813,6 @@ export function Kasir() {
                 </div>
               </motion.div>
             ) : (
-              /* ── Payment Form ── */
               <motion.div
                 key="form"
                 initial={{ opacity: 0, y: 12 }}

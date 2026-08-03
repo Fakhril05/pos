@@ -44,7 +44,7 @@ export function MobileNav() {
 
   return (
     <>
-      <nav className="mobile-nav pb-safe fixed right-0 bottom-0 left-0 z-50 flex border-t border-border bg-background/95 backdrop-blur-xl md:hidden">
+      <nav className="mobile-nav pb-safe fixed right-0 bottom-0 left-0 z-50 flex border-t border-border bg-background/95 backdrop-blur-xl md:hidden inset-shadow">
         <div className="flex w-full items-center justify-around">
           {primaryNavItems.map((item) => {
             const isActive = activePage === item.id
@@ -57,7 +57,7 @@ export function MobileNav() {
                 {isActive && (
                   <motion.div
                     layoutId="mobileNavIndicator"
-                    className="absolute -top-px left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-emerald-500"
+                    className="absolute -top-px left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-emerald-500 nav-active-glow"
                     transition={{ type: 'spring', bounce: 0.15, duration: 0.5 }}
                   />
                 )}
@@ -95,7 +95,7 @@ export function MobileNav() {
 
       {/* More Sheet */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl">
+        <SheetContent side="bottom" className="rounded-t-2xl noise-overlay">
           <SheetHeader>
             <SheetTitle>Menu Lainnya</SheetTitle>
             <SheetDescription>Pilih halaman yang ingin ditampilkan</SheetDescription>

@@ -1,0 +1,857 @@
+   476→      </div>
+   477→    </div>
+   478→  );
+   479→}
+   480→
+   481→// ── Main component ───────────────────────────────────────────────────────────
+   482→
+   483→export default function PaymentLinks() {
+   484→  const queryClient = useQueryClient();
+   485→
+   486→  // ─── Local state ─────────────────────────────────────────────────────
+   487→  const [page, setPage] = useState(1);
+   488→  const [search, setSearch] = useState('');
+   489→  const [searchInput, setSearchInput] = useState('');
+   490→  const [statusFilter, setStatusFilter] = useState('all');
+   491→  const [createOpen, setCreateOpen] = useState(false);
+   492→  const [editOpen, setEditOpen] = useState(false);
+   493→  const [deleteOpen, setDeleteOpen] = useState(false);
+   494→  const [selectedLink, setSelectedLink] = useState<PaymentLinkItem | null>(null);
+   495→  const [form, setForm] = useState<FormData>(emptyForm);
+   496→
+   497→  // ─── Queries ─────────────────────────────────────────────────────────
+   498→  const { data, isLoading, error } = useQuery<{
+   499→    data: PaymentLinkItem[];
+   500→    pagination: PaginationInfo;
+   501→  }>({
+   502→    queryKey: ['payment-links', page, search, statusFilter],
+   503→    queryFn: () => {
+   504→      const params = new URLSearchParams({
+   505→        page: String(page),
+   506→        limit: '9',
+   507→      });
+   508→      if (search) params.set('search', search);
+   509→      return fetch(`/api/payment-links?${params}`).then((r) => r.json());
+   510→    },
+   511→    staleTime: 15_000,
+   512→  });
+   513→
+   514→  const { data: merchantsData } = useQuery<{ data: MerchantOption[] }>({
+   515→    queryKey: ['merchants-select'],
+   516→    queryFn: () =>
+   517→      fetch('/api/merchants?limit=100').then((r) => r.json()),
+   518→    staleTime: 60_000,
+   519→  });
+   520→
+   521→  const merchants = merchantsData?.data ?? [];
+   522→
+   523→  // Client-side status filtering (API doesn't support status filter directly)
+   524→  const filteredData = data?.data.filter((link) => {
+   525→    if (statusFilter === 'all') return true;
+   526→    if (statusFilter === 'active') return !isExpired(link);
+   527→    if (statusFilter === 'expired') return isExpired(link);
+   528→    return true;
+   529→  });
+   530→
+   531→  const pagination = data?.pagination;
+   532→  const links = filteredData ?? [];
+   533→
+   534→  // ─── Mutations ───────────────────────────────────────────────────────
+   535→  const createMutation = useMutation({
+   536→    mutationFn: (body: Record<string, unknown>) =>
+   537→      fetch('/api/payment-links', {
+   538→        method: 'POST',
+   539→        headers: { 'Content-Type': 'application/json' },
+   540→        body: JSON.stringify(body),
+   541→      }).then((r) => {
+   542→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   543→        return r.json();
+   544→      }),
+   545→    onSuccess: () => {
+   546→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   547→      setCreateOpen(false);
+   548→      setForm(emptyForm);
+   549→      toast.success('Link pembayaran berhasil dibuat');
+   550→    },
+   551→    onError: (err: string) => {
+   552→      toast.error(err || 'Gagal membuat link pembayaran');
+   553→    },
+   554→  });
+   555→
+   556→  const updateMutation = useMutation({
+   557→    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+   558→      fetch(`/api/payment-links/${id}`, {
+   559→        method: 'PUT',
+   560→        headers: { 'Content-Type': 'application/json' },
+   561→        body: JSON.stringify(body),
+   562→      }).then((r) => {
+   563→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   564→        return r.json();
+   565→      }),
+   566→    onSuccess: () => {
+   567→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   568→      setEditOpen(false);
+   569→      setSelectedLink(null);
+   570→      setForm(emptyForm);
+   571→      toast.success('Link pembayaran berhasil diperbarui');
+   572→    },
+   573→    onError: (err: string) => {
+   574→      toast.error(err || 'Gagal memperbarui link pembayaran');
+   575→    },
+   576→  });
+   577→
+   578→  const deleteMutation = useMutation({
+   579→    mutationFn: (id: string) =>
+   580→      fetch(`/api/payment-links/${id}`, { method: 'DELETE' }).then((r) => {
+   581→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   582→        return r.json();
+   583→      }),
+   584→    onSuccess: () => {
+   585→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   586→      setDeleteOpen(false);
+   587→      setSelectedLink(null);
+   588→      toast.success('Link pembayaran berhasil dihapus');
+   589→    },
+   590→    onError: (err: string) => {
+   591→      toast.error(err || 'Gagal menghapus link pembayaran');
+   592→    },
+   593→  });
+   594→
+   595→  // ─── Handlers ────────────────────────────────────────────────────────
+   596→  const handleSearch = useCallback(
+   597→    (e: React.FormEvent) => {
+   598→      e.preventDefault();
+   599→      setSearch(searchInput);
+   600→      setPage(1);
+   601→    },
+   602→    [searchInput],
+   603→  );
+   604→
+   605→  const handleStatusFilter = useCallback((value: string) => {
+   606→    setStatusFilter(value);
+   607→    setPage(1);
+   608→  }, []);
+   609→
+   610→  const openCreate = useCallback(() => {
+   611→    setForm(emptyForm);
+   612→    setCreateOpen(true);
+   613→  }, []);
+   614→
+   615→  const openEdit = useCallback((link: PaymentLinkItem) => {
+   616→    setSelectedLink(link);
+   617→    setForm({
+   618→      title: link.title,
+   619→      description: link.description ?? '',
+   620→      amount: String(link.amount),
+   621→      merchantId: link.merchantId,
+   622→      type: link.type,
+   623→      maxQty: String(link.maxQty),
+   624→      expiresAt: link.expiresAt
+   625→        ? new Date(link.expiresAt).toISOString().split('T')[0]
+   626→        : '',
+   627→    });
+   628→    setEditOpen(true);
+   629→  }, []);
+   630→
+   631→  const openDelete = useCallback((link: PaymentLinkItem) => {
+   632→    setSelectedLink(link);
+   633→    setDeleteOpen(true);
+   634→  }, []);
+   635→
+   636→  const handleCopyLink = useCallback((link: PaymentLinkItem) => {
+   637→    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${link.id}`;
+   638→    navigator.clipboard.writeText(url).then(() => {
+   639→      toast.success('Tautan berhasil disalin ke clipboard');
+   640→    });
+   641→  }, []);
+   642→
+   643→  const handleSubmitCreate = useCallback(() => {
+   644→    if (!form.title || !form.amount || !form.merchantId) {
+   645→      toast.error('Judul, jumlah, dan merchant wajib diisi');
+   646→      return;
+   647→    }
+   648→    createMutation.mutate({
+   649→      title: form.title,
+   650→      description: form.description || undefined,
+   651→      amount: Number(form.amount),
+   652→      merchantId: form.merchantId,
+   653→      type: form.type,
+   654→      maxQty: form.type === 'multi' ? Number(form.maxQty) || 1 : 1,
+   655→      expiresAt: form.expiresAt || undefined,
+   656→    });
+   657→  }, [form, createMutation]);
+   658→
+   659→  const handleSubmitEdit = useCallback(() => {
+   660→    if (!selectedLink || !form.title || !form.amount || !form.merchantId) {
+   661→      toast.error('Judul, jumlah, dan merchant wajib diisi');
+   662→      return;
+   663→    }
+   664→    updateMutation.mutate({
+   665→      id: selectedLink.id,
+   666→      body: {
+   667→        title: form.title,
+   668→        description: form.description || undefined,
+   669→        amount: Number(form.amount),
+   670→        merchantId: form.merchantId,
+   671→        type: form.type,
+   672→        maxQty: form.type === 'multi' ? Number(form.maxQty) || 1 : 1,
+   673→        expiresAt: form.expiresAt || null,
+   674→      },
+   675→    });
+   676→  }, [form, selectedLink, updateMutation]);
+   677→
+   678→  const handleConfirmDelete = useCallback(() => {
+   679→    if (selectedLink) deleteMutation.mutate(selectedLink.id);
+   680→  }, [selectedLink, deleteMutation]);
+   681→
+   682→  const updateField = useCallback((field: keyof FormData, value: string) => {
+   683→    setForm((prev) => {
+   684→      const next = { ...prev, [field]: value };
+   685→      // Reset maxQty when switching to single
+   686→      if (field === 'type' && value === 'single') {
+   687→        next.maxQty = '1';
+   688→      }
+   689→      return next;
+   690→    });
+   691→  }, []);
+   692→
+   693→  // ─── Render ──────────────────────────────────────────────────────────
+   694→
+   695→  if (isLoading) return <PaymentLinksSkeleton />;
+   696→  if (error || !data) {
+   697→    return (
+   698→      <div className="flex items-center justify-center py-20">
+   699→        <p className="text-muted-foreground">
+   700→          Gagal memuat data link pembayaran. Silakan coba lagi.
+   701→        </p>
+   702→      </div>
+   703→    );
+   704→  }
+   705→
+   706→  return (
+   707→    <div className="space-y-6 bg-mesh">
+   708→      <PageHeader
+   709→        title="Link Pembayaran"
+   710→        description="Kelola dan pantau semua link pembayaran Anda"
+   711→        icon={Link2}
+   712→        iconGradient="emerald"
+   713→      >
+   714→        <Button onClick={openCreate} className="w-full sm:w-auto btn-press">
+   715→          <Plus className="mr-2 h-4 w-4" />
+   716→          Buat Link Baru
+   717→        </Button>
+   718→      </PageHeader>
+   719→
+   720→      {/* ─── Filter bar ───────────────────────────────────────────── */}
+   721→      <motion.div
+   722→        initial={{ opacity: 0, y: -5 }}
+   723→        animate={{ opacity: 1, y: 0 }}
+   724→        transition={{ duration: 0.3, delay: 0.1 }}
+   725→        className="flex flex-col gap-3 sm:flex-row sm:items-center"
+   726→      >
+   727→        <form onSubmit={handleSearch} className="relative flex-1">
+   728→          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   729→          <Input
+   730→            placeholder="Cari link atau merchant..."
+   731→            value={searchInput}
+   732→            onChange={(e) => setSearchInput(e.target.value)}
+   733→            className="pl-9"
+   734→          />
+   735→        </form>
+   736→        <Select value={statusFilter} onValueChange={handleStatusFilter}>
+   737→          <SelectTrigger className="w-full sm:w-[180px]">
+   738→            <SelectValue placeholder="Status" />
+   739→          </SelectTrigger>
+   740→          <SelectContent>
+   741→            <SelectItem value="all">Semua Status</SelectItem>
+   742→            <SelectItem value="active">Aktif</SelectItem>
+   743→            <SelectItem value="expired">Kedaluwarsa</SelectItem>
+   744→          </SelectContent>
+   745→        </Select>
+   746→      </motion.div>
+   747→
+   748→      {/* ─── Analytics Section ────────────────────────────────────── */}
+   749→      <AnalyticsSection />
+   750→
+   751→      {/* ─── Summary bar ──────────────────────────────────────────── */}
+   752→      <motion.div
+   753→        initial={{ opacity: 0 }}
+   754→        animate={{ opacity: 1 }}
+   755→        transition={{ duration: 0.3, delay: 0.15 }}
+   756→        className="flex items-center gap-2 text-sm text-muted-foreground"
+   757→      >
+   758→        <Link2 className="h-4 w-4" />
+   759→        <span>
+   760→          Menampilkan {links.length} dari {pagination?.total ?? 0} link pembayaran
+   761→        </span>
+   762→        {search && (
+   763→          <Badge variant="secondary" className="ml-2">
+   764→            &ldquo;{search}&rdquo;
+   765→            <button
+   766→              onClick={() => {
+   767→                setSearch('');
+   768→                setSearchInput('');
+   769→                setPage(1);
+   770→              }}
+   771→              className="ml-1.5 hover:text-foreground"
+   772→              aria-label="Hapus pencarian"
+   773→            >
+   774→              ✕
+   775→            </button>
+   776→          </Badge>
+   777→        )}
+   778→      </motion.div>
+   779→
+   780→      {/* ─── Cards Grid ───────────────────────────────────────────── */}
+   781→      {links.length === 0 ? (
+   782→        <motion.div
+   783→          initial={{ opacity: 0, scale: 0.95 }}
+   784→          animate={{ opacity: 1, scale: 1 }}
+   785→          transition={{ duration: 0.3 }}
+   786→          className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16"
+   787→        >
+   788→          <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-2xl">
+   789→            <LinkIcon className="text-muted-foreground h-8 w-8" />
+   790→          </div>
+   791→          <p className="mt-4 text-lg font-medium">Tidak ada link pembayaran</p>
+   792→          <p className="text-muted-foreground mt-1 text-sm">
+   793→            {search || statusFilter !== 'all'
+   794→              ? 'Coba ubah filter pencarian Anda'
+   795→              : 'Buat link pembayaran pertama Anda'}
+   796→          </p>
+   797→        </motion.div>
+   798→      ) : (
+   799→        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+   800→          <AnimatePresence mode="popLayout">
+   801→            {links.map((link, idx) => {
+   802→              const expired = isExpired(link);
+   803→              const progressPct =
+   804→                link.maxQty > 0
+   805→                  ? Math.min(100, (link.soldQty / link.maxQty) * 100)
+   806→                  : 0;
+   807→
+   808→              return (
+   809→                <motion.div
+   810→                  key={link.id}
+   811→                  layout
+   812→                  initial={{ opacity: 0, y: 20, scale: 0.97 }}
+   813→                  animate={{ opacity: 1, y: 0, scale: 1 }}
+   814→                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
+   815→                  transition={{
+   816→                    duration: 0.35,
+   817→                    delay: idx * 0.05,
+   818→                    ease: 'easeOut',
+   819→                  }}
+   820→                >
+   821→                  <Card
+   822→                    className={
+   823→                      'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg card-hover' +
+   824→                      (expired ? ' opacity-70' : '')
+   825→                    }
+   826→                  >
+   827→                    {/* Gradient accent top */}
+   828→                    <div
+   829→                      className={
+   830→                        'absolute left-0 top-0 h-1 w-full bg-gradient-to-r ' +
+   831→                        (expired
+   832→                          ? 'from-gray-400 to-gray-300 dark:from-gray-600 dark:to-gray-500'
+   833→                          : 'from-emerald-500 to-teal-400')
+   834→                      }
+   835→                    />
+   836→
+   837→                    <CardContent className="p-5">
+   838→                      {/* Top row: badges + menu */}
+   839→                      <div className="flex items-start justify-between gap-2">
+   840→                        <div className="flex flex-wrap items-center gap-1.5">
+   841→                          <StatusBadge status={expired ? 'expired' : link.status} />
+   842→                          <TypeBadge type={link.type} />
+   843→                        </div>
+   844→                        <DropdownMenu>
+   845→                          <DropdownMenuTrigger asChild>
+   846→                            <Button
+   847→                              variant="ghost"
+   848→                              size="icon"
+   849→                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+   850→                            >
+   851→                              <MoreHorizontal className="h-4 w-4" />
+   852→                              <span className="sr-only">Menu</span>
+   853→                            </Button>
+   854→                          </DropdownMenuTrigger>
+   855→                          <DropdownMenuContent align="end">
+   856→                            <DropdownMenuItem onClick={() => handleCopyLink(link)}>
+   857→                              <Copy className="mr-2 h-4 w-4" />
+   858→                              Salin Tautan
+   859→                            </DropdownMenuItem>
+   860→                            <DropdownMenuItem onClick={() => openEdit(link)}>
+   861→                              <Pencil className="mr-2 h-4 w-4" />
+   862→                              Edit
+   863→                            </DropdownMenuItem>
+   864→                            <DropdownMenuSeparator />
+   865→                            <DropdownMenuItem
+   866→                              onClick={() => openDelete(link)}
+   867→                              className="text-red-600 focus:text-red-600 dark:text-red-400"
+   868→                            >
+   869→                              <Trash2 className="mr-2 h-4 w-4" />
+   870→                              Hapus
+   871→                            </DropdownMenuItem>
+   872→                          </DropdownMenuContent>
+   873→                        </DropdownMenu>
+   874→                      </div>
+   875→
+   876→                      {/* Title + merchant */}
+   877→                      <div className="mt-3 space-y-1">
+   878→                        <h3 className="truncate text-base font-semibold leading-tight">
+   879→                          {link.title}
+   880→                        </h3>
+   881→                        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+   882→                          <Store className="h-3.5 w-3.5" />
+   883→                          <span className="truncate">{link.merchant.name}</span>
+   884→                        </div>
+   885→                      </div>
+   886→
+   887→                      {/* Description */}
+   888→                      {link.description && (
+   889→                        <p className="text-muted-foreground mt-2 line-clamp-2 text-xs leading-relaxed">
+   890→                          {link.description}
+   891→                        </p>
+   892→                      )}
+   893→
+   894→                      {/* Amount */}
+   895→                      <div className="mt-4">
+   896→                        <p className="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+   897→                          {formatRp(link.amount)}
+   898→                        </p>
+   899→                      </div>
+   900→
+   901→                      {/* Progress bar (for multi-use) */}
+   902→                      <div className="mt-3 space-y-1.5">
+   903→                        <div className="flex items-center justify-between text-xs">
+   904→                          <span className="text-muted-foreground">
+   905→                            {link.type === 'multi' ? 'Terjual' : 'Transaksi'}
+   906→                          </span>
+   907→                          <span className="font-medium">
+   908→                            {link.soldQty}
+   909→                            {link.type === 'multi' && (
+   910→                              <span className="text-muted-foreground">
+   911→                                {' '}/ {link.maxQty}
+   912→                              </span>
+   913→                            )}
+   914→                          </span>
+   915→                        </div>
+   916→                        {link.type === 'multi' && (
+   917→                          <Progress
+   918→                            value={progressPct}
+   919→                            className="h-2"
+   920→                          />
+   921→                        )}
+   922→                      </div>
+   923→
+   924→                      {/* Footer: dates */}
+   925→                      <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs">
+   926→                        <div className="flex items-center gap-1">
+   927→                          <CalendarDays className="h-3 w-3" />
+   928→                          <span>{formatDate(link.createdAt)}</span>
+   929→                        </div>
+   930→                        {link.expiresAt && (
+   931→                          <div className="flex items-center gap-1">
+   932→                            <Clock className="h-3 w-3" />
+   933→                            <span className={expired ? 'text-gray-500' : ''}>
+   934→                              {formatDate(link.expiresAt)}
+   935→                            </span>
+   936→                          </div>
+   937→                        )}
+   938→                      </div>
+   939→
+   940→                      {/* Quick action: copy link button */}
+   941→                      <Button
+   942→                        variant="outline"
+   943→                        size="sm"
+   944→                        className="mt-3 w-full gap-2 text-xs"
+   945→                        onClick={() => handleCopyLink(link)}
+   946→                      >
+   947→                        <Copy className="h-3.5 w-3.5" />
+   948→                        Salin Tautan Pembayaran
+   949→                      </Button>
+   950→                    </CardContent>
+   951→                  </Card>
+   952→                </motion.div>
+   953→              );
+   954→            })}
+   955→          </AnimatePresence>
+   956→        </div>
+   957→      )}
+   958→
+   959→      {/* ─── Pagination ────────────────────────────────────────────── */}
+   960→      {pagination && pagination.totalPages > 1 && (
+   961→        <motion.div
+   962→          initial={{ opacity: 0 }}
+   963→          animate={{ opacity: 1 }}
+   964→          transition={{ duration: 0.3, delay: 0.3 }}
+   965→          className="flex flex-col items-center gap-3"
+   966→        >
+   967→          <Pagination>
+   968→            <PaginationContent>
+   969→              <PaginationItem>
+   970→                <PaginationPrevious
+   971→                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+   972→                  className={
+   973→                    page <= 1
+   974→                      ? 'pointer-events-none opacity-50'
+   975→                      : 'cursor-pointer'
+   976→                  }
+   977→                  aria-disabled={page <= 1}
+   978→                />
+   979→              </PaginationItem>
+   980→              {getPageRange(page, pagination.totalPages).map((p, i) =>
+   981→                p === 'ellipsis' ? (
+   982→                  <PaginationItem key={`el-${i}`}>
+   983→                    <PaginationEllipsis />
+   984→                  </PaginationItem>
+   985→                ) : (
+   986→                  <PaginationItem key={p}>
+   987→                    <PaginationLink
+   988→                      isActive={p === page}
+   989→                      onClick={() => setPage(p)}
+   990→                      className="cursor-pointer"
+   991→                    >
+   992→                      {p}
+   993→                    </PaginationLink>
+   994→                  </PaginationItem>
+   995→                ),
+   996→              )}
+   997→              <PaginationItem>
+   998→                <PaginationNext
+   999→                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+  1000→                  className={
+  1001→                    page >= pagination.totalPages
+  1002→                      ? 'pointer-events-none opacity-50'
+  1003→                      : 'cursor-pointer'
+  1004→                  }
+  1005→                  aria-disabled={page >= pagination.totalPages}
+  1006→                />
+  1007→              </PaginationItem>
+  1008→            </PaginationContent>
+  1009→          </Pagination>
+  1010→          <p className="text-muted-foreground text-xs">
+  1011→            Halaman {page} dari {pagination.totalPages}
+  1012→          </p>
+  1013→        </motion.div>
+  1014→      )}
+  1015→
+  1016→      {/* ─── Create Dialog ─────────────────────────────────────────── */}
+  1017→      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+  1018→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  1019→          <DialogHeader>
+  1020→            <DialogTitle className="flex items-center gap-2">
+  1021→              <Plus className="h-5 w-5 text-emerald-500" />
+  1022→              Buat Link Pembayaran Baru
+  1023→            </DialogTitle>
+  1024→            <DialogDescription>
+  1025→              Isi detail di bawah untuk membuat link pembayaran baru.
+  1026→            </DialogDescription>
+  1027→          </DialogHeader>
+  1028→
+  1029→          <div className="grid gap-4 py-2">
+  1030→            {/* Title */}
+  1031→            <div className="grid gap-2">
+  1032→              <Label htmlFor="create-title">Judul *</Label>
+  1033→              <Input
+  1034→                id="create-title"
+  1035→                placeholder="contoh: Pembayaran Tiket Konser"
+  1036→                value={form.title}
+  1037→                onChange={(e) => updateField('title', e.target.value)}
+  1038→              />
+  1039→            </div>
+  1040→
+  1041→            {/* Description */}
+  1042→            <div className="grid gap-2">
+  1043→              <Label htmlFor="create-desc">Deskripsi</Label>
+  1044→              <Textarea
+  1045→                id="create-desc"
+  1046→                placeholder="Deskripsi singkat tentang link pembayaran ini (opsional)"
+  1047→                value={form.description}
+  1048→                onChange={(e) => updateField('description', e.target.value)}
+  1049→                rows={3}
+  1050→              />
+  1051→            </div>
+  1052→
+  1053→            {/* Amount */}
+  1054→            <div className="grid gap-2">
+  1055→              <Label htmlFor="create-amount">Jumlah (IDR) *</Label>
+  1056→              <div className="relative">
+  1057→                <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+  1058→                  Rp
+  1059→                </span>
+  1060→                <Input
+  1061→                  id="create-amount"
+  1062→                  type="number"
+  1063→                  placeholder="0"
+  1064→                  className="pl-10"
+  1065→                  value={form.amount}
+  1066→                  onChange={(e) => updateField('amount', e.target.value)}
+  1067→                />
+  1068→              </div>
+  1069→              {form.amount && Number(form.amount) > 0 && (
+  1070→                <p className="text-muted-foreground text-xs">
+  1071→                  {formatRp(Number(form.amount))}
+  1072→                </p>
+  1073→              )}
+  1074→            </div>
+  1075→
+  1076→            {/* Merchant */}
+  1077→            <div className="grid gap-2">
+  1078→              <Label>Merchant *</Label>
+  1079→              <Select
+  1080→                value={form.merchantId}
+  1081→                onValueChange={(v) => updateField('merchantId', v)}
+  1082→              >
+  1083→                <SelectTrigger className="w-full">
+  1084→                  <SelectValue placeholder="Pilih merchant" />
+  1085→                </SelectTrigger>
+  1086→                <SelectContent>
+  1087→                  {merchants.map((m) => (
+  1088→                    <SelectItem key={m.id} value={m.id}>
+  1089→                      {m.name}
+  1090→                    </SelectItem>
+  1091→                  ))}
+  1092→                </SelectContent>
+  1093→              </Select>
+  1094→            </div>
+  1095→
+  1096→            {/* Type */}
+  1097→            <div className="grid gap-2">
+  1098→              <Label>Tipe</Label>
+  1099→              <Select
+  1100→                value={form.type}
+  1101→                onValueChange={(v) => updateField('type', v)}
+  1102→              >
+  1103→                <SelectTrigger className="w-full">
+  1104→                  <SelectValue />
+  1105→                </SelectTrigger>
+  1106→                <SelectContent>
+  1107→                  <SelectItem value="single">Sekali Pakai</SelectItem>
+  1108→                  <SelectItem value="multi">Multi Pakai</SelectItem>
+  1109→                </SelectContent>
+  1110→              </Select>
+  1111→            </div>
+  1112→
+  1113→            {/* Max Qty (multi only) */}
+  1114→            {form.type === 'multi' && (
+  1115→              <motion.div
+  1116→                initial={{ opacity: 0, height: 0 }}
+  1117→                animate={{ opacity: 1, height: 'auto' }}
+  1118→                exit={{ opacity: 0, height: 0 }}
+  1119→                className="grid gap-2"
+  1120→              >
+  1121→                <Label htmlFor="create-maxqty">Jumlah Maksimal</Label>
+  1122→                <Input
+  1123→                  id="create-maxqty"
+  1124→                  type="number"
+  1125→                  min="1"
+  1126→                  placeholder="1"
+  1127→                  value={form.maxQty}
+  1128→                  onChange={(e) => updateField('maxQty', e.target.value)}
+  1129→                />
+  1130→              </motion.div>
+  1131→            )}
+  1132→
+  1133→            {/* Expiry */}
+  1134→            <div className="grid gap-2">
+  1135→              <Label htmlFor="create-expiry">Tanggal Kedaluwarsa</Label>
+  1136→              <Input
+  1137→                id="create-expiry"
+  1138→                type="date"
+  1139→                value={form.expiresAt}
+  1140→                onChange={(e) => updateField('expiresAt', e.target.value)}
+  1141→                min={new Date().toISOString().split('T')[0]}
+  1142→              />
+  1143→            </div>
+  1144→          </div>
+  1145→
+  1146→          <DialogFooter>
+  1147→            <Button
+  1148→              variant="outline"
+  1149→              onClick={() => setCreateOpen(false)}
+  1150→              disabled={createMutation.isPending}
+  1151→            >
+  1152→              Batal
+  1153→            </Button>
+  1154→            <Button
+  1155→              onClick={handleSubmitCreate}
+  1156→              disabled={createMutation.isPending}
+  1157→              className="bg-emerald-600 hover:bg-emerald-700"
+  1158→            >
+  1159→              {createMutation.isPending ? 'Menyimpan...' : 'Buat Link'}
+  1160→            </Button>
+  1161→          </DialogFooter>
+  1162→        </DialogContent>
+  1163→      </Dialog>
+  1164→
+  1165→      {/* ─── Edit Dialog ───────────────────────────────────────────── */}
+  1166→      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+  1167→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  1168→          <DialogHeader>
+  1169→            <DialogTitle className="flex items-center gap-2">
+  1170→              <Pencil className="h-5 w-5 text-emerald-500" />
+  1171→              Edit Link Pembayaran
+  1172→            </DialogTitle>
+  1173→            <DialogDescription>
+  1174→              Perbarui detail link pembayaran.
+  1175→            </DialogDescription>
+  1176→          </DialogHeader>
+  1177→
+  1178→          <div className="grid gap-4 py-2">
+  1179→            <div className="grid gap-2">
+  1180→              <Label htmlFor="edit-title">Judul *</Label>
+  1181→              <Input
+  1182→                id="edit-title"
+  1183→                value={form.title}
+  1184→                onChange={(e) => updateField('title', e.target.value)}
+  1185→              />
+  1186→            </div>
+  1187→
+  1188→            <div className="grid gap-2">
+  1189→              <Label htmlFor="edit-desc">Deskripsi</Label>
+  1190→              <Textarea
+  1191→                id="edit-desc"
+  1192→                value={form.description}
+  1193→                onChange={(e) => updateField('description', e.target.value)}
+  1194→                rows={3}
+  1195→              />
+  1196→            </div>
+  1197→
+  1198→            <div className="grid gap-2">
+  1199→              <Label htmlFor="edit-amount">Jumlah (IDR) *</Label>
+  1200→              <div className="relative">
+  1201→                <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+  1202→                  Rp
+  1203→                </span>
+  1204→                <Input
+  1205→                  id="edit-amount"
+  1206→                  type="number"
+  1207→                  className="pl-10"
+  1208→                  value={form.amount}
+  1209→                  onChange={(e) => updateField('amount', e.target.value)}
+  1210→                />
+  1211→              </div>
+  1212→              {form.amount && Number(form.amount) > 0 && (
+  1213→                <p className="text-muted-foreground text-xs">
+  1214→                  {formatRp(Number(form.amount))}
+  1215→                </p>
+  1216→              )}
+  1217→            </div>
+  1218→
+  1219→            <div className="grid gap-2">
+  1220→              <Label>Merchant *</Label>
+  1221→              <Select
+  1222→                value={form.merchantId}
+  1223→                onValueChange={(v) => updateField('merchantId', v)}
+  1224→              >
+  1225→                <SelectTrigger className="w-full">
+  1226→                  <SelectValue placeholder="Pilih merchant" />
+  1227→                </SelectTrigger>
+  1228→                <SelectContent>
+  1229→                  {merchants.map((m) => (
+  1230→                    <SelectItem key={m.id} value={m.id}>
+  1231→                      {m.name}
+  1232→                    </SelectItem>
+  1233→                  ))}
+  1234→                </SelectContent>
+  1235→              </Select>
+  1236→            </div>
+  1237→
+  1238→            <div className="grid gap-2">
+  1239→              <Label>Tipe</Label>
+  1240→              <Select
+  1241→                value={form.type}
+  1242→                onValueChange={(v) => updateField('type', v)}
+  1243→              >
+  1244→                <SelectTrigger className="w-full">
+  1245→                  <SelectValue />
+  1246→                </SelectTrigger>
+  1247→                <SelectContent>
+  1248→                  <SelectItem value="single">Sekali Pakai</SelectItem>
+  1249→                  <SelectItem value="multi">Multi Pakai</SelectItem>
+  1250→                </SelectContent>
+  1251→              </Select>
+  1252→            </div>
+  1253→
+  1254→            {form.type === 'multi' && (
+  1255→              <motion.div
+  1256→                initial={{ opacity: 0, height: 0 }}
+  1257→                animate={{ opacity: 1, height: 'auto' }}
+  1258→                exit={{ opacity: 0, height: 0 }}
+  1259→                className="grid gap-2"
+  1260→              >
+  1261→                <Label htmlFor="edit-maxqty">Jumlah Maksimal</Label>
+  1262→                <Input
+  1263→                  id="edit-maxqty"
+  1264→                  type="number"
+  1265→                  min="1"
+  1266→                  value={form.maxQty}
+  1267→                  onChange={(e) => updateField('maxQty', e.target.value)}
+  1268→                />
+  1269→              </motion.div>
+  1270→            )}
+  1271→
+  1272→            <div className="grid gap-2">
+  1273→              <Label htmlFor="edit-expiry">Tanggal Kedaluwarsa</Label>
+  1274→              <Input
+  1275→                id="edit-expiry"
+  1276→                type="date"
+  1277→                value={form.expiresAt}
+  1278→                onChange={(e) => updateField('expiresAt', e.target.value)}
+  1279→              />
+  1280→            </div>
+  1281→          </div>
+  1282→
+  1283→          <DialogFooter>
+  1284→            <Button
+  1285→              variant="outline"
+  1286→              onClick={() => setEditOpen(false)}
+  1287→              disabled={updateMutation.isPending}
+  1288→            >
+  1289→              Batal
+  1290→            </Button>
+  1291→            <Button
+  1292→              onClick={handleSubmitEdit}
+  1293→              disabled={updateMutation.isPending}
+  1294→              className="bg-emerald-600 hover:bg-emerald-700"
+  1295→            >
+  1296→              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+  1297→            </Button>
+  1298→          </DialogFooter>
+  1299→        </DialogContent>
+  1300→      </Dialog>
+  1301→
+  1302→      {/* ─── Delete AlertDialog ────────────────────────────────────── */}
+  1303→      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+  1304→        <AlertDialogContent>
+  1305→          <AlertDialogHeader>
+  1306→            <AlertDialogTitle>Hapus Link Pembayaran?</AlertDialogTitle>
+  1307→            <AlertDialogDescription>
+  1308→              Tindakan ini tidak dapat dibatalkan. Link pembayaran{" "}
+  1309→              <span className="font-semibold text-foreground">
+  1310→                &ldquo;{selectedLink?.title}&rdquo;
+  1311→              </span>{" "}
+  1312→              akan dihapus secara permanen beserta data terkait.
+  1313→            </AlertDialogDescription>
+  1314→          </AlertDialogHeader>
+  1315→          <AlertDialogFooter>
+  1316→            <AlertDialogCancel disabled={deleteMutation.isPending}>
+  1317→              Batal
+  1318→            </AlertDialogCancel>
+  1319→            <AlertDialogAction
+  1320→              onClick={handleConfirmDelete}
+  1321→              disabled={deleteMutation.isPending}
+  1322→              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+  1323→            >
+  1324→              {deleteMutation.isPending ? 'Menghapus...' : 'Ya, Hapus'}
+  1325→            </AlertDialogAction>
+  1326→          </AlertDialogFooter>
+  1327→        </AlertDialogContent>
+  1328→      </AlertDialog>
+  1329→    </div>
+  1330→  );
+  1331→}
+  1332→

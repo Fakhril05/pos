@@ -16,6 +16,12 @@ import {
   User,
   X,
   Filter,
+  Mail,
+  Landmark,
+  CreditCard,
+  UserCircle,
+  StickyNote,
+  Check,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +48,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import {
   Table,
   TableBody,
@@ -77,6 +90,27 @@ const formatDate = (d: string) =>
     hour: '2-digit',
     minute: '2-digit',
   });
+
+const formatDateShort = (d: string) =>
+  new Date(d).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+const formatTime = (d: string) =>
+  new Date(d).toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+const maskAccountNo = (accountNo: string) => {
+  if (accountNo.length <= 6) return accountNo;
+  const first = accountNo.slice(0, 3);
+  const last = accountNo.slice(-3);
+  const masked = '*'.repeat(accountNo.length - 6);
+  return `${first}${masked}${last}`;
+};
 
 const statusLabel: Record<string, string> = {
   pending: 'Menunggu',
@@ -127,10 +161,363 @@ interface Payout {
   merchant: { id: string; name: string; logo: string | null };
 }
 
+interface PayoutDetail extends Payout {
+  merchant: { id: string; name: string; email: string; logo: string | null };
+  timeline: { status: string; at: string; label: string }[];
+}
+
 interface MerchantOption {
   id: string;
   name: string;
   email: string;
+}
+
+// ─── Detail Drawer Component ──────────────────────────────────────────────
+
+function PayoutDetailDrawer({
+  payoutId,
+  open,
+  onOpenChange,
+}: {
+  payoutId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['payout-detail', payoutId],
+    queryFn: async () => {
+      const res = await fetch(`/api/payouts/${payoutId}`);
+      if (!res.ok) throw new Error('Gagal memuat detail pencairan');
+      const json = await res.json();
+      return json.data as PayoutDetail;
+    },
+    enabled: open && !!payoutId,
+    staleTime: 10_000,
+  });
+
+  // Mutation for processing payout from drawer
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/payouts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Gagal memperbarui pencairan');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success('Pencairan berhasil diperbarui');
+      queryClient.invalidateQueries({ queryKey: ['payout-detail', payoutId] });
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['payouts-stats'] });
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+
+  const payout = data;
+
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.35, delay: i * 0.08, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] },
+    }),
+  } as const;
+
+  // Timeline step configuration
+  const getDotStyle = (stepStatus: string, payoutStatus: string, index: number, totalSteps: number) => {
+    const statusOrder = ['pending', 'processing', 'completed'];
+    const currentOrder = statusOrder.indexOf(payoutStatus);
+    const stepOrder = statusOrder.indexOf(stepStatus);
+    const isFailed = payoutStatus === 'failed' && stepStatus === 'failed';
+    const isCompletedStep = stepOrder < currentOrder || stepStatus === 'completed' || (payoutStatus === 'completed' && stepStatus === 'completed');
+    const isCurrentStep = stepOrder === currentOrder || isFailed;
+    const isFutureStep = stepOrder > currentOrder && !isFailed;
+
+    if (isFailed) return 'bg-red-500 text-red-500';
+    if (isCompletedStep && !isCurrentStep) return 'bg-emerald-500 text-emerald-500';
+    if (isCurrentStep) return 'bg-emerald-500 text-emerald-500';
+    return 'bg-gray-300 dark:bg-gray-600 text-gray-300 dark:text-gray-600';
+  };
+
+  const isStepCompleted = (stepStatus: string, payoutStatus: string) => {
+    if (payoutStatus === 'failed' && stepStatus === 'failed') return true;
+    if (payoutStatus === 'completed' && stepStatus === 'completed') return true;
+    const statusOrder = ['pending', 'processing', 'completed'];
+    return statusOrder.indexOf(stepStatus) < statusOrder.indexOf(payoutStatus);
+  };
+
+  const isStepCurrent = (stepStatus: string, payoutStatus: string) => {
+    if (payoutStatus === 'failed' && stepStatus === 'failed') return true;
+    if (payoutStatus === 'completed' && stepStatus === 'completed') return true;
+    return stepStatus === payoutStatus;
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-lg p-0 flex flex-col overflow-hidden"
+      >
+        {/* ── Header ── */}
+        <SheetHeader className="p-5 pb-4 border-b border-border shrink-0">
+          <div className="flex items-center justify-between pr-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg icon-glow-emerald">
+                <Banknote className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <SheetTitle className="text-base">Detail Pencairan</SheetTitle>
+                <SheetDescription className="text-xs">
+                  ID: {payoutId.slice(0, 8).toUpperCase()}
+                </SheetDescription>
+              </div>
+            </div>
+            {payout && (
+              <Badge className={`text-xs ${statusColor[payout.status] || ''}`}>
+                {statusLabel[payout.status] || payout.status}
+              </Badge>
+            )}
+          </div>
+        </SheetHeader>
+
+        {/* ── Scrollable Content ── */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin scroll-smooth-container p-5 space-y-5">
+          {isLoading || !payout ? (
+            <div className="space-y-4">
+              <Skeleton className="h-28 w-full rounded-xl" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-32 w-full rounded-xl" />
+            </div>
+          ) : (
+            <>
+              {/* ── Amount Section ── */}
+              <motion.div
+                custom={0}
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+                className="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800 p-5"
+              >
+                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1">
+                  Jumlah Pencairan
+                </p>
+                <p className="text-2xl font-bold text-gradient-emerald tabular-nums">
+                  {formatMoney(payout.amount)}
+                </p>
+                <div className="mt-3 flex items-center gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Biaya </span>
+                    <span className="text-muted-foreground tabular-nums">{formatMoney(payout.fee)}</span>
+                  </div>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Diterima </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
+                      {formatMoney(payout.amount - payout.fee)}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Bank Info Section ── */}
+              <motion.div
+                custom={1}
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+                className="card-elevated rounded-xl p-4 space-y-3"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+                  <Landmark className="h-4 w-4 text-emerald-600" />
+                  Informasi Rekening Bank
+                </div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Nama Bank</p>
+                      <p className="text-sm font-medium truncate">{payout.bankName}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Nomor Rekening</p>
+                      <p className="text-sm font-mono font-medium tracking-wider">{maskAccountNo(payout.accountNo)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <UserCircle className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Nama Pemilik</p>
+                      <p className="text-sm font-medium truncate">{payout.accountName}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Merchant Info Section ── */}
+              <motion.div
+                custom={2}
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+                className="card-elevated rounded-xl p-4 space-y-3"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+                  <Store className="h-4 w-4 text-emerald-600" />
+                  Informasi Merchant
+                </div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-xs font-bold shrink-0">
+                      {payout.merchant.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Nama</p>
+                      <p className="text-sm font-medium truncate">{payout.merchant.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium truncate">{payout.merchant.email}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Status Timeline ── */}
+              <motion.div
+                custom={3}
+                initial="hidden"
+                animate="visible"
+                variants={sectionVariants}
+                className="card-elevated rounded-xl p-4"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-4">
+                  <Clock className="h-4 w-4 text-emerald-600" />
+                  Riwayat Status
+                </div>
+                <div className="relative pl-6">
+                  {/* Vertical line */}
+                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
+
+                  <div className="space-y-5">
+                    {payout.timeline.map((step, i) => {
+                      const completed = isStepCompleted(step.status, payout.status);
+                      const current = isStepCurrent(step.status, payout.status);
+                      const future = !completed && !current;
+                      const dotColor = getDotStyle(step.status, payout.status, i, payout.timeline.length);
+                      const isFailedStep = step.status === 'failed';
+
+                      return (
+                        <div key={step.status} className="relative flex items-start gap-3">
+                          {/* Dot */}
+                          <div className="absolute left-[-21px] top-0.5">
+                            <div className={`relative h-3.5 w-3.5 rounded-full ${dotColor.split(' ')[0]} flex items-center justify-center`}>
+                              {completed && !current && (
+                                <Check className="h-2 w-2 text-white" />
+                              )}
+                              {current && (
+                                <>
+                                  <span className="absolute inset-0 rounded-full pulse-ring text-current" />
+                                  <span className={`h-2 w-2 rounded-full ${dotColor.split(' ')[0]}`} />
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${future ? 'text-muted-foreground' : ''}`}>
+                              {step.label}
+                            </p>
+                            <p className={`text-xs ${future ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>
+                              {formatDateShort(step.at)} &middot; {formatTime(step.at)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Notes Section (if any) ── */}
+              {payout.notes && (
+                <motion.div
+                  custom={4}
+                  initial="hidden"
+                  animate="visible"
+                  variants={sectionVariants}
+                  className="rounded-xl bg-muted/50 border border-border p-4"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                    <StickyNote className="h-4 w-4 text-emerald-600" />
+                    Catatan
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{payout.notes}</p>
+                </motion.div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Action Buttons ── */}
+        {payout && (
+          <div className="shrink-0 border-t border-border p-5 space-y-3">
+            {(payout.status === 'pending' || payout.status === 'processing') && (
+              <Button
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white btn-press"
+                disabled={updateMutation.isPending}
+                onClick={() =>
+                  updateMutation.mutate({
+                    id: payout.id,
+                    status: payout.status === 'pending' ? 'processing' : 'completed',
+                  })
+                }
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Play className="h-4 w-4 mr-2" />
+                )}
+                {payout.status === 'pending' ? 'Proses Pencairan' : 'Selesaikan Pencairan'}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className="w-full btn-press"
+              onClick={() => onOpenChange(false)}
+            >
+              Tutup
+            </Button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -140,6 +527,7 @@ export default function Payouts() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
 
   // ── Form state ──
   const [formMerchant, setFormMerchant] = useState('');
@@ -504,15 +892,25 @@ export default function Payouts() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <span className="text-sm font-semibold">{formatMoney(po.amount)}</span>
+                              <button
+                                type="button"
+                                className="text-sm font-semibold cursor-pointer text-emerald-600 dark:text-emerald-400 hover:underline"
+                                onClick={() => setSelectedPayoutId(po.id)}
+                              >
+                                {formatMoney(po.amount)}
+                              </button>
                             </TableCell>
                             <TableCell className="text-right hidden sm:table-cell">
                               <span className="text-sm text-muted-foreground">{formatMoney(po.fee)}</span>
                             </TableCell>
                             <TableCell className="text-right hidden md:table-cell">
-                              <span className="text-sm font-medium text-emerald-600">
+                              <button
+                                type="button"
+                                className="text-sm font-medium text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline"
+                                onClick={() => setSelectedPayoutId(po.id)}
+                              >
                                 {formatMoney(po.amount - po.fee)}
-                              </span>
+                              </button>
                             </TableCell>
                             <TableCell>
                               <Badge className={`text-xs ${statusColor[po.status] || ''}`}>
@@ -777,6 +1175,15 @@ export default function Payouts() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ── Payout Detail Drawer ── */}
+      <PayoutDetailDrawer
+        payoutId={selectedPayoutId || ''}
+        open={!!selectedPayoutId}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPayoutId(null);
+        }}
+      />
     </div>
   );
 }
