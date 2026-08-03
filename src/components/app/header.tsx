@@ -113,7 +113,7 @@ export function Header() {
       initial={false}
       animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6"
+      className="fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6 glass-card"
     >
       <div className="flex items-center gap-4">
         <Button
@@ -139,7 +139,7 @@ export function Header() {
           <Input
             readOnly
             placeholder="Cari transaksi, merchant... ⌘K"
-            className="w-64 cursor-pointer pl-9"
+            className="w-64 cursor-pointer pl-9 hover-glow-border"
             onClick={() => setCommandOpen(true)}
           />
         </div>

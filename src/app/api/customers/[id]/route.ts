@@ -8,11 +8,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
     const customer = await db.customer.findUnique({
       where: { id },
       include: {
         transactions: {
           orderBy: { createdAt: 'desc' },
+          take: 10,
           include: {
             merchant: { select: { id: true, name: true, logo: true } },
           },
@@ -27,7 +29,80 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: customer });
+    // Compute stats from all transactions (not just the 10 returned)
+    const allTransactions = await db.transaction.findMany({
+      where: { customerId: id },
+      select: { amount: true, status: true, createdAt: true },
+    });
+
+    const totalSpent = allTransactions.reduce(
+      (sum, tx) => (tx.status === 'success' ? sum + tx.amount : sum),
+      0,
+    );
+    const totalTx = allTransactions.length;
+    const successTx = allTransactions.filter(
+      (tx) => tx.status === 'success',
+    ).length;
+    const successRate =
+      totalTx > 0 ? Number(((successTx / totalTx) * 100).toFixed(1)) : 0;
+    const lastTransactionDate =
+      allTransactions.length > 0
+        ? allTransactions.reduce(
+            (latest, tx) =>
+              tx.createdAt > latest ? tx.createdAt : latest,
+            allTransactions[0].createdAt,
+          )
+        : null;
+
+    // Monthly activity for last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const recentTx = await db.transaction.findMany({
+      where: {
+        customerId: id,
+        createdAt: { gte: sixMonthsAgo },
+      },
+      select: { amount: true, status: true, createdAt: true },
+    });
+
+    const monthlyMap = new Map<string, { count: number; amount: number }>();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthlyMap.set(key, { count: 0, amount: 0 });
+    }
+
+    for (const tx of recentTx) {
+      const key = `${tx.createdAt.getFullYear()}-${String(tx.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      const entry = monthlyMap.get(key);
+      if (entry && tx.status === 'success') {
+        entry.count += 1;
+        entry.amount += tx.amount;
+      }
+    }
+
+    const monthlyActivity = Array.from(monthlyMap.entries()).map(
+      ([month, data]) => ({
+        month,
+        count: data.count,
+        amount: Number(data.amount.toFixed(2)),
+      }),
+    );
+
+    return NextResponse.json({
+      data: {
+        ...customer,
+        totalSpent,
+        totalTx,
+        successRate,
+        lastTransactionDate,
+        monthlyActivity,
+      },
+    });
   } catch (error) {
     console.error('[Customer GET]', error);
     return NextResponse.json(

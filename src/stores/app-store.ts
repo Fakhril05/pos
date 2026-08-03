@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Page = 'dashboard' | 'transactions' | 'payment-links' | 'customers' | 'merchants' | 'payouts' | 'reports' | 'settings'
+export type Page = 'dashboard' | 'transactions' | 'payment-links' | 'customers' | 'merchants' | 'kasir' | 'payouts' | 'reports' | 'settings'
 
 interface AppState {
   activePage: Page

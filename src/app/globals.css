@@ -919,3 +919,161 @@
   color: oklch(0.70 0.02 155);
   border-bottom-color: oklch(0.608 0.17 155 / 15%);
 }
+
+/* ── Glassmorphism Variants ── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Shimmer Loading Effect ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ── Pulse Ring for status indicators ── */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* ── Gradient Text ── */
+.text-gradient-emerald {
+  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-warm {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-cool {
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Hover Scale ── */
+.hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+.hover-scale:active {
+  transform: scale(0.98);
+}
+
+/* ── Number Ticker ── */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count-up {
+  animation: count-up 0.6s ease-out forwards;
+}
+
+/* ── Slide in from right ── */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s ease-out forwards;
+}
+
+/* ── Float animation ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float-slow {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* ── Gradient border with pseudo element ── */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Hover Glow Border ── */
+.hover-glow-border {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.hover-glow-border:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), 0 0 40px rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ── Subtle Pattern Background ── */
+.pattern-grid {
+  background-image:
+    linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── Focus visible ring for accessibility ── */
+.focus-ring-emerald:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+/* ── Table Row alternating ── */
+.table-stripe tr:nth-child(even) {
+  background-color: rgba(16, 185, 129, 0.02);
+}
+.dark .table-stripe tr:nth-child(even) {
+  background-color: rgba(16, 185, 129, 0.03);
+}
+
+/* ── Text shadow for headings ── */
+.text-shadow-subtle {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.dark .text-shadow-subtle {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Smooth number transition ── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

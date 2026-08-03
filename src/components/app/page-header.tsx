@@ -55,13 +55,13 @@ export function PageHeader({
             <Icon className="h-5.5 w-5.5 text-white" style={{ width: 22, height: 22 }} />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl text-gradient-emerald">{title}</h1>
             {description && (
               <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
             )}
           </div>
         </div>
-        {children && <div className="flex items-center gap-2">{children}</div>}
+        {children && <div className="flex items-center gap-2 hover-scale">{children}</div>}
       </motion.div>
       {/* Gradient separator */}
       <div className="mt-4 h-px w-full bg-gradient-to-r from-emerald-500/40 via-teal-500/20 to-transparent" />

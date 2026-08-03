@@ -20,6 +20,7 @@ const Merchants = dynamic(() => import('@/components/app/merchants'), { ssr: fal
 const Payouts = dynamic(() => import('@/components/app/payouts'), { ssr: false })
 const Reports = dynamic(() => import('@/components/app/reports'), { ssr: false })
 const Settings = dynamic(() => import('@/components/app/settings'), { ssr: false })
+const Kasir = dynamic(() => import('@/components/app/kasir').then(m => ({ default: m.Kasir })), { ssr: false })
 
 const pageComponents: Record<string, React.ComponentType> = {
   dashboard: Dashboard,
@@ -27,6 +28,7 @@ const pageComponents: Record<string, React.ComponentType> = {
   'payment-links': PaymentLinks,
   customers: Customers,
   merchants: Merchants,
+  kasir: Kasir,
   payouts: Payouts,
   reports: Reports,
   settings: Settings,
@@ -41,6 +43,8 @@ const PAGE_KEYS: Record<string, string> = {
   '6': 'payouts',
   '7': 'reports',
   '8': 'settings',
+  '9': 'kasir',
+  'k': 'kasir',
 }
 
 export default function Home() {
@@ -71,6 +75,13 @@ export default function Home() {
       if (key === 'd' || key === 'D') {
         e.preventDefault()
         setTheme(theme === 'dark' ? 'light' : 'dark')
+        return
+      }
+
+      // K - go to kasir
+      if (key === 'k' || key === 'K') {
+        e.preventDefault()
+        setActivePage('kasir')
         return
       }
 

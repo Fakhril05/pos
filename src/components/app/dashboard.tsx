@@ -528,7 +528,7 @@ export default function Dashboard() {
     }));
 
   return (
-    <div className="space-y-6 bg-mesh">
+    <div className="space-y-6 bg-mesh pattern-grid">
       {/* ─── Page Header ────────────────────────────────────────── */}
       <PageHeader
         title="Dashboard"
@@ -552,7 +552,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="card-elevated relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white glow-emerald-sm">
+        <div className="card-elevated gradient-border relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white glow-emerald-sm">
           {/* Decorative circles */}
           <div className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 animate-float rounded-full bg-white/10" />
           <div className="pointer-events-none absolute -bottom-12 right-16 h-40 w-40 animate-float rounded-full bg-white/[0.07]" />
@@ -561,7 +561,7 @@ export default function Dashboard() {
 
           <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-lg">
-              <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
+              <h1 className="text-2xl font-bold leading-tight sm:text-3xl text-shadow-subtle">
                 Selamat Datang, Admin Ril 👋
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
@@ -584,7 +584,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.1, ease: 'easeOut' }}
             >
-              <Card className="card-hover group relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm">
+              <Card className="card-hover hover-glow-border group relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm">
                 {/* gradient top accent */}
                 <div
                   className={`absolute left-0 right-0 top-0 h-[3px] bg-gradient-to-r ${card.gradient}`}
@@ -599,7 +599,7 @@ export default function Dashboard() {
                         value={card.rawValue}
                         formatFn={'formatFn' in card && card.formatFn ? card.formatFn : undefined}
                         className={cn(
-                          "text-2xl font-bold tracking-tight",
+                          "text-2xl font-bold tracking-tight tabular-nums",
                           card.label === 'Total Pendapatan' && "gradient-text-emerald",
                         )}
                       />
@@ -804,7 +804,7 @@ export default function Dashboard() {
                 return (
                   <div
                     key={merchant.id}
-                    className="flex items-center gap-4 rounded-lg p-3 transition-all duration-200 hover:bg-muted/60 hover:shadow-sm"
+                    className="flex items-center gap-4 rounded-lg p-3 transition-all duration-200 hover:bg-muted/60 hover:shadow-sm hover-scale"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 text-sm font-bold text-white shadow-sm">
                       {idx + 1}
@@ -825,7 +825,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-semibold tabular-nums">
                       {formatRp(merchant.totalSales)}
                     </span>
                   </div>
@@ -906,7 +906,7 @@ export default function Dashboard() {
                       <span className="text-muted-foreground text-sm">
                         {entry.value} tx
                       </span>
-                      <span className="w-12 text-right text-sm font-semibold">
+                      <span className="w-12 text-right text-sm font-semibold tabular-nums">
                         {pct}%
                       </span>
                     </div>

@@ -99,7 +99,7 @@ function ProfilTab() {
       className="space-y-6"
     >
       {/* Logo Upload */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <CardTitle className="text-base">Logo Bisnis</CardTitle>
           <CardDescription>
@@ -135,7 +135,7 @@ function ProfilTab() {
       </Card>
 
       {/* Business Info */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <CardTitle className="text-base">Informasi Bisnis</CardTitle>
           <CardDescription>
@@ -297,7 +297,7 @@ function PembayaranTab() {
       className="space-y-6"
     >
       {/* Global limits */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Wallet className="h-4 w-4 text-emerald-500" />
@@ -504,7 +504,7 @@ function NotifikasiTab() {
       className="space-y-6"
     >
       {/* Notification Toggles */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-emerald-500" />
@@ -555,7 +555,7 @@ function NotifikasiTab() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card className="card-hover">
+          <Card className="card-hover hover-glow-border">
             <CardHeader>
               <CardTitle className="text-base">Konfigurasi Webhook</CardTitle>
               <CardDescription>
@@ -687,7 +687,7 @@ function KeamananTab() {
       className="space-y-6"
     >
       {/* Change Password */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-emerald-500" />
@@ -788,7 +788,7 @@ function KeamananTab() {
       </Card>
 
       {/* 2FA Toggle */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <CardTitle className="text-base">Autentikasi Dua Faktor (2FA)</CardTitle>
           <CardDescription>
@@ -827,7 +827,7 @@ function KeamananTab() {
       </Card>
 
       {/* API Key */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Key className="h-4 w-4 text-emerald-500" />
@@ -1050,7 +1050,7 @@ function WebhookTab() {
       className="space-y-6"
     >
       {/* Webhook Configuration */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Globe className="h-4 w-4 text-emerald-500" />
@@ -1117,7 +1117,7 @@ function WebhookTab() {
       </Card>
 
       {/* Event Subscriptions */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Zap className="h-4 w-4 text-emerald-500" />
@@ -1156,7 +1156,7 @@ function WebhookTab() {
 
       {/* Delivery Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card className="card-hover">
+        <Card className="card-hover hover-glow-border">
           <CardContent className="pt-5 pb-4 px-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
@@ -1169,7 +1169,7 @@ function WebhookTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="card-hover">
+        <Card className="card-hover hover-glow-border">
           <CardContent className="pt-5 pb-4 px-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
@@ -1182,7 +1182,7 @@ function WebhookTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="card-hover">
+        <Card className="card-hover hover-glow-border">
           <CardContent className="pt-5 pb-4 px-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -1195,7 +1195,7 @@ function WebhookTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="card-hover">
+        <Card className="card-hover hover-glow-border">
           <CardContent className="pt-5 pb-4 px-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
@@ -1211,7 +1211,7 @@ function WebhookTab() {
       </div>
 
       {/* Recent Delivery Logs */}
-      <Card className="card-hover">
+      <Card className="card-hover hover-glow-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="h-4 w-4 text-emerald-500" />
@@ -1223,7 +1223,7 @@ function WebhookTab() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto -mx-6 px-6">
-            <Table>
+            <Table className="table-stripe">
               <TableHeader className="table-header-enhanced">
                 <TableRow className="border-border/50 hover:bg-transparent">
                   <TableHead className="text-xs">Event Type</TableHead>
@@ -1301,7 +1301,7 @@ export default function Settings() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card>
+        <Card className="gradient-border">
           <CardContent className="p-1">
             <Tabs defaultValue="profil" className="w-full">
               <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">

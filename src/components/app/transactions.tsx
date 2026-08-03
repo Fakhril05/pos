@@ -912,7 +912,7 @@ export default function Transactions() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="shadow-sm card-hover card-elevated">
+        <Card className="shadow-sm card-hover card-elevated hover-glow-border">
           <CardContent className="p-4">
             <form
               onSubmit={handleSearch}
@@ -1054,7 +1054,7 @@ export default function Transactions() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card className="shadow-sm card-hover">
+        <Card className="shadow-sm card-hover hover-glow-border">
           <CardContent className="p-0">
             {/* Table Header Info */}
             <div className="flex items-center justify-between border-b px-4 py-3">
@@ -1072,7 +1072,7 @@ export default function Transactions() {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="table-stripe">
                 <TableHeader className="table-header-enhanced">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="pl-4">Invoice</TableHead>

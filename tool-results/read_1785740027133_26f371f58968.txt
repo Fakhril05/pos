@@ -1,0 +1,525 @@
+     1→   200→   299→   398→   398→  overflow: hidden;
+     2→   201→   300→   399→   399→}
+     3→   202→   301→   400→   400→.kpi-accent-bar::before {
+     4→   203→   302→   401→   401→  content: '';
+     5→   204→   303→   402→   402→  position: absolute;
+     6→   205→   304→   403→   403→  top: 0;
+     7→   206→   305→   404→   404→  left: 0;
+     8→   207→   306→   405→   405→  right: 0;
+     9→   208→   307→   406→   406→  height: 3px;
+    10→   209→   308→   407→   407→  border-radius: 3px 3px 0 0;
+    11→   210→   309→   408→   408→}
+    12→   211→   310→   409→   409→.kpi-accent-emerald::before {
+    13→   212→   311→   410→   410→  background: linear-gradient(90deg, #059669, #34d399);
+    14→   213→   312→   411→   411→}
+    15→   214→   313→   412→   412→.kpi-accent-teal::before {
+    16→   215→   314→   413→   413→  background: linear-gradient(90deg, #0d9488, #5eead4);
+    17→   216→   315→   414→   414→}
+    18→   217→   316→   415→   415→.kpi-accent-amber::before {
+    19→   218→   317→   416→   416→  background: linear-gradient(90deg, #d97706, #fbbf24);
+    20→   219→   318→   417→   417→}
+    21→   220→   319→   418→   418→.kpi-accent-rose::before {
+    22→   221→   320→   419→   419→  background: linear-gradient(90deg, #e11d48, #fb7185);
+    23→   222→   321→   420→   420→}
+    24→   223→   322→   421→   421→
+    25→   224→   323→   422→   422→/* ── Separator Enhancement ───────────────────────────────────────────────── */
+    26→   225→   324→   423→   423→.separator-gradient {
+    27→   226→   325→   424→   424→  height: 1px;
+    28→   227→   326→   425→   425→  background: linear-gradient(90deg, transparent, oklch(0.508 0.17 155 / 20%), transparent);
+    29→   228→   327→   426→   426→  border: none;
+    30→   229→   328→   427→   427→}
+    31→   230→   329→   428→   428→
+    32→   231→   330→   429→   429→/* ── Quick Stats Bar ────────────────────────────────────────────────────── */
+    33→   232→   331→   430→   430→.quick-stats-bar {
+    34→   233→   332→   431→   431→  background: linear-gradient(90deg,
+    35→   234→   333→   432→   432→    oklch(0.508 0.17 155 / 4%) 0%,
+    36→   235→   334→   433→   433→    oklch(0.508 0.17 155 / 1%) 50%,
+    37→   236→   335→   434→   434→    oklch(0.508 0.17 155 / 4%) 100%
+    38→   237→   336→   435→   435→  );
+    39→   238→   337→   436→   436→  border-bottom: 1px solid oklch(0.508 0.17 155 / 10%);
+    40→   239→   338→   437→   437→}
+    41→   240→   339→   438→   438→.dark .quick-stats-bar {
+    42→   241→   340→   439→   439→  background: linear-gradient(90deg,
+    43→   242→   341→   440→   440→    oklch(0.608 0.17 155 / 6%) 0%,
+    44→   243→   342→   441→   441→    oklch(0.608 0.17 155 / 2%) 50%,
+    45→   244→   343→   442→   442→    oklch(0.608 0.17 155 / 6%) 100%
+    46→   245→   344→   443→   443→  );
+    47→   246→   345→   444→   444→  border-bottom-color: oklch(0.608 0.17 155 / 12%);
+    48→   247→   346→   445→   445→}
+    49→   248→   347→   446→   446→.quick-stat-item {
+    50→   249→   348→   447→   447→  position: relative;
+    51→   250→   349→   448→   448→  transition: all 0.2s ease;
+    52→   251→   350→   449→   449→}
+    53→   252→   351→   450→   450→.quick-stat-item:hover {
+    54→   253→   352→   451→   451→  transform: translateY(-1px);
+    55→   254→   353→   452→   452→}
+    56→   255→   354→   453→   453→.quick-stat-divider {
+    57→   256→   355→   454→   454→  width: 1px;
+    58→   257→   356→   455→   455→  height: 24px;
+    59→   258→   357→   456→   456→  background: linear-gradient(180deg, transparent, oklch(0.508 0.17 155 / 20%), transparent);
+    60→   259→   358→   457→   457→}
+    61→   260→   359→   458→   458→.dark .quick-stat-divider {
+    62→   261→   360→   459→   459→  background: linear-gradient(180deg, transparent, oklch(0.608 0.17 155 / 25%), transparent);
+    63→   262→   361→   460→   460→}
+    64→   263→   362→   461→   461→
+    65→   264→   363→   462→   462→/* ── Animated Counter ───────────────────────────────────────────────────── */
+    66→   265→   364→   463→   463→@keyframes count-up {
+    67→   266→   365→   464→   464→  from { opacity: 0; transform: translateY(4px); }
+    68→   267→   366→   465→   465→  to { opacity: 1; transform: translateY(0); }
+    69→   268→   367→   466→   466→}
+    70→   269→   368→   467→   467→.animate-count-up {
+    71→   270→   369→   468→   468→  animation: count-up 0.4s ease-out forwards;
+    72→   271→   370→   469→   469→}
+    73→   272→   371→   470→   470→
+    74→   273→   372→   471→   471→/* ── Subtle Border Glow ─────────────────────────────────────────────────── */
+    75→   274→   373→   472→   472→.border-glow {
+    76→   275→   374→   473→   473→  position: relative;
+    77→   276→   375→   474→   474→}
+    78→   277→   376→   475→   475→.border-glow::after {
+    79→   278→   377→   476→   476→  content: '';
+    80→   279→   378→   477→   477→  position: absolute;
+    81→   280→   379→   478→   478→  inset: -1px;
+    82→   281→   380→   479→   479→  border-radius: inherit;
+    83→   282→   381→   480→   480→  background: linear-gradient(135deg, oklch(0.508 0.17 155 / 20%), transparent, oklch(0.508 0.17 155 / 10%));
+    84→   283→   382→   481→   481→  z-index: -1;
+    85→   284→   383→   482→   482→  opacity: 0;
+    86→   285→   384→   483→   483→  transition: opacity 0.3s ease;
+    87→   286→   385→   484→   484→}
+    88→   287→   386→   485→   485→.border-glow:hover::after {
+    89→   288→   387→   486→   486→  opacity: 1;
+    90→   289→   388→   487→   487→}
+    91→   290→   389→   488→   488→.dark .border-glow::after {
+    92→   291→   390→   489→   489→  background: linear-gradient(135deg, oklch(0.608 0.17 155 / 25%), transparent, oklch(0.608 0.17 155 / 12%));
+    93→   292→   391→   490→   490→}
+    94→   293→   392→   491→   491→
+    95→   294→   393→   492→   492→/* ── Ripple Effect ──────────────────────────────────────────────────────── */
+    96→   295→   394→   493→   493→.ripple {
+    97→   296→   395→   494→   494→  position: relative;
+    98→   297→   396→   495→   495→  overflow: hidden;
+    99→   298→   397→   496→   496→}
+   100→   299→   398→   497→   497→.ripple::after {
+   101→   300→   399→   498→   498→  content: '';
+   102→   301→   400→   499→   499→  position: absolute;
+   103→   302→   401→   500→   500→  inset: 0;
+   104→   303→   402→   501→   501→  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), oklch(0.508 0.17 155 / 12%), transparent 60%);
+   105→   304→   403→   502→   502→  opacity: 0;
+   106→   305→   404→   503→   503→  transition: opacity 0.3s ease;
+   107→   306→   405→   504→   504→  pointer-events: none;
+   108→   307→   406→   505→   505→}
+   109→   308→   407→   506→   506→.ripple:hover::after {
+   110→   309→   408→   507→   507→  opacity: 1;
+   111→   310→   409→   508→   508→}
+   112→   311→   410→   509→   509→
+   113→   312→   411→   510→   510→/* ── Skeleton Shimmer Card ──────────────────────────────────────────────── */
+   114→   313→   412→   511→   511→@keyframes skeleton-shimmer {
+   115→   314→   413→   512→   512→  0% { background-position: -200% 0; }
+   116→   315→   414→   513→   513→  100% { background-position: 200% 0; }
+   117→   316→   415→   514→   514→}
+   118→   317→   416→   515→   515→.skeleton-card {
+   119→   318→   417→   516→   516→  background: linear-gradient(90deg,
+   120→   319→   418→   517→   517→    oklch(0.95 0.005 155) 0%,
+   121→   320→   419→   518→   518→    oklch(0.97 0.01 155) 20%,
+   122→   321→   420→   519→   519→    oklch(0.97 0.01 155) 40%,
+   123→   322→   421→   520→   520→    oklch(0.95 0.005 155) 60%
+   124→   323→   422→   521→   521→  );
+   125→   324→   423→   522→   522→  background-size: 200% 100%;
+   126→   325→   424→   523→   523→  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+   127→   326→   425→   524→   524→  border-radius: var(--radius-lg);
+   128→   327→   426→   525→   525→}
+   129→   328→   427→   526→   526→.dark .skeleton-card {
+   130→   329→   428→   527→   527→  background: linear-gradient(90deg,
+   131→   330→   429→   528→   528→    oklch(0.20 0.005 155) 0%,
+   132→   331→   430→   529→   529→    oklch(0.24 0.01 155) 20%,
+   133→   332→   431→   530→   530→    oklch(0.24 0.01 155) 40%,
+   134→   333→   432→   531→   531→    oklch(0.20 0.005 155) 60%
+   135→   334→   433→   532→   532→  );
+   136→   335→   434→   533→   533→  background-size: 200% 100%;
+   137→   336→   435→   534→   534→}
+   138→   337→   436→   535→   535→
+   139→   338→   437→   536→   536→/* ── Tag/Chip Component ─────────────────────────────────────────────────── */
+   140→   339→   438→   537→   537→.chip {
+   141→   340→   439→   538→   538→  display: inline-flex;
+   142→   341→   440→   539→   539→  align-items: center;
+   143→   342→   441→   540→   540→  gap: 4px;
+   144→   343→   442→   541→   541→  padding: 2px 10px;
+   145→   344→   443→   542→   542→  border-radius: 9999px;
+   146→   345→   444→   543→   543→  font-size: 11px;
+   147→   346→   445→   544→   544→  font-weight: 500;
+   148→   347→   446→   545→   545→  transition: all 0.15s ease;
+   149→   348→   447→   546→   546→}
+   150→   349→   448→   547→   547→.chip-emerald {
+   151→   350→   449→   548→   548→  background: oklch(0.508 0.17 155 / 10%);
+   152→   351→   450→   549→   549→  color: oklch(0.35 0.12 155);
+   153→   352→   451→   550→   550→  border: 1px solid oklch(0.508 0.17 155 / 15%);
+   154→   353→   452→   551→   551→}
+   155→   354→   453→   552→   552→.dark .chip-emerald {
+   156→   355→   454→   553→   553→  background: oklch(0.608 0.17 155 / 15%);
+   157→   356→   455→   554→   554→  color: oklch(0.85 0.10 155);
+   158→   357→   456→   555→   555→  border-color: oklch(0.608 0.17 155 / 20%);
+   159→   358→   457→   556→   556→}
+   160→   359→   458→   557→   557→
+   161→   360→   459→   558→   558→/* ── Tooltip Enhancement ────────────────────────────────────────────────── */
+   162→   361→   460→   559→   559→.tooltip-pretty {
+   163→   362→   461→   560→   560→  position: relative;
+   164→   363→   462→   561→   561→}
+   165→   364→   463→   562→   562→.tooltip-pretty::before {
+   166→   365→   464→   563→   563→  content: attr(data-tooltip);
+   167→   366→   465→   564→   564→  position: absolute;
+   168→   367→   466→   565→   565→  bottom: calc(100% + 8px);
+   169→   368→   467→   566→   566→  left: 50%;
+   170→   369→   468→   567→   567→  transform: translateX(-50%) translateY(4px);
+   171→   370→   469→   568→   568→  background: oklch(0.15 0.01 155);
+   172→   371→   470→   569→   569→  color: oklch(0.95 0.01 155);
+   173→   372→   471→   570→   570→  padding: 4px 10px;
+   174→   373→   472→   571→   571→  border-radius: 6px;
+   175→   374→   473→   572→   572→  font-size: 12px;
+   176→   375→   474→   573→   573→  white-space: nowrap;
+   177→   376→   475→   574→   574→  opacity: 0;
+   178→   377→   476→   575→   575→  pointer-events: none;
+   179→   378→   477→   576→   576→  transition: all 0.2s ease;
+   180→   379→   478→   577→   577→  z-index: 100;
+   181→   380→   479→   578→   578→}
+   182→   381→   480→   579→   579→.tooltip-pretty:hover::before {
+   183→   382→   481→   580→   580→  opacity: 1;
+   184→   383→   482→   581→   581→  transform: translateX(-50%) translateY(0);
+   185→   384→   483→   582→   582→}
+   186→   385→   484→   583→   583→
+   187→   386→   485→   584→   584→/* ── Smooth Number Transition ───────────────────────────────────────────── */
+   188→   387→   486→   585→   585→.number-transition {
+   189→   388→   487→   586→   586→  display: inline-block;
+   190→   389→   488→   587→   587→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   191→   390→   489→   588→   588→}
+   192→   391→   490→   589→   589→
+   193→   392→   491→   590→   590→/* ── Dark Mode Chart Grid ──────────────────────────────────────────────── */
+   194→   393→   492→   591→   591→.dark .recharts-cartesian-grid-horizontal line,
+   195→   394→   493→   592→   592→.dark .recharts-cartesian-grid-vertical line {
+   196→   395→   494→   593→   593→  stroke: oklch(1 0 0 / 6%);
+   197→   396→   495→   594→   594→}
+   198→   397→   496→   595→   595→.dark .recharts-text {
+   199→   398→   497→   596→   596→  fill: oklch(0.65 0.015 155);
+   200→   399→   498→   597→   597→}
+   201→   400→   499→   598→   598→
+   202→   401→   500→   599→   599→/* ── Error State Enhancement ────────────────────────────────────────────── */
+   203→   402→   501→   600→   600→.error-state {
+   204→   403→   502→   601→   601→  background: linear-gradient(135deg,
+   205→   404→   503→   602→   602→    oklch(0.577 0.245 27.325 / 3%),
+   206→   405→   504→   603→   603→    oklch(0 0 0 / 0%)
+   207→   406→   505→   604→   604→  );
+   208→   407→   506→   605→   605→  border-radius: var(--radius-xl);
+   209→   408→   507→   606→   606→}
+   210→   409→   508→   607→   607→.dark .error-state {
+   211→   410→   509→   608→   608→  background: linear-gradient(135deg,
+   212→   411→   510→   609→   609→    oklch(0.704 0.191 22.216 / 5%),
+   213→   412→   511→   610→   610→    oklch(0 0 0 / 0%)
+   214→   413→   512→   611→   611→  );
+   215→   414→   513→   612→   612→}
+   216→   415→   514→   613→   613→
+   217→   416→   515→   614→   614→/* ── Empty State Enhancement ────────────────────────────────────────────── */
+   218→   417→   516→   615→   615→.empty-state {
+   219→   418→   517→   616→   616→  background: linear-gradient(135deg,
+   220→   419→   518→   617→   617→    oklch(0.508 0.17 155 / 2%),
+   221→   420→   519→   618→   618→    oklch(0 0 0 / 0%)
+   222→   421→   520→   619→   619→  );
+   223→   422→   521→   620→   620→  border-radius: var(--radius-xl);
+   224→   423→   522→   621→   621→}
+   225→   424→   523→   622→   622→.dark .empty-state {
+   226→   425→   524→   623→   623→  background: linear-gradient(135deg,
+   227→   426→   525→   624→   624→    oklch(0.608 0.17 155 / 3%),
+   228→   427→   526→   625→   625→    oklch(0 0 0 / 0%)
+   229→   428→   527→   626→   626→  );
+   230→   429→   528→   627→   627→}
+   231→   430→   529→   628→   628→
+   232→   431→   530→   629→   629→/* ── Accent Underline ───────────────────────────────────────────────────── */
+   233→   432→   531→   630→   630→.accent-underline {
+   234→   433→   532→   631→   631→  position: relative;
+   235→   434→   533→   632→   632→  display: inline;
+   236→   435→   534→   633→   633→}
+   237→   436→   535→   634→   634→.accent-underline::after {
+   238→   437→   536→   635→   635→  content: '';
+   239→   438→   537→   636→   636→  position: absolute;
+   240→   439→   538→   637→   637→  left: 0;
+   241→   440→   539→   638→   638→  bottom: -2px;
+   242→   441→   540→   639→   639→  width: 100%;
+   243→   442→   541→   640→   640→  height: 2px;
+   244→   443→   542→   641→   641→  background: linear-gradient(90deg, oklch(0.508 0.17 155), oklch(0.608 0.17 155 / 0%));
+   245→   444→   543→   642→   642→  border-radius: 1px;
+   246→   445→   544→   643→   643→}
+   247→   446→   545→   644→   644→
+   248→   447→   546→   645→   645→/* ── Page Section Divider ──────────────────────────────────────────────── */
+   249→   448→   547→   646→   646→.section-divider {
+   250→   449→   548→   647→   647→  position: relative;
+   251→   450→   549→   648→   648→  padding-top: 24px;
+   252→   451→   550→   649→   649→}
+   253→   452→   551→   650→   650→.section-divider::before {
+   254→   453→   552→   651→   651→  content: '';
+   255→   454→   553→   652→   652→  position: absolute;
+   256→   455→   554→   653→   653→  top: 0;
+   257→   456→   555→   654→   654→  left: 0;
+   258→   457→   556→   655→   655→  right: 0;
+   259→   458→   557→   656→   656→  height: 1px;
+   260→   459→   558→   657→   657→  background: linear-gradient(90deg,
+   261→   460→   559→   658→   658→    oklch(0.508 0.17 155 / 15%),
+   262→   461→   560→   659→   659→    oklch(0.508 0.17 155 / 5%),
+   263→   462→   561→   660→   660→    oklch(0.508 0.17 155 / 15%)
+   264→   463→   562→   661→   661→  );
+   265→   464→   563→   662→   662→}
+   266→   465→   564→   663→   663→
+   267→   466→   565→   664→   664→/* ── Stat Card Gradient Border ─────────────────────────────────────── */
+   268→   467→   566→   665→   665→.stat-card-gradient {
+   269→   468→   567→   666→   666→  position: relative;
+   270→   469→   568→   667→   667→  overflow: hidden;
+   271→   470→   569→   668→   668→}
+   272→   471→   570→   669→   669→.stat-card-gradient::before {
+   273→   472→   571→   670→   670→  content: '';
+   274→   473→   572→   671→   671→  position: absolute;
+   275→   474→   573→   672→   672→  inset: 0;
+   276→   475→   574→   673→   673→  border-radius: inherit;
+   277→   476→   575→   674→   674→  padding: 1px;
+   278→   477→   576→   675→   675→  background: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.6 0.12 180), oklch(0.7 0.15 160));
+   279→   478→   577→   676→   676→  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   280→   479→   578→   677→   677→  mask-composite: exclude;
+   281→   480→   579→   678→   678→  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   282→   481→   580→   679→   679→  -webkit-mask-composite: xor;
+   283→   482→   581→   680→   680→  pointer-events: none;
+   284→   483→   582→   681→   681→}
+   285→   484→   583→   682→   682→
+   286→   485→   584→   683→   683→/* ── Emerald Glow Shadows ─────────────────────────────────────────── */
+   287→   486→   585→   684→   684→.glow-emerald-sm { box-shadow: 0 0 15px -3px oklch(0.7 0.15 160 / 0.15); }
+   288→   487→   586→   685→   685→.glow-emerald-md { box-shadow: 0 0 25px -5px oklch(0.7 0.15 160 / 0.25); }
+   289→   488→   587→   686→   686→
+   290→   489→   588→   687→   687→/* ── Text Balance ─────────────────────────────────────────────────── */
+   291→   490→   589→   688→   688→.text-balance { text-wrap: balance; }
+   292→   491→   590→   689→   689→
+   293→   492→   591→   690→   690→/* ── Badge Pulse Animation ───────────────────────────────────────── */
+   294→   493→   592→   691→   691→.badge-pulse { animation: badge-pulse 2s ease-in-out infinite; }
+   295→   494→   593→   692→   692→@keyframes badge-pulse {
+   296→   495→   594→   693→   693→  0%, 100% { opacity: 1; }
+   297→   496→   595→   694→   694→  50% { opacity: 0.7; }
+   298→   497→   596→   695→   695→}
+   299→   498→   597→   696→   696→
+   300→   499→   598→   697→   697→/* ── Hover Lift (subtle) ──────────────────────────────────────────── */
+   301→   500→   599→   698→   698→.hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+   302→   501→   600→   699→   699→.hover-lift:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+   303→   502→   601→   700→   700→
+   304→   503→   602→   701→   701→/* ── Gradient Text Emerald ───────────────────────────────────────── */
+   305→   504→   603→   702→   702→.gradient-text-emerald {
+   306→   505→   604→   703→   703→  background: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.6 0.12 180));
+   307→   506→   605→   704→   704→  -webkit-background-clip: text;
+   308→   507→   606→   705→   705→  -webkit-text-fill-color: transparent;
+   309→   508→   607→   706→   706→  background-clip: text;
+   310→   509→   608→   707→   707→}
+   311→   510→   609→   708→   708→
+   312→   511→   610→   709→   709→/* ── Thin Scrollbar ───────────────────────────────────────────────── */
+   313→   512→   611→   710→   710→.scrollbar-thin {
+   314→   513→   612→   711→   711→  scrollbar-width: thin;
+   315→   514→   613→   712→   712→  scrollbar-color: oklch(0.7 0.05 160 / 0.3) transparent;
+   316→   515→   614→   713→   713→}
+   317→   516→   615→   714→   714→.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+   318→   517→   616→   715→   715→.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+   319→   518→   617→   716→   716→.scrollbar-thin::-webkit-scrollbar-thumb { background: oklch(0.7 0.05 160 / 0.3); border-radius: 2px; }
+   320→   519→   618→   717→   717→
+   321→   520→   619→   718→   718→/* ── Dot Pattern ─────────────────────────────────────────────────── */
+   322→   521→   620→   719→   719→.dot-pattern {
+   323→   522→   621→   720→   720→  background-image: radial-gradient(oklch(0.7 0.05 160 / 0.15) 1px, transparent 1px);
+   324→   523→   622→   721→   721→  background-size: 16px 16px;
+   325→   524→   623→   722→   722→}
+   326→   525→   624→   723→   723→.dark .dot-pattern {
+   327→   526→   625→   724→   724→  background-image: radial-gradient(oklch(0.7 0.05 160 / 0.08) 1px, transparent 1px);
+   328→   527→   626→   725→   725→}
+   329→   528→   627→   726→   726→
+   330→   529→   628→   727→   727→/* ── Enhanced Card Variants ────────────────────────────────────────── */
+   331→   530→   629→   728→   728→.card-elevated {
+   332→   531→   630→   729→   729→  border: 1px solid oklch(0.92 0.005 155);
+   333→   532→   631→   730→   730→  box-shadow: 0 1px 3px oklch(0 0 0 / 4%), 0 4px 12px oklch(0 0 0 / 3%);
+   334→   533→   632→   731→   731→  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+   335→   534→   633→   732→   732→}
+   336→   535→   634→   733→   733→.card-elevated:hover {
+   337→   536→   635→   734→   734→  border-color: oklch(0.508 0.17 155 / 20%);
+   338→   537→   636→   735→   735→  box-shadow: 0 2px 8px oklch(0 0 0 / 6%), 0 8px 24px oklch(0 0 0 / 5%), 0 0 0 1px oklch(0.508 0.17 155 / 8%);
+   339→   538→   637→   736→   736→  transform: translateY(-2px);
+   340→   539→   638→   737→   737→}
+   341→   540→   639→   738→   738→.dark .card-elevated {
+   342→   541→   640→   739→   739→  border-color: oklch(1 0 0 / 6%);
+   343→   542→   641→   740→   740→  box-shadow: 0 1px 3px oklch(0 0 0 / 20%), 0 4px 12px oklch(0 0 0 / 15%);
+   344→   543→   642→   741→   741→}
+   345→   544→   643→   742→   742→.dark .card-elevated:hover {
+   346→   545→   644→   743→   743→  border-color: oklch(0.608 0.17 155 / 25%);
+   347→   546→   645→   744→   744→  box-shadow: 0 2px 8px oklch(0 0 0 / 25%), 0 8px 24px oklch(0 0 0 / 20%), 0 0 0 1px oklch(0.608 0.17 155 / 15%);
+   348→   547→   646→   745→   745→}
+   349→   548→   647→   746→   746→
+   350→   549→   648→   747→   747→/* ── Glass Card ───────────────────────────────────────────────────── */
+   351→   550→   649→   748→   748→.card-glass {
+   352→   551→   650→   749→   749→  background: oklch(1 0 0 / 65%);
+   353→   552→   651→   750→   750→  backdrop-filter: blur(20px) saturate(180%);
+   354→   553→   652→   751→   751→  -webkit-backdrop-filter: blur(20px) saturate(180%);
+   355→   554→   653→   752→   752→  border: 1px solid oklch(1 0 0 / 40%);
+   356→   555→   654→   753→   753→  transition: all 0.25s ease;
+   357→   556→   655→   754→   754→}
+   358→   557→   656→   755→   755→.card-glass:hover {
+   359→   558→   657→   756→   756→  background: oklch(1 0 0 / 75%);
+   360→   559→   658→   757→   757→  border-color: oklch(0.508 0.17 155 / 15%);
+   361→   560→   659→   758→   758→  box-shadow: 0 8px 32px oklch(0 0 0 / 6%);
+   362→   561→   660→   759→   759→}
+   363→   562→   661→   760→   760→.dark .card-glass {
+   364→   563→   662→   761→   761→  background: oklch(0.18 0.012 155 / 60%);
+   365→   564→   663→   762→   762→  border-color: oklch(1 0 0 / 6%);
+   366→   565→   664→   763→   763→}
+   367→   566→   665→   764→   764→.dark .card-glass:hover {
+   368→   567→   666→   765→   765→  background: oklch(0.18 0.012 155 / 70%);
+   369→   568→   667→   766→   766→  border-color: oklch(0.608 0.17 155 / 20%);
+   370→   569→   668→   767→   767→  box-shadow: 0 8px 32px oklch(0 0 0 / 20%);
+   371→   570→   669→   768→   768→}
+   372→   571→   670→   769→   769→
+   373→   572→   671→   770→   770→/* ── Glow Icon Container ───────────────────────────────────────────── */
+   374→   573→   672→   771→   771→.icon-glow-emerald {
+   375→   574→   673→   772→   772→  box-shadow: 0 0 12px oklch(0.7 0.15 160 / 0.2), 0 0 4px oklch(0.7 0.15 160 / 0.15);
+   376→   575→   674→   773→   773→}
+   377→   576→   675→   774→   774→.icon-glow-amber {
+   378→   577→   676→   775→   775→  box-shadow: 0 0 12px oklch(0.8 0.15 85 / 0.2), 0 0 4px oklch(0.8 0.15 85 / 0.15);
+   379→   578→   677→   776→   776→}
+   380→   579→   678→   777→   777→.icon-glow-rose {
+   381→   580→   679→   778→   778→  box-shadow: 0 0 12px oklch(0.7 0.2 25 / 0.2), 0 0 4px oklch(0.7 0.2 25 / 0.15);
+   382→   581→   680→   779→   779→}
+   383→   582→   681→   780→   780→.icon-glow-blue {
+   384→   583→   682→   781→   781→  box-shadow: 0 0 12px oklch(0.7 0.15 250 / 0.2), 0 0 4px oklch(0.7 0.15 250 / 0.15);
+   385→   584→   683→   782→   782→}
+   386→   585→   684→   783→   783→.icon-glow-violet {
+   387→   586→   685→   784→   784→  box-shadow: 0 0 12px oklch(0.6 0.2 300 / 0.2), 0 0 4px oklch(0.6 0.2 300 / 0.15);
+   388→   587→   686→   785→   785→}
+   389→   588→   687→   786→   786→
+   390→   589→   688→   787→   787→/* ── Gradient Border Utility ───────────────────────────────────────── */
+   391→   590→   689→   788→   788→.border-gradient-emerald {
+   392→   591→   690→   789→   789→  border-image: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.6 0.12 180)) 1;
+   393→   592→   691→   790→   790→}
+   394→   593→   692→   791→   791→
+   395→   594→   693→   792→   792→/* ── Smooth Scroll Container ───────────────────────────────────────── */
+   396→   595→   694→   793→   793→.scroll-smooth-container {
+   397→   596→   695→   794→   794→  scroll-behavior: smooth;
+   398→   597→   696→   795→   795→  -webkit-overflow-scrolling: touch;
+   399→   598→   697→   796→   796→}
+   400→   599→   698→   797→   797→
+   401→   600→   699→   798→   798→/* ── Animated Dashed Border ───────────────────────────────────────── */
+   402→   601→   700→   799→   799→@keyframes dash-march {
+   403→   602→   701→   800→   800→  to { stroke-dashoffset: -20; }
+   404→   603→   702→   801→   801→}
+   405→   604→   703→   802→   802→.border-dashed-animated {
+   406→   605→   704→   803→   803→  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23059669' stroke-width='2' stroke-dasharray='10%2c 8' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e");
+   407→   606→   705→   804→   804→  background-size: 100% 100%;
+   408→   607→   706→   805→   805→  border: none;
+   409→   608→   707→   806→   806→  padding: 2px;
+   410→   609→   708→   807→   807→}
+   411→   610→   709→   808→   808→.dark .border-dashed-animated {
+   412→   611→   710→   809→   809→  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%2310b981' stroke-width='2' stroke-dasharray='10%2c 8' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e");
+   413→   612→   711→   810→   810→}
+   414→   613→   712→   811→   811→
+   415→   614→   713→   812→   812→/* ── Stagger Children Animation ────────────────────────────────────── */
+   416→   615→   714→   813→   813→.stagger-children > * {
+   417→   616→   715→   814→   814→  opacity: 0;
+   418→   617→   716→   815→   815→  animation: stagger-fade-in 0.4s ease-out forwards;
+   419→   618→   717→   816→   816→}
+   420→   619→   718→   817→   817→.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+   421→   620→   719→   818→   818→.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+   422→   621→   720→   819→   819→.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+   423→   622→   721→   820→   820→.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+   424→   623→   722→   821→   821→.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+   425→   624→   723→   822→   822→.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+   426→   625→   724→   823→   823→.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+   427→   626→   725→   824→   824→.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+   428→   627→   726→   825→   825→@keyframes stagger-fade-in {
+   429→   628→   727→   826→   826→  from { opacity: 0; transform: translateY(6px); }
+   430→   629→   728→   827→   827→  to { opacity: 1; transform: translateY(0); }
+   431→   630→   729→   828→   828→}
+   432→   631→   730→   829→   829→
+   433→   632→   731→   830→   830→/* ── Enhanced Focus Input ──────────────────────────────────────────── */
+   434→   633→   732→   831→   831→.input-glow:focus-within {
+   435→   634→   733→   832→   832→  box-shadow: 0 0 0 3px oklch(0.508 0.17 155 / 12%);
+   436→   635→   734→   833→   833→  border-color: oklch(0.508 0.17 155 / 40%);
+   437→   636→   735→   834→   834→}
+   438→   637→   736→   835→   835→
+   439→   638→   737→   836→   836→/* ── Pill Button Hover ─────────────────────────────────────────────── */
+   440→   639→   738→   837→   837→.pill-hover {
+   441→   640→   739→   838→   838→  transition: all 0.2s ease;
+   442→   641→   740→   839→   839→  border-radius: 9999px;
+   443→   642→   741→   840→   840→}
+   444→   643→   742→   841→   841→.pill-hover:hover {
+   445→   644→   743→   842→   842→  background: oklch(0.508 0.17 155 / 8%);
+   446→   645→   744→   843→   843→  border-color: oklch(0.508 0.17 155 / 25%);
+   447→   646→   745→   844→   844→}
+   448→   647→   746→   845→   845→.dark .pill-hover:hover {
+   449→   648→   747→   846→   846→  background: oklch(0.608 0.17 155 / 12%);
+   450→   649→   748→   847→   847→  border-color: oklch(0.608 0.17 155 / 20%);
+   451→   650→   749→   848→   848→}
+   452→   651→   750→   849→   849→
+   453→   652→   751→   850→   850→/* ── Subtle Inner Shadow Card ──────────────────────────────────────── */
+   454→   653→   752→   851→   851→.card-inner-shadow {
+   455→   654→   753→   852→   852→  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 80%), 0 1px 3px oklch(0 0 0 / 5%);
+   456→   655→   754→   853→   853→}
+   457→   656→   755→   854→   854→.dark .card-inner-shadow {
+   458→   657→   756→   855→   855→  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 5%), 0 1px 3px oklch(0 0 0 / 20%);
+   459→   658→   757→   856→   856→}
+   460→   659→   758→   857→   857→
+   461→   660→   759→   858→   858→/* ── Status Indicator Dot ──────────────────────────────────────────── */
+   462→   661→   760→   859→   859→.status-dot {
+   463→   662→   761→   860→   860→  position: relative;
+   464→   663→   762→   861→   861→}
+   465→   664→   763→   862→   862→.status-dot::after {
+   466→   665→   764→   863→   863→  content: '';
+   467→   666→   765→   864→   864→  position: absolute;
+   468→   667→   766→   865→   865→  inset: 0;
+   469→   668→   767→   866→   866→  border-radius: inherit;
+   470→   669→   768→   867→   867→  animation: status-dot-ring 2s ease-out infinite;
+   471→   670→   769→   868→   868→}
+   472→   671→   770→   869→   869→@keyframes status-dot-ring {
+   473→   672→   771→   870→   870→  0% { box-shadow: 0 0 0 0 oklch(0.7 0.15 160 / 0.4); }
+   474→   673→   772→   871→   871→  70% { box-shadow: 0 0 0 6px oklch(0.7 0.15 160 / 0); }
+   475→   674→   773→   872→   872→  100% { box-shadow: 0 0 0 0 oklch(0.7 0.15 160 / 0); }
+   476→   675→   774→   873→   873→}
+   477→   676→   775→   874→   874→
+   478→   677→   776→   875→   875→/* ── Fade In Animation ─────────────────────────────────────────────── */
+   479→   678→   777→   876→   876→@keyframes fade-in {
+   480→   679→   778→   877→   877→  from { opacity: 0; }
+   481→   680→   779→   878→   878→  to { opacity: 1; }
+   482→   681→   780→   879→   879→}
+   483→   682→   781→   880→   880→.animate-fade-in {
+   484→   683→   782→   881→   881→  animation: fade-in 0.5s ease-out forwards;
+   485→   684→   783→   882→   882→}
+   486→   685→   784→   883→   883→
+   487→   686→   785→   884→   884→/* ── Scale In Animation ─────────────────────────────────────────────── */
+   488→   687→   786→   885→   885→@keyframes scale-in {
+   489→   688→   787→   886→   886→  from { opacity: 0; transform: scale(0.95); }
+   490→   689→   788→   887→   887→  to { opacity: 1; transform: scale(1); }
+   491→   690→   789→   888→   888→}
+   492→   691→   790→   889→   889→.animate-scale-in {
+   493→   692→   791→   890→   890→  animation: scale-in 0.3s ease-out forwards;
+   494→   693→   792→   891→   891→}
+   495→   694→   793→   892→   892→
+   496→   695→   794→   893→   893→/* ── Gradient Background Mesh ──────────────────────────────────────── */
+   497→   696→   795→   894→   894→.bg-mesh {
+   498→   697→   796→   895→   895→  background:
+   499→   698→   797→   896→   896→    radial-gradient(at 20% 20%, oklch(0.508 0.17 155 / 5%) 0px, transparent 50%),
+   500→   699→   798→   897→   897→    radial-gradient(at 80% 80%, oklch(0.548 0.12 200 / 5%) 0px, transparent 50%),
+   501→   700→   799→   898→   898→    radial-gradient(at 50% 0%, oklch(0.698 0.14 130 / 3%) 0px, transparent 50%);
+   502→   701→   800→   899→   899→}
+   503→   702→   801→   900→   900→.dark .bg-mesh {
+   504→   703→   802→   901→   901→  background:
+   505→   704→   803→   902→   902→    radial-gradient(at 20% 20%, oklch(0.608 0.17 155 / 6%) 0px, transparent 50%),
+   506→   705→   804→   903→   903→    radial-gradient(at 80% 80%, oklch(0.548 0.12 200 / 6%) 0px, transparent 50%),
+   507→   706→   805→   904→   904→    radial-gradient(at 50% 0%, oklch(0.698 0.14 130 / 4%) 0px, transparent 50%);
+   508→   707→   806→   905→   905→}
+   509→   708→   807→   906→   906→
+   510→   709→   808→   907→   907→/* ── Table Enhanced Header ─────────────────────────────────────────── */
+   511→   710→   809→   908→   908→.table-header-enhanced th {
+   512→   711→   810→   909→   909→  background: oklch(0.96 0.008 155);
+   513→   712→   811→   910→   910→  font-weight: 600;
+   514→   713→   812→   911→   911→  font-size: 0.75rem;
+   515→   714→   813→   912→   912→  text-transform: uppercase;
+   516→   715→   814→   913→   913→  letter-spacing: 0.05em;
+   517→   716→   815→   914→   914→  color: oklch(0.45 0.02 155);
+   518→   717→   816→   915→   915→  border-bottom: 2px solid oklch(0.508 0.17 155 / 15%);
+   519→   718→   817→   916→   916→}
+   520→   719→   818→   917→   917→.dark .table-header-enhanced th {
+   521→   720→   819→   918→   918→  background: oklch(0.16 0.008 155);
+   522→   721→   820→   919→   919→  color: oklch(0.70 0.02 155);
+   523→   722→   821→   920→   920→  border-bottom-color: oklch(0.608 0.17 155 / 15%);
+   524→   723→   822→   921→   921→}
+   525→   724→   823→   922→   922→

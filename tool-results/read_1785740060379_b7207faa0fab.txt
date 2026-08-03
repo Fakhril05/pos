@@ -1,0 +1,1228 @@
+     1→'use client';
+     2→
+     3→import { useState, useCallback, useMemo } from 'react';
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import { toast } from 'sonner';
+     7→import {
+     8→  Users,
+     9→  Wallet,
+    10→  TrendingUp,
+    11→  Search,
+    12→  Mail,
+    13→  Phone,
+    14→  ArrowLeftRight,
+    15→  CalendarDays,
+    16→  MapPin,
+    17→  XCircle,
+    18→  Plus,
+    19→  Bell,
+    20→  ShoppingCart,
+    21→} from 'lucide-react';
+    22→import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+    23→import { Card, CardContent } from '@/components/ui/card';
+    24→import { Button } from '@/components/ui/button';
+    25→import { Input } from '@/components/ui/input';
+    26→import { Label } from '@/components/ui/label';
+    27→import { Badge } from '@/components/ui/badge';
+    28→import { Skeleton } from '@/components/ui/skeleton';
+    29→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    30→import { Separator } from '@/components/ui/separator';
+    31→import {
+    32→  Sheet,
+    33→  SheetContent,
+    34→  SheetHeader,
+    35→  SheetTitle,
+    36→  SheetDescription,
+    37→} from '@/components/ui/sheet';
+    38→import { PageHeader } from '@/components/app/page-header';
+    39→import { AnimatedCounter } from '@/components/app/animated-counter';
+    40→import {
+    41→  Table,
+    42→  TableBody,
+    43→  TableCell,
+    44→  TableHead,
+    45→  TableHeader,
+    46→  TableRow,
+    47→} from '@/components/ui/table';
+    48→import {
+    49→  Dialog,
+    50→  DialogContent,
+    51→  DialogHeader,
+    52→  DialogTitle,
+    53→  DialogDescription,
+    54→  DialogFooter,
+    55→} from '@/components/ui/dialog';
+    56→import {
+    57→  ChartContainer,
+    58→  ChartTooltip,
+    59→  ChartTooltipContent,
+    60→  type ChartConfig,
+    61→} from '@/components/ui/chart';
+    62→import {
+    63→  Pagination,
+    64→  PaginationContent,
+    65→  PaginationItem,
+    66→  PaginationLink,
+    67→  PaginationPrevious,
+    68→  PaginationNext,
+    69→  PaginationEllipsis,
+    70→} from '@/components/ui/pagination';
+    71→
+    72→// ── Helpers ──────────────────────────────────────────────────────────────────
+    73→
+    74→const formatRp = (amount: number) =>
+    75→  new Intl.NumberFormat('id-ID', {
+    76→    style: 'currency',
+    77→    currency: 'IDR',
+    78→    minimumFractionDigits: 0,
+    79→  }).format(amount);
+    80→
+    81→const formatDate = (dateStr: string) => {
+    82→  const d = new Date(dateStr);
+    83→  return d.toLocaleDateString('id-ID', {
+    84→    day: 'numeric',
+    85→    month: 'short',
+    86→    year: 'numeric',
+    87→  });
+    88→};
+    89→
+    90→const formatDateTime = (dateStr: string) => {
+    91→  const d = new Date(dateStr);
+    92→  return d.toLocaleDateString('id-ID', {
+    93→    day: 'numeric',
+    94→    month: 'short',
+    95→    year: 'numeric',
+    96→    hour: '2-digit',
+    97→    minute: '2-digit',
+    98→  });
+    99→};
+   100→
+   101→const getInitials = (name: string) => {
+   102→  return name
+   103→    .split(' ')
+   104→    .map((w) => w[0])
+   105→    .slice(0, 2)
+   106→    .join('')
+   107→    .toUpperCase();
+   108→};
+   109→
+   110→// ── Types ────────────────────────────────────────────────────────────────────
+   111→
+   112→interface CustomerItem {
+   113→  id: string;
+   114→  name: string;
+   115→  email: string;
+   116→  phone: string | null;
+   117→  address: string | null;
+   118→  totalSpent: number;
+   119→  totalTx: number;
+   120→  createdAt: string;
+   121→  updatedAt: string;
+   122→  _count: { transactions: number };
+   123→}
+   124→
+   125→interface CustomerTransaction {
+   126→  id: string;
+   127→  invoiceNo: string;
+   128→  amount: number;
+   129→  fee: number;
+   130→  netAmount: number;
+   131→  paymentMethod: string;
+   132→  paymentChannel: string;
+   133→  status: string;
+   134→  description: string | null;
+   135→  paidAt: string | null;
+   136→  createdAt: string;
+   137→  merchant: { id: string; name: string; logo: string | null };
+   138→}
+   139→
+   140→interface MonthlyActivity {
+   141→  month: string;
+   142→  count: number;
+   143→  amount: number;
+   144→}
+   145→
+   146→interface CustomerDetail {
+   147→  id: string;
+   148→  name: string;
+   149→  email: string;
+   150→  phone: string | null;
+   151→  address: string | null;
+   152→  totalSpent: number;
+   153→  totalTx: number;
+   154→  successRate: number;
+   155→  lastTransactionDate: string | null;
+   156→  createdAt: string;
+   157→  updatedAt: string;
+   158→  transactions: CustomerTransaction[];
+   159→  monthlyActivity: MonthlyActivity[];
+   160→}
+   161→
+   162→interface CustomersResponse {
+   163→  data: CustomerItem[];
+   164→  pagination: {
+   165→    page: number;
+   166→    limit: number;
+   167→    total: number;
+   168→    totalPages: number;
+   169→  };
+   170→}
+   171→
+   172→// ── Status Badge ─────────────────────────────────────────────────────────────
+   173→
+   174→function StatusBadge({ status }: { status: string }) {
+   175→  const map: Record<string, { label: string; className: string }> = {
+   176→    success: {
+   177→      label: 'Berhasil',
+   178→      className:
+   179→        'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+   180→    },
+   181→    pending: {
+   182→      label: 'Menunggu',
+   183→      className:
+   184→        'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+   185→    },
+   186→    failed: {
+   187→      label: 'Gagal',
+   188→      className:
+   189→        'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+   190→    },
+   191→    expired: {
+   192→      label: 'Kedaluwarsa',
+   193→      className:
+   194→        'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+   195→    },
+   196→    refunded: {
+   197→      label: 'Refund',
+   198→      className:
+   199→        'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800',
+   200→    },
+   201→  };
+   202→  const cfg = map[status] ?? {
+   203→    label: status,
+   204→    className: 'bg-muted text-muted-foreground border-border',
+   205→  };
+   206→  return (
+   207→    <Badge
+   208→      variant="outline"
+   209→      className={`text-[11px] font-medium px-2 py-0.5 ${cfg.className}`}
+   210→    >
+   211→      {cfg.label}
+   212→    </Badge>
+   213→  );
+   214→}
+   215→
+   216→function PaymentMethodBadge({ method }: { method: string }) {
+   217→  const map: Record<string, string> = {
+   218→    qris: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+   219→    ewallet: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400',
+   220→    bank_transfer: 'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400',
+   221→    credit_card: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400',
+   222→  };
+   223→  const className = map[method] ?? 'bg-muted text-muted-foreground';
+   224→  const labelMap: Record<string, string> = {
+   225→    qris: 'QRIS',
+   226→    ewallet: 'E-Wallet',
+   227→    bank_transfer: 'Transfer Bank',
+   228→    credit_card: 'Kartu Kredit',
+   229→  };
+   230→  return (
+   231→    <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ${className}`}>
+   232→      {labelMap[method] ?? method}
+   233→    </span>
+   234→  );
+   235→}
+   236→
+   237→// ── Pagination Helper ────────────────────────────────────────────────────────
+   238→
+   239→function getPaginationRange(current: number, total: number) {
+   240→  const delta = 2;
+   241→  const range: (number | 'dots')[] = [];
+   242→  const left = Math.max(2, current - delta);
+   243→  const right = Math.min(total - 1, current + delta);
+   244→
+   245→  range.push(1);
+   246→  if (left > 2) range.push('dots');
+   247→  for (let i = left; i <= right; i++) range.push(i);
+   248→  if (right < total - 1) range.push('dots');
+   249→  if (total > 1) range.push(total);
+   250→
+   251→  return range;
+   252→}
+   253→
+   254→// ── Skeleton ─────────────────────────────────────────────────────────────────
+   255→
+   256→function CustomersSkeleton() {
+   257→  return (
+   258→    <div className="space-y-6">
+   259→      {/* Stats skeleton */}
+   260→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+   261→        {Array.from({ length: 3 }).map((_, i) => (
+   262→          <Card key={i} className="shadow-sm">
+   263→            <CardContent className="p-5">
+   264→              <div className="flex items-center gap-4">
+   265→                <Skeleton className="h-11 w-11 rounded-xl" />
+   266→                <div className="flex-1 space-y-2">
+   267→                  <Skeleton className="h-7 w-28" />
+   268→                  <Skeleton className="h-4 w-32" />
+   269→                </div>
+   270→              </div>
+   271→            </CardContent>
+   272→          </Card>
+   273→        ))}
+   274→      </div>
+   275→
+   276→      {/* Search skeleton */}
+   277→      <Card className="shadow-sm">
+   278→        <CardContent className="p-4">
+   279→          <Skeleton className="h-10 w-full max-w-sm" />
+   280→        </CardContent>
+   281→      </Card>
+   282→
+   283→      {/* Table skeleton */}
+   284→      <Card className="shadow-sm">
+   285→        <CardContent className="p-0">
+   286→          <div className="border-b px-4 py-3">
+   287→            <Skeleton className="h-5 w-40" />
+   288→          </div>
+   289→          <div className="space-y-0">
+   290→            {Array.from({ length: 8 }).map((_, i) => (
+   291→              <div key={i} className="flex items-center gap-4 border-b px-4 py-3 last:border-0">
+   292→                <Skeleton className="h-9 w-9 rounded-full" />
+   293→                <Skeleton className="h-4 w-32" />
+   294→                <Skeleton className="ml-auto h-4 w-24 hidden sm:block" />
+   295→                <Skeleton className="h-4 w-28 hidden md:block" />
+   296→                <Skeleton className="h-4 w-20" />
+   297→              </div>
+   298→            ))}
+   299→          </div>
+   300→        </CardContent>
+   301→      </Card>
+   302→
+   303→      <div className="flex justify-center">
+   304→        <Skeleton className="h-9 w-72" />
+   305→      </div>
+   306→    </div>
+   307→  );
+   308→}
+   309→
+   310→// ── Chart Config ────────────────────────────────────────────────────────────
+   311→
+   312→const activityChartConfig = {
+   313→  count: {
+   314→    label: 'Jumlah Transaksi',
+   315→    color: 'oklch(0.6 0.15 160)',
+   316→  },
+   317→} satisfies ChartConfig;
+   318→
+   319→// ── Main Component ───────────────────────────────────────────────────────────
+   320→
+   321→export default function Customers() {
+   322→  const queryClient = useQueryClient();
+   323→
+   324→  const [search, setSearch] = useState('');
+   325→  const [searchInput, setSearchInput] = useState('');
+   326→  const [page, setPage] = useState(1);
+   327→  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+   328→  const [sheetOpen, setSheetOpen] = useState(false);
+   329→  const [createOpen, setCreateOpen] = useState(false);
+   330→  const [createForm, setCreateForm] = useState({ name: '', email: '', phone: '' });
+   331→  const [formErrors, setFormErrors] = useState<{ name?: string; email?: string }>({});
+   332→
+   333→  const limit = 10;
+   334→
+   335→  // ─── Queries ──────────────────────────────────────────────────────────
+   336→
+   337→  // Paginated customer list
+   338→  const {
+   339→    data: listData,
+   340→    isLoading: listLoading,
+   341→    error: listError,
+   342→  } = useQuery<CustomersResponse>({
+   343→    queryKey: ['customers', page, search],
+   344→    queryFn: () => {
+   345→      const params = new URLSearchParams();
+   346→      params.set('page', String(page));
+   347→      params.set('limit', String(limit));
+   348→      if (search) params.set('search', search);
+   349→      return fetch(`/api/customers?${params.toString()}`).then((r) =>
+   350→        r.json(),
+   351→      );
+   352→    },
+   353→    staleTime: 15_000,
+   354→  });
+   355→
+   356→  // Stats query: fetch all customers (no pagination) for accurate aggregates
+   357→  const { data: statsData } = useQuery<{ data: CustomerItem[] }>({
+   358→    queryKey: ['customers-stats', search],
+   359→    queryFn: () => {
+   360→      const params = new URLSearchParams();
+   361→      params.set('page', '1');
+   362→      params.set('limit', '9999');
+   363→      if (search) params.set('search', search);
+   364→      return fetch(`/api/customers?${params.toString()}`).then((r) =>
+   365→        r.json(),
+   366→      );
+   367→    },
+   368→    staleTime: 30_000,
+   369→  });
+   370→
+   371→  // Customer detail with transactions
+   372→  const {
+   373→    data: detailData,
+   374→    isLoading: detailLoading,
+   375→  } = useQuery<{ data: CustomerDetail }>({
+   376→    queryKey: ['customer-detail', selectedCustomerId],
+   377→    queryFn: () =>
+   378→      fetch(`/api/customers/${selectedCustomerId}`).then((r) => r.json()),
+   379→    enabled: !!selectedCustomerId && sheetOpen,
+   380→    staleTime: 15_000,
+   381→  });
+   382→
+   383→  // ─── Mutations ───────────────────────────────────────────────────────
+   384→
+   385→  const createMutation = useMutation({
+   386→    mutationFn: (body: { name: string; email: string; phone?: string }) =>
+   387→      fetch('/api/customers', {
+   388→        method: 'POST',
+   389→        headers: { 'Content-Type': 'application/json' },
+   390→        body: JSON.stringify(body),
+   391→      }).then((r) => {
+   392→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   393→        return r.json();
+   394→      }),
+   395→    onSuccess: () => {
+   396→      queryClient.invalidateQueries({ queryKey: ['customers'] });
+   397→      queryClient.invalidateQueries({ queryKey: ['customers-stats'] });
+   398→      setCreateOpen(false);
+   399→      setCreateForm({ name: '', email: '', phone: '' });
+   400→      setFormErrors({});
+   401→      toast.success('Pelanggan berhasil ditambahkan');
+   402→    },
+   403→    onError: (err: string) => {
+   404→      toast.error(err || 'Gagal menambahkan pelanggan');
+   405→    },
+   406→  });
+   407→
+   408→  // ─── Derived ─────────────────────────────────────────────────────────
+   409→
+   410→  const customers = listData?.data ?? [];
+   411→  const pagination = listData?.pagination;
+   412→  const customerDetail = detailData?.data ?? null;
+   413→
+   414→  const stats = useMemo(() => {
+   415→    const items = statsData?.data ?? [];
+   416→    const totalCustomers = items.length;
+   417→    const totalSpent = items.reduce((sum, c) => sum + c.totalSpent, 0);
+   418→    const avgSpent = totalCustomers > 0 ? totalSpent / totalCustomers : 0;
+   419→    return { totalCustomers, totalSpent, avgSpent };
+   420→  }, [statsData]);
+   421→
+   422→  const pageRange = useMemo(() => {
+   423→    if (!pagination) return [];
+   424→    return getPaginationRange(pagination.page, pagination.totalPages);
+   425→  }, [pagination]);
+   426→
+   427→  // ─── Handlers ─────────────────────────────────────────────────────────
+   428→
+   429→  const handleSearch = useCallback((e: React.FormEvent) => {
+   430→    e.preventDefault();
+   431→    setSearch(searchInput);
+   432→    setPage(1);
+   433→  }, [searchInput]);
+   434→
+   435→  const handleRowClick = useCallback((customer: CustomerItem) => {
+   436→    setSelectedCustomerId(customer.id);
+   437→    setSheetOpen(true);
+   438→  }, []);
+   439→
+   440→  const validateCreateForm = () => {
+   441→    const errors: { name?: string; email?: string } = {};
+   442→    if (!createForm.name.trim()) errors.name = 'Nama wajib diisi';
+   443→    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+   444→    if (!createForm.email.trim()) {
+   445→      errors.email = 'Email wajib diisi';
+   446→    } else if (!emailRegex.test(createForm.email)) {
+   447→      errors.email = 'Format email tidak valid';
+   448→    }
+   449→    setFormErrors(errors);
+   450→    return Object.keys(errors).length === 0;
+   451→  };
+   452→
+   453→  const handleCreateSubmit = () => {
+   454→    if (!validateCreateForm()) return;
+   455→    createMutation.mutate({
+   456→      name: createForm.name.trim(),
+   457→      email: createForm.email.trim(),
+   458→      phone: createForm.phone.trim() || undefined,
+   459→    });
+   460→  };
+   461→
+   462→  // ─── Avatar colors ───────────────────────────────────────────────────
+   463→
+   464→  const avatarColors = [
+   465→    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+   466→    'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400',
+   467→    'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-400',
+   468→    'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400',
+   469→    'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400',
+   470→    'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400',
+   471→  ];
+   472→
+   473→  const getAvatarColor = (name: string) => {
+   474→    let hash = 0;
+   475→    for (let i = 0; i < name.length; i++) {
+   476→      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+   477→    }
+   478→    return avatarColors[Math.abs(hash) % avatarColors.length];
+   479→  };
+   480→
+   481→  // ─── Render ──────────────────────────────────────────────────────────
+   482→
+   483→  if (listLoading) return <CustomersSkeleton />;
+   484→  if (listError || !listData) {
+   485→    return (
+   486→      <div className="flex flex-col items-center justify-center gap-3 py-20">
+   487→        <XCircle className="h-10 w-10 text-muted-foreground" />
+   488→        <p className="text-muted-foreground">
+   489→          Gagal memuat data pelanggan. Silakan coba lagi.
+   490→        </p>
+   491→        <Button variant="outline" onClick={() => window.location.reload()}>
+   492→          Coba Lagi
+   493→        </Button>
+   494→      </div>
+   495→    );
+   496→  }
+   497→
+   498→  return (
+   499→    <div className="space-y-6 bg-mesh">
+   500→      <PageHeader
+   501→        title="Pelanggan"
+   502→        description="Kelola data pelanggan dan riwayat transaksi"
+   503→        icon={Users}
+   504→        iconGradient="teal"
+   505→      >
+   506→        <Button
+   507→          onClick={() => setCreateOpen(true)}
+   508→          className="btn-press bg-emerald-600 hover:bg-emerald-700"
+   509→        >
+   510→          <Plus className="mr-2 h-4 w-4" />
+   511→          <span className="hidden sm:inline">Tambah Pelanggan</span>
+   512→        </Button>
+   513→      </PageHeader>
+   514→
+   515→      {/* ─── Stats Row ────────────────────────────────────────────── */}
+   516→      <motion.div
+   517→        initial={{ opacity: 0, y: -10 }}
+   518→        animate={{ opacity: 1, y: 0 }}
+   519→        transition={{ duration: 0.4 }}
+   520→        className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+   521→      >
+   522→        {/* Total Pelanggan */}
+   523→        <motion.div
+   524→          initial={{ opacity: 0, y: 10 }}
+   525→          animate={{ opacity: 1, y: 0 }}
+   526→          transition={{ duration: 0.3, delay: 0.05 }}
+   527→        >
+   528→          <Card className="shadow-sm transition-shadow hover:shadow-md card-hover">
+   529→            <CardContent className="p-5">
+   530→              <div className="flex items-center gap-4">
+   531→                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400">
+   532→                  <Users className="h-5 w-5 text-white" />
+   533→                </div>
+   534→                <div className="min-w-0 flex-1">
+   535→                  <p className="text-2xl font-bold tracking-tight">
+   536→                    {stats.totalCustomers.toLocaleString('id-ID')}
+   537→                  </p>
+   538→                  <p className="text-muted-foreground text-sm">Total Pelanggan</p>
+   539→                </div>
+   540→              </div>
+   541→            </CardContent>
+   542→          </Card>
+   543→        </motion.div>
+   544→
+   545→        {/* Total Belanja */}
+   546→        <motion.div
+   547→          initial={{ opacity: 0, y: 10 }}
+   548→          animate={{ opacity: 1, y: 0 }}
+   549→          transition={{ duration: 0.3, delay: 0.1 }}
+   550→        >
+   551→          <Card className="shadow-sm transition-shadow hover:shadow-md card-hover">
+   552→            <CardContent className="p-5">
+   553→              <div className="flex items-center gap-4">
+   554→                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-400">
+   555→                  <Wallet className="h-5 w-5 text-white" />
+   556→                </div>
+   557→                <div className="min-w-0 flex-1">
+   558→                  <p className="text-2xl font-bold tracking-tight">
+   559→                    {formatRp(stats.totalSpent)}
+   560→                  </p>
+   561→                  <p className="text-muted-foreground text-sm">Total Belanja</p>
+   562→                </div>
+   563→              </div>
+   564→            </CardContent>
+   565→          </Card>
+   566→        </motion.div>
+   567→
+   568→        {/* Rata-rata Belanja */}
+   569→        <motion.div
+   570→          initial={{ opacity: 0, y: 10 }}
+   571→          animate={{ opacity: 1, y: 0 }}
+   572→          transition={{ duration: 0.3, delay: 0.15 }}
+   573→        >
+   574→          <Card className="shadow-sm transition-shadow hover:shadow-md card-hover">
+   575→            <CardContent className="p-5">
+   576→              <div className="flex items-center gap-4">
+   577→                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-400">
+   578→                  <TrendingUp className="h-5 w-5 text-white" />
+   579→                </div>
+   580→                <div className="min-w-0 flex-1">
+   581→                  <p className="text-2xl font-bold tracking-tight">
+   582→                    {formatRp(stats.avgSpent)}
+   583→                  </p>
+   584→                  <p className="text-muted-foreground text-sm">Rata-rata Belanja</p>
+   585→                </div>
+   586→              </div>
+   587→            </CardContent>
+   588→          </Card>
+   589→        </motion.div>
+   590→      </motion.div>
+   591→
+   592→      {/* ─── Search + Table ────────────────────────────────────────── */}
+   593→      <motion.div
+   594→        initial={{ opacity: 0, y: 10 }}
+   595→        animate={{ opacity: 1, y: 0 }}
+   596→        transition={{ duration: 0.3, delay: 0.2 }}
+   597→      >
+   598→        <Card className="shadow-sm card-hover card-elevated">
+   599→          <CardContent className="p-0">
+   600→            {/* Header with search */}
+   601→            <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+   602→              <div className="flex items-center gap-2">
+   603→                <Users className="h-4 w-4 text-emerald-500" />
+   604→                <h3 className="text-sm font-semibold">Daftar Pelanggan</h3>
+   605→                <span className="text-muted-foreground text-xs">
+   606→                  ({pagination?.total?.toLocaleString('id-ID')} pelanggan)
+   607→                </span>
+   608→              </div>
+   609→              <div className="flex items-center gap-3">
+   610→                <form onSubmit={handleSearch} className="relative w-full sm:w-auto sm:max-w-xs">
+   611→                  <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   612→                  <Input
+   613→                    placeholder="Cari nama, email, telepon..."
+   614→                    value={searchInput}
+   615→                    onChange={(e) => setSearchInput(e.target.value)}
+   616→                    className="pl-9"
+   617→                  />
+   618→                </form>
+   619→              </div>
+   620→            </div>
+   621→
+   622→            {/* Active search indicator */}
+   623→            {search && (
+   624→              <div className="flex items-center gap-2 border-b px-4 py-2 bg-muted/30">
+   625→                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+   626→                <span className="text-muted-foreground text-xs">
+   627→                  Hasil pencarian untuk &ldquo;{search}&rdquo;
+   628→                </span>
+   629→                <button
+   630→                  onClick={() => {
+   631→                    setSearch('');
+   632→                    setSearchInput('');
+   633→                    setPage(1);
+   634→                  }}
+   635→                  className="ml-auto text-muted-foreground text-xs hover:text-foreground transition-colors"
+   636→                  aria-label="Hapus pencarian"
+   637→                >
+   638→                  ✕ Hapus
+   639→                </button>
+   640→              </div>
+   641→            )}
+   642→
+   643→            {/* Table */}
+   644→            <div className="overflow-x-auto">
+   645→              <Table>
+   646→                <TableHeader className="table-header-enhanced">
+   647→                  <TableRow className="hover:bg-transparent">
+   648→                    <TableHead className="pl-4">Pelanggan</TableHead>
+   649→                    <TableHead className="hidden sm:table-cell">Email</TableHead>
+   650→                    <TableHead className="hidden md:table-cell">Telepon</TableHead>
+   651→                    <TableHead className="text-right">Total Transaksi</TableHead>
+   652→                    <TableHead className="text-right">Total Belanja</TableHead>
+   653→                    <TableHead className="hidden lg:table-cell">Terdaftar</TableHead>
+   654→                  </TableRow>
+   655→                </TableHeader>
+   656→                <TableBody>
+   657→                  <AnimatePresence mode="popLayout">
+   658→                    {customers.length === 0 ? (
+   659→                      <TableRow>
+   660→                        <TableCell colSpan={6} className="h-48 text-center">
+   661→                          <div className="flex flex-col items-center gap-3">
+   662→                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+   663→                              <Users className="h-7 w-7 text-muted-foreground/50" />
+   664→                            </div>
+   665→                            <p className="text-muted-foreground text-sm font-medium">
+   666→                              Tidak ada pelanggan ditemukan
+   667→                            </p>
+   668→                            <p className="text-muted-foreground text-xs">
+   669→                              Coba ubah kata kunci pencarian Anda
+   670→                            </p>
+   671→                          </div>
+   672→                        </TableCell>
+   673→                      </TableRow>
+   674→                    ) : (
+   675→                      customers.map((customer) => (
+   676→                        <motion.tr
+   677→                          key={customer.id}
+   678→                          initial={{ opacity: 0, x: -8 }}
+   679→                          animate={{ opacity: 1, x: 0 }}
+   680→                          exit={{ opacity: 0, x: 8 }}
+   681→                          transition={{ duration: 0.2 }}
+   682→                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50 table-row-hover"
+   683→                          onClick={() => handleRowClick(customer)}
+   684→                        >
+   685→                          {/* Avatar + Name */}
+   686→                          <TableCell className="pl-4">
+   687→                            <div className="flex items-center gap-3">
+   688→                              <Avatar className="h-9 w-9">
+   689→                                <AvatarFallback
+   690→                                  className={`text-xs font-semibold ${getAvatarColor(customer.name)}`}
+   691→                                >
+   692→                                  {getInitials(customer.name)}
+   693→                                </AvatarFallback>
+   694→                              </Avatar>
+   695→                              <div className="min-w-0">
+   696→                                <p className="truncate text-sm font-medium cursor-pointer text-emerald-600 dark:text-emerald-400 hover:underline">
+   697→                                  {customer.name}
+   698→                                </p>
+   699→                                <p className="text-muted-foreground truncate text-xs sm:hidden">
+   700→                                  {customer.email}
+   701→                                </p>
+   702→                              </div>
+   703→                            </div>
+   704→                          </TableCell>
+   705→
+   706→                          {/* Email */}
+   707→                          <TableCell className="hidden sm:table-cell">
+   708→                            <div className="flex items-center gap-2">
+   709→                              <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+   710→                              <span className="text-sm text-muted-foreground truncate max-w-[180px]">
+   711→                                {customer.email}
+   712→                              </span>
+   713→                            </div>
+   714→                          </TableCell>
+   715→
+   716→                          {/* Phone */}
+   717→                          <TableCell className="hidden md:table-cell">
+   718→                            <div className="flex items-center gap-2">
+   719→                              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+   720→                              <span className="text-sm text-muted-foreground">
+   721→                                {customer.phone || '-'}
+   722→                              </span>
+   723→                            </div>
+   724→                          </TableCell>
+   725→
+   726→                          {/* Total Transaksi */}
+   727→                          <TableCell className="text-right">
+   728→                            <span className="text-sm font-medium">
+   729→                              {customer._count.transactions}
+   730→                            </span>
+   731→                          </TableCell>
+   732→
+   733→                          {/* Total Belanja */}
+   734→                          <TableCell className="text-right">
+   735→                            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+   736→                              {formatRp(customer.totalSpent)}
+   737→                            </span>
+   738→                          </TableCell>
+   739→
+   740→                          {/* Terdaftar */}
+   741→                          <TableCell className="hidden lg:table-cell">
+   742→                            <span className="text-xs text-muted-foreground">
+   743→                              {formatDate(customer.createdAt)}
+   744→                            </span>
+   745→                          </TableCell>
+   746→                        </motion.tr>
+   747→                      ))
+   748→                    )}
+   749→                  </AnimatePresence>
+   750→                </TableBody>
+   751→              </Table>
+   752→            </div>
+   753→
+   754→            {/* Pagination */}
+   755→            {pagination && pagination.totalPages > 1 && (
+   756→              <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
+   757→                <p className="text-muted-foreground text-xs">
+   758→                  Menampilkan {(pagination.page - 1) * pagination.limit + 1}
+   759→                  –{Math.min(
+   760→                    pagination.page * pagination.limit,
+   761→                    pagination.total,
+   762→                  )}{' '}
+   763→                  dari {pagination.total} pelanggan
+   764→                </p>
+   765→                <Pagination>
+   766→                  <PaginationContent>
+   767→                    <PaginationItem>
+   768→                      <PaginationPrevious
+   769→                        href="#"
+   770→                        onClick={(e) => {
+   771→                          e.preventDefault();
+   772→                          if (pagination.page > 1)
+   773→                            setPage(pagination.page - 1);
+   774→                        }}
+   775→                        className={
+   776→                          pagination.page <= 1
+   777→                            ? 'pointer-events-none opacity-50'
+   778→                            : 'cursor-pointer'
+   779→                        }
+   780→                      />
+   781→                    </PaginationItem>
+   782→                    {pageRange.map((p, idx) =>
+   783→                      p === 'dots' ? (
+   784→                        <PaginationItem key={`dots-${idx}`}>
+   785→                          <PaginationEllipsis />
+   786→                        </PaginationItem>
+   787→                      ) : (
+   788→                        <PaginationItem key={p}>
+   789→                          <PaginationLink
+   790→                            href="#"
+   791→                            isActive={pagination.page === p}
+   792→                            onClick={(e) => {
+   793→                              e.preventDefault();
+   794→                              setPage(p as number);
+   795→                            }}
+   796→                            className="cursor-pointer"
+   797→                          >
+   798→                            {p}
+   799→                          </PaginationLink>
+   800→                        </PaginationItem>
+   801→                      ),
+   802→                    )}
+   803→                    <PaginationItem>
+   804→                      <PaginationNext
+   805→                        href="#"
+   806→                        onClick={(e) => {
+   807→                          e.preventDefault();
+   808→                          if (pagination.page < pagination.totalPages)
+   809→                            setPage(pagination.page + 1);
+   810→                        }}
+   811→                        className={
+   812→                          pagination.page >= pagination.totalPages
+   813→                            ? 'pointer-events-none opacity-50'
+   814→                            : 'cursor-pointer'
+   815→                        }
+   816→                      />
+   817→                    </PaginationItem>
+   818→                  </PaginationContent>
+   819→                </Pagination>
+   820→              </div>
+   821→            )}
+   822→          </CardContent>
+   823→        </Card>
+   824→      </motion.div>
+   825→
+   826→      {/* ─── Customer Detail Sheet ─────────────────────────────────── */}
+   827→      <Sheet open={sheetOpen} onOpenChange={(open) => {
+   828→        setSheetOpen(open);
+   829→        if (!open) setSelectedCustomerId(null);
+   830→      }}>
+   831→        <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden">
+   832→          {detailLoading ? (
+   833→            <div className="flex flex-col gap-4 p-6">
+   834→              <div className="flex items-center gap-4">
+   835→                <Skeleton className="h-16 w-16 rounded-2xl" />
+   836→                <div className="space-y-2 flex-1">
+   837→                  <Skeleton className="h-5 w-40" />
+   838→                  <Skeleton className="h-4 w-56" />
+   839→                </div>
+   840→              </div>
+   841→              <div className="grid grid-cols-3 gap-3">
+   842→                {Array.from({ length: 3 }).map((_, i) => (
+   843→                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
+   844→                ))}
+   845→              </div>
+   846→              <Separator />
+   847→              <div className="space-y-3">
+   848→                {Array.from({ length: 4 }).map((_, i) => (
+   849→                  <Skeleton key={i} className="h-10 w-full" />
+   850→                ))}
+   851→              </div>
+   852→              <Separator />
+   853→              <Skeleton className="h-[120px] w-full rounded-xl" />
+   854→              <Separator />
+   855→              {Array.from({ length: 5 }).map((_, i) => (
+   856→                <Skeleton key={i} className="h-12 w-full" />
+   857→              ))}
+   858→            </div>
+   859→          ) : customerDetail ? (
+   860→            <div className="flex h-full flex-col">
+   861→              {/* ── Drawer Header ─────────────────────────────────── */}
+   862→              <SheetHeader className="border-b px-6 py-5 shrink-0">
+   863→                <div className="flex items-center gap-4">
+   864→                  <div className={
+   865→                    `flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 text-white text-lg font-bold shadow-lg`
+   866→                  }>
+   867→                    {getInitials(customerDetail.name)}
+   868→                  </div>
+   869→                  <div className="min-w-0 flex-1">
+   870→                    <SheetTitle className="text-lg truncate">
+   871→                      {customerDetail.name}
+   872→                    </SheetTitle>
+   873→                    <SheetDescription className="truncate">
+   874→                      {customerDetail.email}
+   875→                    </SheetDescription>
+   876→                  </div>
+   877→                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800 shrink-0">
+   878→                    Aktif
+   879→                  </Badge>
+   880→                </div>
+   881→              </SheetHeader>
+   882→
+   883→              {/* ── Scrollable Content ─────────────────────────────── */}
+   884→              <div className="flex-1 overflow-y-auto scrollbar-thin">
+   885→                <div className="space-y-6 p-6">
+   886→                  {/* ── Stats Section ────────────────────────────── */}
+   887→                  <motion.div
+   888→                    initial={{ opacity: 0, y: 12 }}
+   889→                    animate={{ opacity: 1, y: 0 }}
+   890→                    transition={{ duration: 0.3, delay: 0.05 }}
+   891→                    className="grid grid-cols-3 gap-3"
+   892→                  >
+   893→                    {/* Total Belanja */}
+   894→                    <div className="card-elevated rounded-xl p-3.5">
+   895→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-400">
+   896→                        <Wallet className="h-4 w-4 text-white" />
+   897→                      </div>
+   898→                      <p className="text-muted-foreground text-[11px] font-medium">Total Belanja</p>
+   899→                      <p className="mt-0.5 text-sm font-bold">
+   900→                        <AnimatedCounter
+   901→                          value={customerDetail.totalSpent}
+   902→                          formatFn={(v) => formatRp(v)}
+   903→                          duration={800}
+   904→                          className="text-emerald-600 dark:text-emerald-400"
+   905→                        />
+   906→                      </p>
+   907→                    </div>
+   908→
+   909→                    {/* Total Transaksi */}
+   910→                    <div className="card-elevated rounded-xl p-3.5">
+   911→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-400">
+   912→                        <ArrowLeftRight className="h-4 w-4 text-white" />
+   913→                      </div>
+   914→                      <p className="text-muted-foreground text-[11px] font-medium">Total Transaksi</p>
+   915→                      <p className="mt-0.5 text-sm font-bold">
+   916→                        <AnimatedCounter
+   917→                          value={customerDetail.totalTx}
+   918→                          duration={800}
+   919→                        />
+   920→                      </p>
+   921→                    </div>
+   922→
+   923→                    {/* Rata-rata Belanja */}
+   924→                    <div className="card-elevated rounded-xl p-3.5">
+   925→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-400">
+   926→                        <TrendingUp className="h-4 w-4 text-white" />
+   927→                      </div>
+   928→                      <p className="text-muted-foreground text-[11px] font-medium">Rata-rata</p>
+   929→                      <p className="mt-0.5 text-sm font-bold">
+   930→                        <AnimatedCounter
+   931→                          value={customerDetail.totalTx > 0 ? Math.round(customerDetail.totalSpent / customerDetail.totalTx) : 0}
+   932→                          formatFn={(v) => formatRp(v)}
+   933→                          duration={800}
+   934→                        />
+   935→                      </p>
+   936→                    </div>
+   937→                  </motion.div>
+   938→
+   939→                  {/* ── Contact Info Section ──────────────────────── */}
+   940→                  <motion.div
+   941→                    initial={{ opacity: 0, y: 12 }}
+   942→                    animate={{ opacity: 1, y: 0 }}
+   943→                    transition={{ duration: 0.3, delay: 0.1 }}
+   944→                    className="space-y-3"
+   945→                  >
+   946→                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   947→                      Informasi Kontak
+   948→                    </h4>
+   949→                    <div className="rounded-xl border p-4 space-y-3">
+   950→                      <div className="flex items-center gap-3">
+   951→                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   952→                          <Mail className="h-4 w-4 text-muted-foreground" />
+   953→                        </div>
+   954→                        <div className="min-w-0">
+   955→                          <p className="text-muted-foreground text-[11px]">Email</p>
+   956→                          <p className="text-sm font-medium truncate">{customerDetail.email}</p>
+   957→                        </div>
+   958→                      </div>
+   959→                      {customerDetail.phone && (
+   960→                        <div className="flex items-center gap-3">
+   961→                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   962→                            <Phone className="h-4 w-4 text-muted-foreground" />
+   963→                          </div>
+   964→                          <div className="min-w-0">
+   965→                            <p className="text-muted-foreground text-[11px]">Telepon</p>
+   966→                            <p className="text-sm font-medium">{customerDetail.phone}</p>
+   967→                          </div>
+   968→                        </div>
+   969→                      )}
+   970→                      {customerDetail.address && (
+   971→                        <div className="flex items-center gap-3">
+   972→                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   973→                            <MapPin className="h-4 w-4 text-muted-foreground" />
+   974→                          </div>
+   975→                          <div className="min-w-0">
+   976→                            <p className="text-muted-foreground text-[11px]">Alamat</p>
+   977→                            <p className="text-sm font-medium">{customerDetail.address}</p>
+   978→                          </div>
+   979→                        </div>
+   980→                      )}
+   981→                      <div className="flex items-center gap-3">
+   982→                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   983→                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+   984→                        </div>
+   985→                        <div className="min-w-0">
+   986→                          <p className="text-muted-foreground text-[11px]">Bergabung Sejak</p>
+   987→                          <p className="text-sm font-medium">{formatDate(customerDetail.createdAt)}</p>
+   988→                        </div>
+   989→                      </div>
+   990→                    </div>
+   991→                  </motion.div>
+   992→
+   993→                  {/* ── Activity Chart ────────────────────────────── */}
+   994→                  {customerDetail.monthlyActivity && customerDetail.monthlyActivity.length > 0 && (
+   995→                    <motion.div
+   996→                      initial={{ opacity: 0, y: 12 }}
+   997→                      animate={{ opacity: 1, y: 0 }}
+   998→                      transition={{ duration: 0.3, delay: 0.15 }}
+   999→                    >
+  1000→                      <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+  1001→                        Aktivitas Transaksi
+  1002→                      </h4>
+  1003→                      <div className="rounded-xl border p-4">
+  1004→                        <ChartContainer
+  1005→                          config={activityChartConfig}
+  1006→                          className="h-[120px] w-full"
+  1007→                        >
+  1008→                          <BarChart data={customerDetail.monthlyActivity} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+  1009→                            <XAxis
+  1010→                              dataKey="month"
+  1011→                              tickLine={false}
+  1012→                              axisLine={false}
+  1013→                              tickFormatter={(v: string) => {
+  1014→                                const [, m] = v.split('-');
+  1015→                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  1016→                                return months[parseInt(m, 10) - 1] ?? m;
+  1017→                              }}
+  1018→                              className="text-[10px]"
+  1019→                              interval={0}
+  1020→                            />
+  1021→                            <YAxis tickLine={false} axisLine={false} className="text-[10px]" />
+  1022→                            <ChartTooltip
+  1023→                              content={
+  1024→                                <ChartTooltipContent
+  1025→                                  labelFormatter={(label: string) => {
+  1026→                                    const parts = label.split('-');
+  1027→                                    const m = parseInt(parts[1], 10);
+  1028→                                    const y = parts[0];
+  1029→                                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  1030→                                    return `${months[m - 1]} ${y}`;
+  1031→                                  }}
+  1032→                                />
+  1033→                              }
+  1034→                            />
+  1035→                            <Bar
+  1036→                              dataKey="count"
+  1037→                              fill="var(--color-count)"
+  1038→                              radius={[4, 4, 0, 0]}
+  1039→                              maxBarSize={32}
+  1040→                            />
+  1041→                          </BarChart>
+  1042→                        </ChartContainer>
+  1043→                      </div>
+  1044→                    </motion.div>
+  1045→                  )}
+  1046→
+  1047→                  {/* ── Transaction History ───────────────────────── */}
+  1048→                  <motion.div
+  1049→                    initial={{ opacity: 0, y: 12 }}
+  1050→                    animate={{ opacity: 1, y: 0 }}
+  1051→                    transition={{ duration: 0.3, delay: 0.2 }}
+  1052→                  >
+  1053→                    <div className="mb-3 flex items-center justify-between">
+  1054→                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+  1055→                        Riwayat Transaksi
+  1056→                      </h4>
+  1057→                      <Badge variant="secondary" className="text-[10px]">
+  1058→                        {customerDetail.totalTx} total
+  1059→                      </Badge>
+  1060→                    </div>
+  1061→
+  1062→                    {customerDetail.transactions.length === 0 ? (
+  1063→                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10">
+  1064→                        <ArrowLeftRight className="h-8 w-8 text-muted-foreground/40" />
+  1065→                        <p className="text-muted-foreground text-sm">Belum ada transaksi</p>
+  1066→                      </div>
+  1067→                    ) : (
+  1068→                      <div className="rounded-xl border overflow-hidden">
+  1069→                        <Table>
+  1070→                          <TableHeader className="table-header-enhanced">
+  1071→                            <TableRow className="hover:bg-transparent">
+  1072→                              <TableHead className="text-[11px]">Invoice</TableHead>
+  1073→                              <TableHead className="text-[11px]">Merchant</TableHead>
+  1074→                              <TableHead className="text-[11px] text-right">Jumlah</TableHead>
+  1075→                              <TableHead className="text-[11px]">Metode</TableHead>
+  1076→                              <TableHead className="text-[11px]">Status</TableHead>
+  1077→                              <TableHead className="text-[11px]">Tanggal</TableHead>
+  1078→                            </TableRow>
+  1079→                          </TableHeader>
+  1080→                          <TableBody>
+  1081→                            {customerDetail.transactions.map((tx, idx) => (
+  1082→                              <motion.tr
+  1083→                                key={tx.id}
+  1084→                                initial={{ opacity: 0, x: -6 }}
+  1085→                                animate={{ opacity: 1, x: 0 }}
+  1086→                                transition={{ duration: 0.15, delay: idx * 0.03 }}
+  1087→                                className="table-row-hover border-b last:border-0"
+  1088→                              >
+  1089→                                <TableCell className="py-2.5">
+  1090→                                  <span className="font-mono text-[11px] font-medium">{tx.invoiceNo}</span>
+  1091→                                </TableCell>
+  1092→                                <TableCell className="py-2.5">
+  1093→                                  <span className="text-xs truncate block max-w-[100px]">{tx.merchant.name}</span>
+  1094→                                </TableCell>
+  1095→                                <TableCell className="py-2.5 text-right">
+  1096→                                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+  1097→                                    {formatRp(tx.amount)}
+  1098→                                  </span>
+  1099→                                </TableCell>
+  1100→                                <TableCell className="py-2.5">
+  1101→                                  <PaymentMethodBadge method={tx.paymentMethod} />
+  1102→                                </TableCell>
+  1103→                                <TableCell className="py-2.5">
+  1104→                                  <StatusBadge status={tx.status} />
+  1105→                                </TableCell>
+  1106→                                <TableCell className="py-2.5">
+  1107→                                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">{formatDateTime(tx.createdAt)}</span>
+  1108→                                </TableCell>
+  1109→                              </motion.tr>
+  1110→                            ))}
+  1111→                          </TableBody>
+  1112→                        </Table>
+  1113→                      </div>
+  1114→                    )}
+  1115→                  </motion.div>
+  1116→                </div>
+  1117→              </div>
+  1118→
+  1119→              {/* ── Action Buttons ─────────────────────────────────── */}
+  1120→              <div className="shrink-0 border-t px-6 py-4 flex gap-3">
+  1121→                <Button
+  1122→                  className="flex-1 btn-press bg-emerald-600 hover:bg-emerald-700"
+  1123→                  onClick={() => toast.info('Notifikasi dikirim ke ' + customerDetail.name)}
+  1124→                >
+  1125→                  <Bell className="mr-2 h-4 w-4" />
+  1126→                  Kirim Notifikasi
+  1127→                </Button>
+  1128→                <Button variant="outline" className="flex-1 btn-press">
+  1129→                  <ShoppingCart className="mr-2 h-4 w-4" />
+  1130→                  Buat Transaksi
+  1131→                </Button>
+  1132→              </div>
+  1133→            </div>
+  1134→          ) : null}
+  1135→        </SheetContent>
+  1136→      </Sheet>
+  1137→
+  1138→      {/* ─── Create Customer Dialog ──────────────────────────── */}
+  1139→      <Dialog open={createOpen} onOpenChange={(open) => {
+  1140→        setCreateOpen(open);
+  1141→        if (!open) {
+  1142→          setCreateForm({ name: '', email: '', phone: '' });
+  1143→          setFormErrors({});
+  1144→        }
+  1145→      }}>
+  1146→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  1147→          <DialogHeader>
+  1148→            <DialogTitle className="flex items-center gap-2">
+  1149→              <Plus className="h-5 w-5 text-emerald-500" />
+  1150→              Tambah Pelanggan Baru
+  1151→            </DialogTitle>
+  1152→            <DialogDescription>
+  1153→              Isi detail di bawah untuk menambahkan pelanggan baru.
+  1154→            </DialogDescription>
+  1155→          </DialogHeader>
+  1156→
+  1157→          <div className="grid gap-4 py-2">
+  1158→            {/* Nama */}
+  1159→            <div className="grid gap-2">
+  1160→              <Label htmlFor="create-name">Nama *</Label>
+  1161→              <Input
+  1162→                id="create-name"
+  1163→                placeholder="Nama lengkap pelanggan"
+  1164→                value={createForm.name}
+  1165→                onChange={(e) => {
+  1166→                  setCreateForm((f) => ({ ...f, name: e.target.value }));
+  1167→                  if (formErrors.name) setFormErrors((f) => ({ ...f, name: undefined }));
+  1168→                }}
+  1169→                className={formErrors.name ? 'border-red-400 focus-visible:ring-red-400' : ''}
+  1170→              />
+  1171→              {formErrors.name && (
+  1172→                <p className="text-xs text-red-500">{formErrors.name}</p>
+  1173→              )}
+  1174→            </div>
+  1175→
+  1176→            {/* Email */}
+  1177→            <div className="grid gap-2">
+  1178→              <Label htmlFor="create-email">Email *</Label>
+  1179→              <Input
+  1180→                id="create-email"
+  1181→                type="email"
+  1182→                placeholder="contoh: email@domain.com"
+  1183→                value={createForm.email}
+  1184→                onChange={(e) => {
+  1185→                  setCreateForm((f) => ({ ...f, email: e.target.value }));
+  1186→                  if (formErrors.email) setFormErrors((f) => ({ ...f, email: undefined }));
+  1187→                }}
+  1188→                className={formErrors.email ? 'border-red-400 focus-visible:ring-red-400' : ''}
+  1189→              />
+  1190→              {formErrors.email && (
+  1191→                <p className="text-xs text-red-500">{formErrors.email}</p>
+  1192→              )}
+  1193→            </div>
+  1194→
+  1195→            {/* Telepon */}
+  1196→            <div className="grid gap-2">
+  1197→              <Label htmlFor="create-phone">Telepon</Label>
+  1198→              <Input
+  1199→                id="create-phone"
+  1200→                placeholder="contoh: 08123456789"
+  1201→                value={createForm.phone}
+  1202→                onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))}
+  1203→              />
+  1204→            </div>
+  1205→          </div>
+  1206→
+  1207→          <DialogFooter>
+  1208→            <Button
+  1209→              variant="outline"
+  1210→              onClick={() => setCreateOpen(false)}
+  1211→              disabled={createMutation.isPending}
+  1212→            >
+  1213→              Batal
+  1214→            </Button>
+  1215→            <Button
+  1216→              onClick={handleCreateSubmit}
+  1217→              disabled={createMutation.isPending}
+  1218→              className="bg-emerald-600 hover:bg-emerald-700"
+  1219→            >
+  1220→              {createMutation.isPending ? 'Menyimpan...' : 'Tambah Pelanggan'}
+  1221→            </Button>
+  1222→          </DialogFooter>
+  1223→        </DialogContent>
+  1224→      </Dialog>
+  1225→    </div>
+  1226→  );
+  1227→}
+  1228→

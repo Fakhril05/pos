@@ -383,7 +383,7 @@ export default function Payouts() {
         <div className="relative flex-1 w-full sm:w-auto">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={handleFilterChange}>
-            <SelectTrigger className="pl-9 w-full sm:w-48">
+            <SelectTrigger className="pl-9 w-full sm:w-48 hover-glow-border">
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
@@ -426,7 +426,7 @@ export default function Payouts() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.28 }}
       >
-        <Card>
+        <Card className="hover-glow-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -459,7 +459,7 @@ export default function Payouts() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="table-stripe">
                   <TableHeader className="table-header-enhanced">
                     <TableRow>
                       <TableHead className="pl-6">Merchant</TableHead>

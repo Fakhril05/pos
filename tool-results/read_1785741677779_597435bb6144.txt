@@ -1,0 +1,2002 @@
+  3340→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3341→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3342→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3343→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3344→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3345→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3346→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3347→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3348→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3349→ GET /api/dashboard 200 in 19ms (compile: 1856µs, render: 17ms)
+  3350→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3351→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3352→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3353→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3354→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3355→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3356→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3357→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3358→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3359→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3360→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3361→ GET /api/dashboard 200 in 15ms (compile: 1465µs, render: 14ms)
+  3362→prisma:query SELECT 1
+  3363→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3364→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3365→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3366→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3367→ GET /api/transactions?limit=8&status=success 200 in 8ms (compile: 1573µs, render: 6ms)
+  3368→ GET / 200 in 97ms (compile: 3ms, render: 95ms)
+  3369→prisma:query SELECT 1
+  3370→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3371→ GET /api/notifications 200 in 40ms (compile: 3ms, render: 37ms)
+  3372→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3373→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3374→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3375→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3376→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3377→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3378→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3379→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3380→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3381→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3382→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3383→ GET /api/dashboard 200 in 33ms (compile: 5ms, render: 28ms)
+  3384→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3385→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3386→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3387→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3388→prisma:query SELECT 1
+  3389→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3390→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3391→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3392→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3393→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3394→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3395→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3396→ GET /api/dashboard 200 in 31ms (compile: 3ms, render: 28ms)
+  3397→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3398→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3399→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3400→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3401→ GET /api/transactions?limit=8&status=success 200 in 10ms (compile: 1477µs, render: 8ms)
+  3402→ GET /api/transactions?page=1&limit=10 200 in 18ms (compile: 4ms, render: 14ms)
+  3403→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3404→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3405→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3406→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3407→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3408→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?) LIMIT ? OFFSET ?
+  3409→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?) LIMIT ? OFFSET ?
+  3410→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3411→ GET /api/transactions?limit=1&page=1&status=success 200 in 21ms (compile: 11ms, render: 10ms)
+  3412→ GET /api/transactions?limit=1&page=1&status=pending 200 in 16ms (compile: 5ms, render: 11ms)
+  3413→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3414→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?) LIMIT ? OFFSET ?
+  3415→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?) LIMIT ? OFFSET ?
+  3416→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3417→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3418→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?) LIMIT ? OFFSET ?
+  3419→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?) LIMIT ? OFFSET ?
+  3420→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3421→ GET /api/transactions?limit=1&page=1&status=failed 200 in 32ms (compile: 9ms, render: 23ms)
+  3422→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3423→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?) LIMIT ? OFFSET ?
+  3424→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?) LIMIT ? OFFSET ?
+  3425→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3426→ GET /api/transactions?limit=1&page=1&status=expired 200 in 34ms (compile: 22ms, render: 12ms)
+  3427→ GET /api/transactions?limit=1&page=1&status=refunded 200 in 19ms (compile: 3ms, render: 16ms)
+  3428→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3429→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?) LIMIT ? OFFSET ?
+  3430→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?) LIMIT ? OFFSET ?
+  3431→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3432→prisma:query SELECT 1
+  3433→prisma:query SELECT `main`.`PaymentLink`.`id`, `main`.`PaymentLink`.`title`, `main`.`PaymentLink`.`description`, `main`.`PaymentLink`.`amount`, `main`.`PaymentLink`.`merchantId`, `main`.`PaymentLink`.`status`, `main`.`PaymentLink`.`type`, `main`.`PaymentLink`.`maxQty`, `main`.`PaymentLink`.`soldQty`, `main`.`PaymentLink`.`expiresAt`, `main`.`PaymentLink`.`createdAt`, `main`.`PaymentLink`.`updatedAt`, COALESCE(`aggr_selection_0_Transaction`.`_aggr_count_transactions`, 0) AS `_aggr_count_transactions` FROM `main`.`PaymentLink` LEFT JOIN (SELECT `main`.`Transaction`.`paymentLinkId`, COUNT(*) AS `_aggr_count_transactions` FROM `main`.`Transaction` WHERE 1=1 GROUP BY `main`.`Transaction`.`paymentLinkId`) AS `aggr_selection_0_Transaction` ON (`main`.`PaymentLink`.`id` = `aggr_selection_0_Transaction`.`paymentLinkId`) WHERE 1=1 ORDER BY `main`.`PaymentLink`.`createdAt` DESC LIMIT ? OFFSET ?
+  3434→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3435→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`PaymentLink`.`id` FROM `main`.`PaymentLink` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3436→ GET /api/payment-links?page=1&limit=9 200 in 11ms (compile: 4ms, render: 7ms)
+  3437→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt`, COALESCE(`aggr_selection_0_Transaction`.`_aggr_count_transactions`, 0) AS `_aggr_count_transactions`, COALESCE(`aggr_selection_1_PaymentLink`.`_aggr_count_paymentLinks`, 0) AS `_aggr_count_paymentLinks`, COALESCE(`aggr_selection_2_Payout`.`_aggr_count_payouts`, 0) AS `_aggr_count_payouts` FROM `main`.`Merchant` LEFT JOIN (SELECT `main`.`Transaction`.`merchantId`, COUNT(*) AS `_aggr_count_transactions` FROM `main`.`Transaction` WHERE 1=1 GROUP BY `main`.`Transaction`.`merchantId`) AS `aggr_selection_0_Transaction` ON (`main`.`Merchant`.`id` = `aggr_selection_0_Transaction`.`merchantId`) LEFT JOIN (SELECT `main`.`PaymentLink`.`merchantId`, COUNT(*) AS `_aggr_count_paymentLinks` FROM `main`.`PaymentLink` WHERE 1=1 GROUP BY `main`.`PaymentLink`.`merchantId`) AS `aggr_selection_1_PaymentLink` ON (`main`.`Merchant`.`id` = `aggr_selection_1_PaymentLink`.`merchantId`) LEFT JOIN (SELECT `main`.`Payout`.`merchantId`, COUNT(*) AS `_aggr_count_payouts` FROM `main`.`Payout` WHERE 1=1 GROUP BY `main`.`Payout`.`merchantId`) AS `aggr_selection_2_Payout` ON (`main`.`Merchant`.`id` = `aggr_selection_2_Payout`.`merchantId`) WHERE 1=1 ORDER BY `main`.`Merchant`.`createdAt` DESC LIMIT ? OFFSET ?
+  3438→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3439→ GET /api/merchants?limit=100 200 in 15ms (compile: 7ms, render: 8ms)
+  3440→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3441→ GET /api/notifications 200 in 6ms (compile: 1848µs, render: 4ms)
+  3442→prisma:query SELECT 1
+  3443→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3444→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3445→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3446→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3447→ GET /api/transactions?limit=8&status=success 200 in 14ms (compile: 3ms, render: 11ms)
+  3448→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3449→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3450→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3451→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3452→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3453→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3454→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3455→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3456→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3457→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3458→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3459→ GET /api/dashboard 200 in 24ms (compile: 1392µs, render: 23ms)
+  3460→prisma:query SELECT 1
+  3461→prisma:query SELECT 1
+  3462→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3463→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3464→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3465→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3466→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3467→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3468→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3469→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3470→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3471→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3472→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3473→ GET /api/notifications 200 in 8ms (compile: 4ms, render: 4ms)
+  3474→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3475→ GET /api/dashboard 200 in 22ms (compile: 5ms, render: 18ms)
+  3476→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3477→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3478→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3479→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3480→ GET /api/transactions?limit=8&status=success 200 in 16ms (compile: 3ms, render: 13ms)
+  3481→prisma:query SELECT 1
+  3482→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3483→ GET /api/notifications 200 in 9ms (compile: 4ms, render: 4ms)
+  3484→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3485→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3486→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3487→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3488→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3489→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3490→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3491→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3492→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3493→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3494→ GET /api/transactions?limit=8&status=success 200 in 55ms (compile: 35ms, render: 19ms)
+  3495→ GET /api/dashboard 200 in 88ms (compile: 4ms, render: 85ms)
+  3496→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3497→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3498→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3499→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3500→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3501→prisma:query SELECT 1
+  3502→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3503→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3504→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3505→prisma:query SELECT 1
+  3506→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3507→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3508→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3509→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3510→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3511→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3512→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3513→ GET /api/dashboard 200 in 19ms (compile: 3ms, render: 16ms)
+  3514→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3515→ GET /api/notifications 200 in 11ms (compile: 7ms, render: 5ms)
+  3516→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3517→ GET /api/transactions?limit=8&status=success 200 in 11ms (compile: 2ms, render: 8ms)
+  3518→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3519→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3520→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3521→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3522→✓ Compiled in 371ms
+  3523→prisma:query SELECT 1
+  3524→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3525→ GET /api/notifications 200 in 8ms (compile: 2ms, render: 6ms)
+  3526→prisma:query SELECT 1
+  3527→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3528→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3529→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3530→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3531→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3532→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3533→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3534→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3535→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3536→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3537→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3538→ GET /api/dashboard 200 in 24ms (compile: 2ms, render: 22ms)
+  3539→ GET /api/transactions?limit=8&status=success 200 in 16ms (compile: 7ms, render: 9ms)
+  3540→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3541→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3542→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3543→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3544→prisma:query SELECT 1
+  3545→prisma:query SELECT 1
+  3546→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3547→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3548→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3549→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3550→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3551→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3552→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3553→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3554→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3555→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3556→ GET /api/dashboard 200 in 17ms (compile: 4ms, render: 13ms)
+  3557→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3558→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3559→ GET /api/notifications 200 in 6ms (compile: 1908µs, render: 4ms)
+  3560→ GET /api/transactions?limit=8&status=success 200 in 12ms (compile: 2ms, render: 10ms)
+  3561→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3562→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3563→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3564→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3565→prisma:query SELECT 1
+  3566→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3567→ GET /api/notifications 200 in 9ms (compile: 2ms, render: 7ms)
+  3568→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3569→prisma:query SELECT 1
+  3570→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3571→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3572→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3573→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3574→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3575→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3576→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3577→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3578→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3579→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3580→ GET /api/dashboard 200 in 23ms (compile: 3ms, render: 20ms)
+  3581→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3582→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3583→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3584→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3585→ GET /api/transactions?limit=8&status=success 200 in 16ms (compile: 3ms, render: 13ms)
+  3586→prisma:query SELECT 1
+  3587→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3588→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3589→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3590→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3591→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3592→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3593→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3594→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3595→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3596→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3597→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3598→ GET /api/dashboard 200 in 22ms (compile: 2ms, render: 19ms)
+  3599→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3600→ GET /api/notifications 200 in 6ms (compile: 1557µs, render: 5ms)
+  3601→prisma:query SELECT 1
+  3602→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3603→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3604→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3605→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3606→ GET /api/transactions?limit=8&status=success 200 in 9ms (compile: 3ms, render: 6ms)
+  3607→prisma:query SELECT 1
+  3608→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3609→ GET /api/notifications 200 in 11ms (compile: 4ms, render: 6ms)
+  3610→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3611→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3612→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3613→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3614→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3615→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3616→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3617→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3618→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3619→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3620→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3621→ GET /api/dashboard 200 in 19ms (compile: 2ms, render: 17ms)
+  3622→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3623→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3624→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3625→ GET /api/transactions?limit=8&status=success 200 in 12ms (compile: 3ms, render: 9ms)
+  3626→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3627→prisma:query SELECT 1
+  3628→prisma:query SELECT 1
+  3629→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3630→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3631→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3632→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3633→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3634→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3635→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3636→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3637→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3638→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3639→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3640→ GET /api/dashboard 200 in 18ms (compile: 1838µs, render: 16ms)
+  3641→ GET /api/notifications 200 in 8ms (compile: 1541µs, render: 7ms)
+  3642→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3643→ GET /api/transactions?limit=8&status=success 200 in 10ms (compile: 2ms, render: 8ms)
+  3644→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3645→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3646→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3647→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3648→prisma:query SELECT 1
+  3649→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3650→ GET /api/notifications 200 in 11ms (compile: 3ms, render: 8ms)
+  3651→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3652→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3653→prisma:query SELECT 1
+  3654→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3655→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3656→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3657→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3658→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3659→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3660→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3661→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3662→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3663→ GET /api/dashboard 200 in 35ms (compile: 3ms, render: 32ms)
+  3664→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3665→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3666→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3667→ GET /api/transactions?limit=8&status=success 200 in 17ms (compile: 3ms, render: 14ms)
+  3668→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3669→ GET / 200 in 590ms (compile: 207ms, render: 383ms)
+  3670→ GET / 200 in 597ms (compile: 400ms, render: 197ms)
+  3671→ GET / 200 in 602ms (compile: 450ms, render: 153ms)
+  3672→ GET / 200 in 611ms (compile: 477ms, render: 134ms)
+  3673→ GET / 200 in 622ms (compile: 501ms, render: 120ms)
+  3674→ GET / 200 in 667ms (compile: 537ms, render: 130ms)
+  3675→ GET / 200 in 208ms (compile: 11ms, render: 198ms)
+  3676→ GET / 200 in 209ms (compile: 30ms, render: 179ms)
+  3677→ GET / 200 in 209ms (compile: 45ms, render: 164ms)
+  3678→ GET / 200 in 210ms (compile: 90ms, render: 120ms)
+  3679→ GET / 200 in 211ms (compile: 111ms, render: 100ms)
+  3680→ GET / 200 in 211ms (compile: 128ms, render: 83ms)
+  3681→ GET / 200 in 182ms (compile: 8ms, render: 174ms)
+  3682→ GET / 200 in 162ms (compile: 7ms, render: 155ms)
+  3683→ GET / 200 in 162ms (compile: 19ms, render: 143ms)
+  3684→ GET / 200 in 162ms (compile: 75ms, render: 87ms)
+  3685→ GET / 200 in 164ms (compile: 61ms, render: 104ms)
+  3686→ GET / 200 in 167ms (compile: 95ms, render: 72ms)
+  3687→ GET / 200 in 133ms (compile: 6ms, render: 127ms)
+  3688→ GET / 200 in 117ms (compile: 8ms, render: 109ms)
+  3689→ GET / 200 in 116ms (compile: 19ms, render: 97ms)
+  3690→ GET / 200 in 116ms (compile: 31ms, render: 84ms)
+  3691→ GET / 200 in 115ms (compile: 72ms, render: 43ms)
+  3692→ GET / 200 in 34ms (compile: 3ms, render: 30ms)
+  3693→ GET / 200 in 162ms (compile: 7ms, render: 155ms)
+  3694→ GET / 200 in 122ms (compile: 6ms, render: 115ms)
+  3695→ GET / 200 in 122ms (compile: 22ms, render: 100ms)
+  3696→ GET / 200 in 122ms (compile: 35ms, render: 87ms)
+  3697→ GET / 200 in 122ms (compile: 49ms, render: 73ms)
+  3698→ GET / 200 in 91ms (compile: 4ms, render: 88ms)
+  3699→ GET / 200 in 102ms (compile: 4ms, render: 98ms)
+  3700→ GET / 200 in 69ms (compile: 5ms, render: 63ms)
+  3701→ GET / 200 in 69ms (compile: 39ms, render: 30ms)
+  3702→ GET / 200 in 68ms (compile: 50ms, render: 18ms)
+  3703→prisma:query SELECT 1
+  3704→prisma:query SELECT 1
+  3705→prisma:query SELECT SUM(`amount`) AS `_sum$amount`, COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`amount`, `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3706→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3707→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+  3708→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Merchant`.`id` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3709→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Transaction`.`amount` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?) AS `sub`
+  3710→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3711→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`paidAt` FROM `main`.`Transaction` WHERE (`main`.`Transaction`.`status` = ? AND `main`.`Transaction`.`paidAt` >= ?) LIMIT ? OFFSET ?
+  3712→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE 1=1 ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3713→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+  3714→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`email`, `main`.`Merchant`.`phone`, `main`.`Merchant`.`address`, `main`.`Merchant`.`logo`, `main`.`Merchant`.`status`, `main`.`Merchant`.`apiKey`, `main`.`Merchant`.`totalSales`, `main`.`Merchant`.`totalTx`, `main`.`Merchant`.`createdAt`, `main`.`Merchant`.`updatedAt` FROM `main`.`Merchant` WHERE 1=1 ORDER BY `main`.`Merchant`.`totalSales` DESC LIMIT ? OFFSET ?
+  3715→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`read`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE 1=1 ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+  3716→prisma:query SELECT COUNT(*) AS `_count$_all`, SUM(`main`.`Transaction`.`amount`) AS `_sum$amount`, `main`.`Transaction`.`paymentMethod` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? GROUP BY `main`.`Transaction`.`paymentMethod` LIMIT ? OFFSET ?
+  3717→ GET /api/notifications 200 in 101ms (compile: 73ms, render: 28ms)
+  3718→ GET /api/dashboard 200 in 190ms (compile: 48ms, render: 141ms)
+  3719→prisma:query SELECT `main`.`Transaction`.`id`, `main`.`Transaction`.`invoiceNo`, `main`.`Transaction`.`merchantId`, `main`.`Transaction`.`customerId`, `main`.`Transaction`.`amount`, `main`.`Transaction`.`fee`, `main`.`Transaction`.`netAmount`, `main`.`Transaction`.`paymentMethod`, `main`.`Transaction`.`paymentChannel`, `main`.`Transaction`.`status`, `main`.`Transaction`.`description`, `main`.`Transaction`.`customerName`, `main`.`Transaction`.`customerEmail`, `main`.`Transaction`.`customerPhone`, `main`.`Transaction`.`paidAt`, `main`.`Transaction`.`expiredAt`, `main`.`Transaction`.`createdAt`, `main`.`Transaction`.`updatedAt`, `main`.`Transaction`.`paymentLinkId` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? ORDER BY `main`.`Transaction`.`createdAt` DESC LIMIT ? OFFSET ?
+  3720→prisma:query SELECT `main`.`Merchant`.`id`, `main`.`Merchant`.`name`, `main`.`Merchant`.`logo` FROM `main`.`Merchant` WHERE `main`.`Merchant`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3721→prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email` FROM `main`.`Customer` WHERE `main`.`Customer`.`id` IN (?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+  3722→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Transaction`.`id` FROM `main`.`Transaction` WHERE `main`.`Transaction`.`status` = ? LIMIT ? OFFSET ?) AS `sub`
+  3723→ GET /api/transactions?limit=8&status=success 200 in 49ms (compile: 37ms, render: 13ms)
+  3724→⨯ ./src/app/page.tsx
+  3725→Module not found: Can't resolve '@/components/app/kasir'
+  3726→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3727→
+  3728→
+  3729→Import traces:
+  3730→  Client Component Browser:
+  3731→    ./src/app/page.tsx [Client Component Browser]
+  3732→    ./src/app/page.tsx [Server Component]
+  3733→
+  3734→  Client Component SSR:
+  3735→    ./src/app/page.tsx [Client Component SSR]
+  3736→    ./src/app/page.tsx [Server Component]
+  3737→
+  3738→https://nextjs.org/docs/messages/module-not-found
+  3739→
+  3740→
+  3741→⨯ ./src/app/page.tsx:23:29
+  3742→Module not found: Can't resolve '@/components/app/kasir'
+  3743→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3744→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3745→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3746→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  3747→ [90m 24 |[39m
+  3748→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  3749→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  3750→
+  3751→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3752→
+  3753→
+  3754→Import traces:
+  3755→  Client Component Browser:
+  3756→    ./src/app/page.tsx [Client Component Browser]
+  3757→    ./src/app/page.tsx [Server Component]
+  3758→
+  3759→  Client Component SSR:
+  3760→    ./src/app/page.tsx [Client Component SSR]
+  3761→    ./src/app/page.tsx [Server Component]
+  3762→
+  3763→https://nextjs.org/docs/messages/module-not-found
+  3764→
+  3765→
+  3766→⨯ ./src/app/page.tsx
+  3767→Module not found: Can't resolve '@/components/app/kasir'
+  3768→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3769→
+  3770→
+  3771→Import traces:
+  3772→  Client Component Browser:
+  3773→    ./src/app/page.tsx [Client Component Browser]
+  3774→    ./src/app/page.tsx [Server Component]
+  3775→
+  3776→  Client Component SSR:
+  3777→    ./src/app/page.tsx [Client Component SSR]
+  3778→    ./src/app/page.tsx [Server Component]
+  3779→
+  3780→https://nextjs.org/docs/messages/module-not-found
+  3781→
+  3782→
+  3783→⨯ ./src/app/page.tsx
+  3784→Module not found: Can't resolve '@/components/app/kasir'
+  3785→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3786→
+  3787→
+  3788→Import traces:
+  3789→  Client Component Browser:
+  3790→    ./src/app/page.tsx [Client Component Browser]
+  3791→    ./src/app/page.tsx [Server Component]
+  3792→
+  3793→  Client Component SSR:
+  3794→    ./src/app/page.tsx [Client Component SSR]
+  3795→    ./src/app/page.tsx [Server Component]
+  3796→
+  3797→https://nextjs.org/docs/messages/module-not-found
+  3798→
+  3799→
+  3800→⨯ ./src/app/page.tsx:23:29
+  3801→Module not found: Can't resolve '@/components/app/kasir'
+  3802→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3803→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3804→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3805→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  3806→ [90m 24 |[39m
+  3807→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  3808→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  3809→
+  3810→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3811→
+  3812→
+  3813→Import traces:
+  3814→  Client Component Browser:
+  3815→    ./src/app/page.tsx [Client Component Browser]
+  3816→    ./src/app/page.tsx [Server Component]
+  3817→
+  3818→  Client Component SSR:
+  3819→    ./src/app/page.tsx [Client Component SSR]
+  3820→    ./src/app/page.tsx [Server Component]
+  3821→
+  3822→https://nextjs.org/docs/messages/module-not-found
+  3823→
+  3824→
+  3825→⨯ ./src/app/page.tsx
+  3826→Module not found: Can't resolve '@/components/app/kasir'
+  3827→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3828→
+  3829→
+  3830→Import traces:
+  3831→  Client Component Browser:
+  3832→    ./src/app/page.tsx [Client Component Browser]
+  3833→    ./src/app/page.tsx [Server Component]
+  3834→
+  3835→  Client Component SSR:
+  3836→    ./src/app/page.tsx [Client Component SSR]
+  3837→    ./src/app/page.tsx [Server Component]
+  3838→
+  3839→https://nextjs.org/docs/messages/module-not-found
+  3840→
+  3841→
+  3842→⨯ ./src/app/page.tsx
+  3843→Module not found: Can't resolve '@/components/app/kasir'
+  3844→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3845→
+  3846→
+  3847→Import traces:
+  3848→  Client Component Browser:
+  3849→    ./src/app/page.tsx [Client Component Browser]
+  3850→    ./src/app/page.tsx [Server Component]
+  3851→
+  3852→  Client Component SSR:
+  3853→    ./src/app/page.tsx [Client Component SSR]
+  3854→    ./src/app/page.tsx [Server Component]
+  3855→
+  3856→https://nextjs.org/docs/messages/module-not-found
+  3857→
+  3858→
+  3859→⨯ ./src/app/page.tsx:23:29
+  3860→Module not found: Can't resolve '@/components/app/kasir'
+  3861→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3862→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3863→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3864→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  3865→ [90m 24 |[39m
+  3866→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  3867→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  3868→
+  3869→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3870→
+  3871→
+  3872→Import traces:
+  3873→  Client Component Browser:
+  3874→    ./src/app/page.tsx [Client Component Browser]
+  3875→    ./src/app/page.tsx [Server Component]
+  3876→
+  3877→  Client Component SSR:
+  3878→    ./src/app/page.tsx [Client Component SSR]
+  3879→    ./src/app/page.tsx [Server Component]
+  3880→
+  3881→https://nextjs.org/docs/messages/module-not-found
+  3882→
+  3883→
+  3884→⨯ ./src/app/page.tsx
+  3885→Module not found: Can't resolve '@/components/app/kasir'
+  3886→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3887→
+  3888→
+  3889→Import traces:
+  3890→  Client Component Browser:
+  3891→    ./src/app/page.tsx [Client Component Browser]
+  3892→    ./src/app/page.tsx [Server Component]
+  3893→
+  3894→  Client Component SSR:
+  3895→    ./src/app/page.tsx [Client Component SSR]
+  3896→    ./src/app/page.tsx [Server Component]
+  3897→
+  3898→https://nextjs.org/docs/messages/module-not-found
+  3899→
+  3900→
+  3901→⨯ ./src/app/page.tsx
+  3902→Module not found: Can't resolve '@/components/app/kasir'
+  3903→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3904→
+  3905→
+  3906→Import traces:
+  3907→  Client Component Browser:
+  3908→    ./src/app/page.tsx [Client Component Browser]
+  3909→    ./src/app/page.tsx [Server Component]
+  3910→
+  3911→  Client Component SSR:
+  3912→    ./src/app/page.tsx [Client Component SSR]
+  3913→    ./src/app/page.tsx [Server Component]
+  3914→
+  3915→https://nextjs.org/docs/messages/module-not-found
+  3916→
+  3917→
+  3918→⨯ ./src/app/page.tsx:23:29
+  3919→Module not found: Can't resolve '@/components/app/kasir'
+  3920→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3921→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3922→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3923→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  3924→ [90m 24 |[39m
+  3925→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  3926→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  3927→
+  3928→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3929→
+  3930→
+  3931→Import traces:
+  3932→  Client Component Browser:
+  3933→    ./src/app/page.tsx [Client Component Browser]
+  3934→    ./src/app/page.tsx [Server Component]
+  3935→
+  3936→  Client Component SSR:
+  3937→    ./src/app/page.tsx [Client Component SSR]
+  3938→    ./src/app/page.tsx [Server Component]
+  3939→
+  3940→https://nextjs.org/docs/messages/module-not-found
+  3941→
+  3942→
+  3943→⨯ ./src/app/page.tsx
+  3944→Module not found: Can't resolve '@/components/app/kasir'
+  3945→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3946→
+  3947→
+  3948→Import traces:
+  3949→  Client Component Browser:
+  3950→    ./src/app/page.tsx [Client Component Browser]
+  3951→    ./src/app/page.tsx [Server Component]
+  3952→
+  3953→  Client Component SSR:
+  3954→    ./src/app/page.tsx [Client Component SSR]
+  3955→    ./src/app/page.tsx [Server Component]
+  3956→
+  3957→https://nextjs.org/docs/messages/module-not-found
+  3958→
+  3959→
+  3960→⨯ ./src/app/page.tsx
+  3961→Module not found: Can't resolve '@/components/app/kasir'
+  3962→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3963→
+  3964→
+  3965→Import traces:
+  3966→  Client Component Browser:
+  3967→    ./src/app/page.tsx [Client Component Browser]
+  3968→    ./src/app/page.tsx [Server Component]
+  3969→
+  3970→  Client Component SSR:
+  3971→    ./src/app/page.tsx [Client Component SSR]
+  3972→    ./src/app/page.tsx [Server Component]
+  3973→
+  3974→https://nextjs.org/docs/messages/module-not-found
+  3975→
+  3976→
+  3977→⨯ ./src/app/page.tsx:23:29
+  3978→Module not found: Can't resolve '@/components/app/kasir'
+  3979→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3980→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3981→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  3982→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  3983→ [90m 24 |[39m
+  3984→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  3985→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  3986→
+  3987→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  3988→
+  3989→
+  3990→Import traces:
+  3991→  Client Component Browser:
+  3992→    ./src/app/page.tsx [Client Component Browser]
+  3993→    ./src/app/page.tsx [Server Component]
+  3994→
+  3995→  Client Component SSR:
+  3996→    ./src/app/page.tsx [Client Component SSR]
+  3997→    ./src/app/page.tsx [Server Component]
+  3998→
+  3999→https://nextjs.org/docs/messages/module-not-found
+  4000→
+  4001→
+  4002→⨯ ./src/app/page.tsx
+  4003→Module not found: Can't resolve '@/components/app/kasir'
+  4004→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4005→
+  4006→
+  4007→Import traces:
+  4008→  Client Component Browser:
+  4009→    ./src/app/page.tsx [Client Component Browser]
+  4010→    ./src/app/page.tsx [Server Component]
+  4011→
+  4012→  Client Component SSR:
+  4013→    ./src/app/page.tsx [Client Component SSR]
+  4014→    ./src/app/page.tsx [Server Component]
+  4015→
+  4016→https://nextjs.org/docs/messages/module-not-found
+  4017→
+  4018→
+  4019→⨯ ./src/app/page.tsx
+  4020→Module not found: Can't resolve '@/components/app/kasir'
+  4021→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4022→
+  4023→
+  4024→Import traces:
+  4025→  Client Component Browser:
+  4026→    ./src/app/page.tsx [Client Component Browser]
+  4027→    ./src/app/page.tsx [Server Component]
+  4028→
+  4029→  Client Component SSR:
+  4030→    ./src/app/page.tsx [Client Component SSR]
+  4031→    ./src/app/page.tsx [Server Component]
+  4032→
+  4033→https://nextjs.org/docs/messages/module-not-found
+  4034→
+  4035→
+  4036→⨯ ./src/app/page.tsx:23:29
+  4037→Module not found: Can't resolve '@/components/app/kasir'
+  4038→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4039→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4040→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4041→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4042→ [90m 24 |[39m
+  4043→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4044→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4045→
+  4046→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4047→
+  4048→
+  4049→Import traces:
+  4050→  Client Component Browser:
+  4051→    ./src/app/page.tsx [Client Component Browser]
+  4052→    ./src/app/page.tsx [Server Component]
+  4053→
+  4054→  Client Component SSR:
+  4055→    ./src/app/page.tsx [Client Component SSR]
+  4056→    ./src/app/page.tsx [Server Component]
+  4057→
+  4058→https://nextjs.org/docs/messages/module-not-found
+  4059→
+  4060→
+  4061→⨯ ./src/app/page.tsx
+  4062→Module not found: Can't resolve '@/components/app/kasir'
+  4063→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4064→
+  4065→
+  4066→Import traces:
+  4067→  Client Component Browser:
+  4068→    ./src/app/page.tsx [Client Component Browser]
+  4069→    ./src/app/page.tsx [Server Component]
+  4070→
+  4071→  Client Component SSR:
+  4072→    ./src/app/page.tsx [Client Component SSR]
+  4073→    ./src/app/page.tsx [Server Component]
+  4074→
+  4075→https://nextjs.org/docs/messages/module-not-found
+  4076→
+  4077→
+  4078→⨯ ./src/app/page.tsx
+  4079→Module not found: Can't resolve '@/components/app/kasir'
+  4080→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4081→
+  4082→
+  4083→Import traces:
+  4084→  Client Component Browser:
+  4085→    ./src/app/page.tsx [Client Component Browser]
+  4086→    ./src/app/page.tsx [Server Component]
+  4087→
+  4088→  Client Component SSR:
+  4089→    ./src/app/page.tsx [Client Component SSR]
+  4090→    ./src/app/page.tsx [Server Component]
+  4091→
+  4092→https://nextjs.org/docs/messages/module-not-found
+  4093→
+  4094→
+  4095→⨯ ./src/app/page.tsx:23:29
+  4096→Module not found: Can't resolve '@/components/app/kasir'
+  4097→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4098→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4099→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4100→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4101→ [90m 24 |[39m
+  4102→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4103→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4104→
+  4105→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4106→
+  4107→
+  4108→Import traces:
+  4109→  Client Component Browser:
+  4110→    ./src/app/page.tsx [Client Component Browser]
+  4111→    ./src/app/page.tsx [Server Component]
+  4112→
+  4113→  Client Component SSR:
+  4114→    ./src/app/page.tsx [Client Component SSR]
+  4115→    ./src/app/page.tsx [Server Component]
+  4116→
+  4117→https://nextjs.org/docs/messages/module-not-found
+  4118→
+  4119→
+  4120→⨯ ./src/app/page.tsx
+  4121→Module not found: Can't resolve '@/components/app/kasir'
+  4122→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4123→
+  4124→
+  4125→Import traces:
+  4126→  Client Component Browser:
+  4127→    ./src/app/page.tsx [Client Component Browser]
+  4128→    ./src/app/page.tsx [Server Component]
+  4129→
+  4130→  Client Component SSR:
+  4131→    ./src/app/page.tsx [Client Component SSR]
+  4132→    ./src/app/page.tsx [Server Component]
+  4133→
+  4134→https://nextjs.org/docs/messages/module-not-found
+  4135→
+  4136→
+  4137→⨯ ./src/app/page.tsx
+  4138→Module not found: Can't resolve '@/components/app/kasir'
+  4139→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4140→
+  4141→
+  4142→Import traces:
+  4143→  Client Component Browser:
+  4144→    ./src/app/page.tsx [Client Component Browser]
+  4145→    ./src/app/page.tsx [Server Component]
+  4146→
+  4147→  Client Component SSR:
+  4148→    ./src/app/page.tsx [Client Component SSR]
+  4149→    ./src/app/page.tsx [Server Component]
+  4150→
+  4151→https://nextjs.org/docs/messages/module-not-found
+  4152→
+  4153→
+  4154→⨯ ./src/app/page.tsx:23:29
+  4155→Module not found: Can't resolve '@/components/app/kasir'
+  4156→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4157→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4158→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4159→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4160→ [90m 24 |[39m
+  4161→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4162→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4163→
+  4164→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4165→
+  4166→
+  4167→Import traces:
+  4168→  Client Component Browser:
+  4169→    ./src/app/page.tsx [Client Component Browser]
+  4170→    ./src/app/page.tsx [Server Component]
+  4171→
+  4172→  Client Component SSR:
+  4173→    ./src/app/page.tsx [Client Component SSR]
+  4174→    ./src/app/page.tsx [Server Component]
+  4175→
+  4176→https://nextjs.org/docs/messages/module-not-found
+  4177→
+  4178→
+  4179→⨯ ./src/app/page.tsx
+  4180→Module not found: Can't resolve '@/components/app/kasir'
+  4181→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4182→
+  4183→
+  4184→Import traces:
+  4185→  Client Component Browser:
+  4186→    ./src/app/page.tsx [Client Component Browser]
+  4187→    ./src/app/page.tsx [Server Component]
+  4188→
+  4189→  Client Component SSR:
+  4190→    ./src/app/page.tsx [Client Component SSR]
+  4191→    ./src/app/page.tsx [Server Component]
+  4192→
+  4193→https://nextjs.org/docs/messages/module-not-found
+  4194→
+  4195→
+  4196→⨯ ./src/app/page.tsx
+  4197→Module not found: Can't resolve '@/components/app/kasir'
+  4198→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4199→
+  4200→
+  4201→Import traces:
+  4202→  Client Component Browser:
+  4203→    ./src/app/page.tsx [Client Component Browser]
+  4204→    ./src/app/page.tsx [Server Component]
+  4205→
+  4206→  Client Component SSR:
+  4207→    ./src/app/page.tsx [Client Component SSR]
+  4208→    ./src/app/page.tsx [Server Component]
+  4209→
+  4210→https://nextjs.org/docs/messages/module-not-found
+  4211→
+  4212→
+  4213→⨯ ./src/app/page.tsx:23:29
+  4214→Module not found: Can't resolve '@/components/app/kasir'
+  4215→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4216→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4217→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4218→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4219→ [90m 24 |[39m
+  4220→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4221→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4222→
+  4223→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4224→
+  4225→
+  4226→Import traces:
+  4227→  Client Component Browser:
+  4228→    ./src/app/page.tsx [Client Component Browser]
+  4229→    ./src/app/page.tsx [Server Component]
+  4230→
+  4231→  Client Component SSR:
+  4232→    ./src/app/page.tsx [Client Component SSR]
+  4233→    ./src/app/page.tsx [Server Component]
+  4234→
+  4235→https://nextjs.org/docs/messages/module-not-found
+  4236→
+  4237→
+  4238→⨯ ./src/app/page.tsx
+  4239→Module not found: Can't resolve '@/components/app/kasir'
+  4240→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4241→
+  4242→
+  4243→Import traces:
+  4244→  Client Component Browser:
+  4245→    ./src/app/page.tsx [Client Component Browser]
+  4246→    ./src/app/page.tsx [Server Component]
+  4247→
+  4248→  Client Component SSR:
+  4249→    ./src/app/page.tsx [Client Component SSR]
+  4250→    ./src/app/page.tsx [Server Component]
+  4251→
+  4252→https://nextjs.org/docs/messages/module-not-found
+  4253→
+  4254→
+  4255→⨯ ./src/app/page.tsx
+  4256→Module not found: Can't resolve '@/components/app/kasir'
+  4257→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4258→
+  4259→
+  4260→Import traces:
+  4261→  Client Component Browser:
+  4262→    ./src/app/page.tsx [Client Component Browser]
+  4263→    ./src/app/page.tsx [Server Component]
+  4264→
+  4265→  Client Component SSR:
+  4266→    ./src/app/page.tsx [Client Component SSR]
+  4267→    ./src/app/page.tsx [Server Component]
+  4268→
+  4269→https://nextjs.org/docs/messages/module-not-found
+  4270→
+  4271→
+  4272→⨯ ./src/app/page.tsx:23:29
+  4273→Module not found: Can't resolve '@/components/app/kasir'
+  4274→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4275→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4276→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4277→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4278→ [90m 24 |[39m
+  4279→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4280→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4281→
+  4282→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4283→
+  4284→
+  4285→Import traces:
+  4286→  Client Component Browser:
+  4287→    ./src/app/page.tsx [Client Component Browser]
+  4288→    ./src/app/page.tsx [Server Component]
+  4289→
+  4290→  Client Component SSR:
+  4291→    ./src/app/page.tsx [Client Component SSR]
+  4292→    ./src/app/page.tsx [Server Component]
+  4293→
+  4294→https://nextjs.org/docs/messages/module-not-found
+  4295→
+  4296→
+  4297→⨯ ./src/app/page.tsx
+  4298→Module not found: Can't resolve '@/components/app/kasir'
+  4299→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4300→
+  4301→
+  4302→Import traces:
+  4303→  Client Component Browser:
+  4304→    ./src/app/page.tsx [Client Component Browser]
+  4305→    ./src/app/page.tsx [Server Component]
+  4306→
+  4307→  Client Component SSR:
+  4308→    ./src/app/page.tsx [Client Component SSR]
+  4309→    ./src/app/page.tsx [Server Component]
+  4310→
+  4311→https://nextjs.org/docs/messages/module-not-found
+  4312→
+  4313→
+  4314→⨯ ./src/app/page.tsx
+  4315→Module not found: Can't resolve '@/components/app/kasir'
+  4316→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4317→
+  4318→
+  4319→Import traces:
+  4320→  Client Component Browser:
+  4321→    ./src/app/page.tsx [Client Component Browser]
+  4322→    ./src/app/page.tsx [Server Component]
+  4323→
+  4324→  Client Component SSR:
+  4325→    ./src/app/page.tsx [Client Component SSR]
+  4326→    ./src/app/page.tsx [Server Component]
+  4327→
+  4328→https://nextjs.org/docs/messages/module-not-found
+  4329→
+  4330→
+  4331→⨯ ./src/app/page.tsx:23:29
+  4332→Module not found: Can't resolve '@/components/app/kasir'
+  4333→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4334→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4335→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4336→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4337→ [90m 24 |[39m
+  4338→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4339→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4340→
+  4341→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4342→
+  4343→
+  4344→Import traces:
+  4345→  Client Component Browser:
+  4346→    ./src/app/page.tsx [Client Component Browser]
+  4347→    ./src/app/page.tsx [Server Component]
+  4348→
+  4349→  Client Component SSR:
+  4350→    ./src/app/page.tsx [Client Component SSR]
+  4351→    ./src/app/page.tsx [Server Component]
+  4352→
+  4353→https://nextjs.org/docs/messages/module-not-found
+  4354→
+  4355→
+  4356→✓ Compiled in 1568ms
+  4357→ GET /api/notifications 500 in 75ms (compile: 57ms, render: 18ms)
+  4358→ GET /api/notifications 500 in 18ms (compile: 9ms, render: 9ms)
+  4359→ GET /api/dashboard 500 in 30ms (compile: 15ms, render: 15ms)
+  4360→ GET /api/transactions?limit=8&status=success 500 in 24ms (compile: 10ms, render: 13ms)
+  4361→ GET /api/dashboard 500 in 25ms (compile: 6ms, render: 18ms)
+  4362→⨯ ./src/app/page.tsx
+  4363→Module not found: Can't resolve '@/components/app/kasir'
+  4364→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4365→
+  4366→
+  4367→Import traces:
+  4368→  Client Component Browser:
+  4369→    ./src/app/page.tsx [Client Component Browser]
+  4370→    ./src/app/page.tsx [Server Component]
+  4371→
+  4372→  Client Component SSR:
+  4373→    ./src/app/page.tsx [Client Component SSR]
+  4374→    ./src/app/page.tsx [Server Component]
+  4375→
+  4376→https://nextjs.org/docs/messages/module-not-found
+  4377→
+  4378→
+  4379→⨯ ./src/app/page.tsx
+  4380→Module not found: Can't resolve '@/components/app/kasir'
+  4381→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4382→
+  4383→
+  4384→Import traces:
+  4385→  Client Component Browser:
+  4386→    ./src/app/page.tsx [Client Component Browser]
+  4387→    ./src/app/page.tsx [Server Component]
+  4388→
+  4389→  Client Component SSR:
+  4390→    ./src/app/page.tsx [Client Component SSR]
+  4391→    ./src/app/page.tsx [Server Component]
+  4392→
+  4393→https://nextjs.org/docs/messages/module-not-found
+  4394→
+  4395→
+  4396→⨯ ./src/app/page.tsx:23:29
+  4397→Module not found: Can't resolve '@/components/app/kasir'
+  4398→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4399→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4400→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4401→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4402→ [90m 24 |[39m
+  4403→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4404→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4405→
+  4406→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4407→
+  4408→
+  4409→Import traces:
+  4410→  Client Component Browser:
+  4411→    ./src/app/page.tsx [Client Component Browser]
+  4412→    ./src/app/page.tsx [Server Component]
+  4413→
+  4414→  Client Component SSR:
+  4415→    ./src/app/page.tsx [Client Component SSR]
+  4416→    ./src/app/page.tsx [Server Component]
+  4417→
+  4418→https://nextjs.org/docs/messages/module-not-found
+  4419→
+  4420→
+  4421→⨯ ./src/app/page.tsx
+  4422→Module not found: Can't resolve '@/components/app/kasir'
+  4423→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4424→
+  4425→
+  4426→Import traces:
+  4427→  Client Component Browser:
+  4428→    ./src/app/page.tsx [Client Component Browser]
+  4429→    ./src/app/page.tsx [Server Component]
+  4430→
+  4431→  Client Component SSR:
+  4432→    ./src/app/page.tsx [Client Component SSR]
+  4433→    ./src/app/page.tsx [Server Component]
+  4434→
+  4435→https://nextjs.org/docs/messages/module-not-found
+  4436→
+  4437→
+  4438→⨯ ./src/app/page.tsx
+  4439→Module not found: Can't resolve '@/components/app/kasir'
+  4440→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4441→
+  4442→
+  4443→Import traces:
+  4444→  Client Component Browser:
+  4445→    ./src/app/page.tsx [Client Component Browser]
+  4446→    ./src/app/page.tsx [Server Component]
+  4447→
+  4448→  Client Component SSR:
+  4449→    ./src/app/page.tsx [Client Component SSR]
+  4450→    ./src/app/page.tsx [Server Component]
+  4451→
+  4452→https://nextjs.org/docs/messages/module-not-found
+  4453→
+  4454→
+  4455→⨯ ./src/app/page.tsx:23:29
+  4456→Module not found: Can't resolve '@/components/app/kasir'
+  4457→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4458→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4459→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4460→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4461→ [90m 24 |[39m
+  4462→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4463→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4464→
+  4465→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4466→
+  4467→
+  4468→Import traces:
+  4469→  Client Component Browser:
+  4470→    ./src/app/page.tsx [Client Component Browser]
+  4471→    ./src/app/page.tsx [Server Component]
+  4472→
+  4473→  Client Component SSR:
+  4474→    ./src/app/page.tsx [Client Component SSR]
+  4475→    ./src/app/page.tsx [Server Component]
+  4476→
+  4477→https://nextjs.org/docs/messages/module-not-found
+  4478→
+  4479→
+  4480→⨯ ./src/app/page.tsx
+  4481→Module not found: Can't resolve '@/components/app/kasir'
+  4482→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4483→
+  4484→
+  4485→Import traces:
+  4486→  Client Component Browser:
+  4487→    ./src/app/page.tsx [Client Component Browser]
+  4488→    ./src/app/page.tsx [Server Component]
+  4489→
+  4490→  Client Component SSR:
+  4491→    ./src/app/page.tsx [Client Component SSR]
+  4492→    ./src/app/page.tsx [Server Component]
+  4493→
+  4494→https://nextjs.org/docs/messages/module-not-found
+  4495→
+  4496→
+  4497→⨯ ./src/app/page.tsx
+  4498→Module not found: Can't resolve '@/components/app/kasir'
+  4499→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4500→
+  4501→
+  4502→Import traces:
+  4503→  Client Component Browser:
+  4504→    ./src/app/page.tsx [Client Component Browser]
+  4505→    ./src/app/page.tsx [Server Component]
+  4506→
+  4507→  Client Component SSR:
+  4508→    ./src/app/page.tsx [Client Component SSR]
+  4509→    ./src/app/page.tsx [Server Component]
+  4510→
+  4511→https://nextjs.org/docs/messages/module-not-found
+  4512→
+  4513→
+  4514→⨯ ./src/app/page.tsx:23:29
+  4515→Module not found: Can't resolve '@/components/app/kasir'
+  4516→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4517→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4518→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4519→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4520→ [90m 24 |[39m
+  4521→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4522→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4523→
+  4524→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4525→
+  4526→
+  4527→Import traces:
+  4528→  Client Component Browser:
+  4529→    ./src/app/page.tsx [Client Component Browser]
+  4530→    ./src/app/page.tsx [Server Component]
+  4531→
+  4532→  Client Component SSR:
+  4533→    ./src/app/page.tsx [Client Component SSR]
+  4534→    ./src/app/page.tsx [Server Component]
+  4535→
+  4536→https://nextjs.org/docs/messages/module-not-found
+  4537→
+  4538→
+  4539→⨯ ./src/app/page.tsx
+  4540→Module not found: Can't resolve '@/components/app/kasir'
+  4541→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4542→
+  4543→
+  4544→Import traces:
+  4545→  Client Component Browser:
+  4546→    ./src/app/page.tsx [Client Component Browser]
+  4547→    ./src/app/page.tsx [Server Component]
+  4548→
+  4549→  Client Component SSR:
+  4550→    ./src/app/page.tsx [Client Component SSR]
+  4551→    ./src/app/page.tsx [Server Component]
+  4552→
+  4553→https://nextjs.org/docs/messages/module-not-found
+  4554→
+  4555→
+  4556→⨯ ./src/app/page.tsx
+  4557→Module not found: Can't resolve '@/components/app/kasir'
+  4558→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4559→
+  4560→
+  4561→Import traces:
+  4562→  Client Component Browser:
+  4563→    ./src/app/page.tsx [Client Component Browser]
+  4564→    ./src/app/page.tsx [Server Component]
+  4565→
+  4566→  Client Component SSR:
+  4567→    ./src/app/page.tsx [Client Component SSR]
+  4568→    ./src/app/page.tsx [Server Component]
+  4569→
+  4570→https://nextjs.org/docs/messages/module-not-found
+  4571→
+  4572→
+  4573→⨯ ./src/app/page.tsx:23:29
+  4574→Module not found: Can't resolve '@/components/app/kasir'
+  4575→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4576→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4577→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4578→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4579→ [90m 24 |[39m
+  4580→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4581→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4582→
+  4583→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4584→
+  4585→
+  4586→Import traces:
+  4587→  Client Component Browser:
+  4588→    ./src/app/page.tsx [Client Component Browser]
+  4589→    ./src/app/page.tsx [Server Component]
+  4590→
+  4591→  Client Component SSR:
+  4592→    ./src/app/page.tsx [Client Component SSR]
+  4593→    ./src/app/page.tsx [Server Component]
+  4594→
+  4595→https://nextjs.org/docs/messages/module-not-found
+  4596→
+  4597→
+  4598→⨯ ./src/app/page.tsx
+  4599→Module not found: Can't resolve '@/components/app/kasir'
+  4600→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4601→
+  4602→
+  4603→Import traces:
+  4604→  Client Component Browser:
+  4605→    ./src/app/page.tsx [Client Component Browser]
+  4606→    ./src/app/page.tsx [Server Component]
+  4607→
+  4608→  Client Component SSR:
+  4609→    ./src/app/page.tsx [Client Component SSR]
+  4610→    ./src/app/page.tsx [Server Component]
+  4611→
+  4612→https://nextjs.org/docs/messages/module-not-found
+  4613→
+  4614→
+  4615→⨯ ./src/app/page.tsx
+  4616→Module not found: Can't resolve '@/components/app/kasir'
+  4617→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4618→
+  4619→
+  4620→Import traces:
+  4621→  Client Component Browser:
+  4622→    ./src/app/page.tsx [Client Component Browser]
+  4623→    ./src/app/page.tsx [Server Component]
+  4624→
+  4625→  Client Component SSR:
+  4626→    ./src/app/page.tsx [Client Component SSR]
+  4627→    ./src/app/page.tsx [Server Component]
+  4628→
+  4629→https://nextjs.org/docs/messages/module-not-found
+  4630→
+  4631→
+  4632→⨯ ./src/app/page.tsx:23:29
+  4633→Module not found: Can't resolve '@/components/app/kasir'
+  4634→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4635→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4636→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4637→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4638→ [90m 24 |[39m
+  4639→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4640→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4641→
+  4642→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4643→
+  4644→
+  4645→Import traces:
+  4646→  Client Component Browser:
+  4647→    ./src/app/page.tsx [Client Component Browser]
+  4648→    ./src/app/page.tsx [Server Component]
+  4649→
+  4650→  Client Component SSR:
+  4651→    ./src/app/page.tsx [Client Component SSR]
+  4652→    ./src/app/page.tsx [Server Component]
+  4653→
+  4654→https://nextjs.org/docs/messages/module-not-found
+  4655→
+  4656→
+  4657→⨯ ./src/app/page.tsx
+  4658→Module not found: Can't resolve '@/components/app/kasir'
+  4659→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4660→
+  4661→
+  4662→Import traces:
+  4663→  Client Component Browser:
+  4664→    ./src/app/page.tsx [Client Component Browser]
+  4665→    ./src/app/page.tsx [Server Component]
+  4666→
+  4667→  Client Component SSR:
+  4668→    ./src/app/page.tsx [Client Component SSR]
+  4669→    ./src/app/page.tsx [Server Component]
+  4670→
+  4671→https://nextjs.org/docs/messages/module-not-found
+  4672→
+  4673→
+  4674→⨯ ./src/app/page.tsx
+  4675→Module not found: Can't resolve '@/components/app/kasir'
+  4676→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4677→
+  4678→
+  4679→Import traces:
+  4680→  Client Component Browser:
+  4681→    ./src/app/page.tsx [Client Component Browser]
+  4682→    ./src/app/page.tsx [Server Component]
+  4683→
+  4684→  Client Component SSR:
+  4685→    ./src/app/page.tsx [Client Component SSR]
+  4686→    ./src/app/page.tsx [Server Component]
+  4687→
+  4688→https://nextjs.org/docs/messages/module-not-found
+  4689→
+  4690→
+  4691→⨯ ./src/app/page.tsx:23:29
+  4692→Module not found: Can't resolve '@/components/app/kasir'
+  4693→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4694→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4695→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4696→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4697→ [90m 24 |[39m
+  4698→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4699→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4700→
+  4701→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4702→
+  4703→
+  4704→Import traces:
+  4705→  Client Component Browser:
+  4706→    ./src/app/page.tsx [Client Component Browser]
+  4707→    ./src/app/page.tsx [Server Component]
+  4708→
+  4709→  Client Component SSR:
+  4710→    ./src/app/page.tsx [Client Component SSR]
+  4711→    ./src/app/page.tsx [Server Component]
+  4712→
+  4713→https://nextjs.org/docs/messages/module-not-found
+  4714→
+  4715→
+  4716→✓ Compiled in 800ms
+  4717→⨯ ./src/app/page.tsx
+  4718→Module not found: Can't resolve '@/components/app/kasir'
+  4719→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4720→
+  4721→
+  4722→Import traces:
+  4723→  Client Component Browser:
+  4724→    ./src/app/page.tsx [Client Component Browser]
+  4725→    ./src/app/page.tsx [Server Component]
+  4726→
+  4727→  Client Component SSR:
+  4728→    ./src/app/page.tsx [Client Component SSR]
+  4729→    ./src/app/page.tsx [Server Component]
+  4730→
+  4731→https://nextjs.org/docs/messages/module-not-found
+  4732→
+  4733→
+  4734→⨯ ./src/app/page.tsx
+  4735→Module not found: Can't resolve '@/components/app/kasir'
+  4736→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4737→
+  4738→
+  4739→Import traces:
+  4740→  Client Component Browser:
+  4741→    ./src/app/page.tsx [Client Component Browser]
+  4742→    ./src/app/page.tsx [Server Component]
+  4743→
+  4744→  Client Component SSR:
+  4745→    ./src/app/page.tsx [Client Component SSR]
+  4746→    ./src/app/page.tsx [Server Component]
+  4747→
+  4748→https://nextjs.org/docs/messages/module-not-found
+  4749→
+  4750→
+  4751→⨯ ./src/app/page.tsx:23:29
+  4752→Module not found: Can't resolve '@/components/app/kasir'
+  4753→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4754→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4755→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4756→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4757→ [90m 24 |[39m
+  4758→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4759→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4760→
+  4761→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4762→
+  4763→
+  4764→Import traces:
+  4765→  Client Component Browser:
+  4766→    ./src/app/page.tsx [Client Component Browser]
+  4767→    ./src/app/page.tsx [Server Component]
+  4768→
+  4769→  Client Component SSR:
+  4770→    ./src/app/page.tsx [Client Component SSR]
+  4771→    ./src/app/page.tsx [Server Component]
+  4772→
+  4773→https://nextjs.org/docs/messages/module-not-found
+  4774→
+  4775→
+  4776→⨯ ./src/app/page.tsx
+  4777→Module not found: Can't resolve '@/components/app/kasir'
+  4778→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4779→
+  4780→
+  4781→Import traces:
+  4782→  Client Component Browser:
+  4783→    ./src/app/page.tsx [Client Component Browser]
+  4784→    ./src/app/page.tsx [Server Component]
+  4785→
+  4786→  Client Component SSR:
+  4787→    ./src/app/page.tsx [Client Component SSR]
+  4788→    ./src/app/page.tsx [Server Component]
+  4789→
+  4790→https://nextjs.org/docs/messages/module-not-found
+  4791→
+  4792→
+  4793→⨯ ./src/app/page.tsx
+  4794→Module not found: Can't resolve '@/components/app/kasir'
+  4795→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4796→
+  4797→
+  4798→Import traces:
+  4799→  Client Component Browser:
+  4800→    ./src/app/page.tsx [Client Component Browser]
+  4801→    ./src/app/page.tsx [Server Component]
+  4802→
+  4803→  Client Component SSR:
+  4804→    ./src/app/page.tsx [Client Component SSR]
+  4805→    ./src/app/page.tsx [Server Component]
+  4806→
+  4807→https://nextjs.org/docs/messages/module-not-found
+  4808→
+  4809→
+  4810→⨯ ./src/app/page.tsx:23:29
+  4811→Module not found: Can't resolve '@/components/app/kasir'
+  4812→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4813→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4814→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4815→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4816→ [90m 24 |[39m
+  4817→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4818→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4819→
+  4820→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4821→
+  4822→
+  4823→Import traces:
+  4824→  Client Component Browser:
+  4825→    ./src/app/page.tsx [Client Component Browser]
+  4826→    ./src/app/page.tsx [Server Component]
+  4827→
+  4828→  Client Component SSR:
+  4829→    ./src/app/page.tsx [Client Component SSR]
+  4830→    ./src/app/page.tsx [Server Component]
+  4831→
+  4832→https://nextjs.org/docs/messages/module-not-found
+  4833→
+  4834→
+  4835→⨯ ./src/app/page.tsx
+  4836→Module not found: Can't resolve '@/components/app/kasir'
+  4837→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4838→
+  4839→
+  4840→Import traces:
+  4841→  Client Component Browser:
+  4842→    ./src/app/page.tsx [Client Component Browser]
+  4843→    ./src/app/page.tsx [Server Component]
+  4844→
+  4845→  Client Component SSR:
+  4846→    ./src/app/page.tsx [Client Component SSR]
+  4847→    ./src/app/page.tsx [Server Component]
+  4848→
+  4849→https://nextjs.org/docs/messages/module-not-found
+  4850→
+  4851→
+  4852→⨯ ./src/app/page.tsx
+  4853→Module not found: Can't resolve '@/components/app/kasir'
+  4854→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4855→
+  4856→
+  4857→Import traces:
+  4858→  Client Component Browser:
+  4859→    ./src/app/page.tsx [Client Component Browser]
+  4860→    ./src/app/page.tsx [Server Component]
+  4861→
+  4862→  Client Component SSR:
+  4863→    ./src/app/page.tsx [Client Component SSR]
+  4864→    ./src/app/page.tsx [Server Component]
+  4865→
+  4866→https://nextjs.org/docs/messages/module-not-found
+  4867→
+  4868→
+  4869→⨯ ./src/app/page.tsx:23:29
+  4870→Module not found: Can't resolve '@/components/app/kasir'
+  4871→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4872→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4873→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4874→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4875→ [90m 24 |[39m
+  4876→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4877→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4878→
+  4879→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4880→
+  4881→
+  4882→Import traces:
+  4883→  Client Component Browser:
+  4884→    ./src/app/page.tsx [Client Component Browser]
+  4885→    ./src/app/page.tsx [Server Component]
+  4886→
+  4887→  Client Component SSR:
+  4888→    ./src/app/page.tsx [Client Component SSR]
+  4889→    ./src/app/page.tsx [Server Component]
+  4890→
+  4891→https://nextjs.org/docs/messages/module-not-found
+  4892→
+  4893→
+  4894→⨯ ./src/app/page.tsx
+  4895→Module not found: Can't resolve '@/components/app/kasir'
+  4896→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4897→
+  4898→
+  4899→Import traces:
+  4900→  Client Component Browser:
+  4901→    ./src/app/page.tsx [Client Component Browser]
+  4902→    ./src/app/page.tsx [Server Component]
+  4903→
+  4904→  Client Component SSR:
+  4905→    ./src/app/page.tsx [Client Component SSR]
+  4906→    ./src/app/page.tsx [Server Component]
+  4907→
+  4908→https://nextjs.org/docs/messages/module-not-found
+  4909→
+  4910→
+  4911→⨯ ./src/app/page.tsx
+  4912→Module not found: Can't resolve '@/components/app/kasir'
+  4913→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4914→
+  4915→
+  4916→Import traces:
+  4917→  Client Component Browser:
+  4918→    ./src/app/page.tsx [Client Component Browser]
+  4919→    ./src/app/page.tsx [Server Component]
+  4920→
+  4921→  Client Component SSR:
+  4922→    ./src/app/page.tsx [Client Component SSR]
+  4923→    ./src/app/page.tsx [Server Component]
+  4924→
+  4925→https://nextjs.org/docs/messages/module-not-found
+  4926→
+  4927→
+  4928→⨯ ./src/app/page.tsx:23:29
+  4929→Module not found: Can't resolve '@/components/app/kasir'
+  4930→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4931→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4932→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4933→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4934→ [90m 24 |[39m
+  4935→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4936→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4937→
+  4938→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4939→
+  4940→
+  4941→Import traces:
+  4942→  Client Component Browser:
+  4943→    ./src/app/page.tsx [Client Component Browser]
+  4944→    ./src/app/page.tsx [Server Component]
+  4945→
+  4946→  Client Component SSR:
+  4947→    ./src/app/page.tsx [Client Component SSR]
+  4948→    ./src/app/page.tsx [Server Component]
+  4949→
+  4950→https://nextjs.org/docs/messages/module-not-found
+  4951→
+  4952→
+  4953→⨯ ./src/app/page.tsx
+  4954→Module not found: Can't resolve '@/components/app/kasir'
+  4955→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4956→
+  4957→
+  4958→Import traces:
+  4959→  Client Component Browser:
+  4960→    ./src/app/page.tsx [Client Component Browser]
+  4961→    ./src/app/page.tsx [Server Component]
+  4962→
+  4963→  Client Component SSR:
+  4964→    ./src/app/page.tsx [Client Component SSR]
+  4965→    ./src/app/page.tsx [Server Component]
+  4966→
+  4967→https://nextjs.org/docs/messages/module-not-found
+  4968→
+  4969→
+  4970→⨯ ./src/app/page.tsx
+  4971→Module not found: Can't resolve '@/components/app/kasir'
+  4972→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4973→
+  4974→
+  4975→Import traces:
+  4976→  Client Component Browser:
+  4977→    ./src/app/page.tsx [Client Component Browser]
+  4978→    ./src/app/page.tsx [Server Component]
+  4979→
+  4980→  Client Component SSR:
+  4981→    ./src/app/page.tsx [Client Component SSR]
+  4982→    ./src/app/page.tsx [Server Component]
+  4983→
+  4984→https://nextjs.org/docs/messages/module-not-found
+  4985→
+  4986→
+  4987→⨯ ./src/app/page.tsx:23:29
+  4988→Module not found: Can't resolve '@/components/app/kasir'
+  4989→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4990→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4991→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  4992→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  4993→ [90m 24 |[39m
+  4994→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  4995→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  4996→
+  4997→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  4998→
+  4999→
+  5000→Import traces:
+  5001→  Client Component Browser:
+  5002→    ./src/app/page.tsx [Client Component Browser]
+  5003→    ./src/app/page.tsx [Server Component]
+  5004→
+  5005→  Client Component SSR:
+  5006→    ./src/app/page.tsx [Client Component SSR]
+  5007→    ./src/app/page.tsx [Server Component]
+  5008→
+  5009→https://nextjs.org/docs/messages/module-not-found
+  5010→
+  5011→
+  5012→⨯ ./src/app/page.tsx
+  5013→Module not found: Can't resolve '@/components/app/kasir'
+  5014→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5015→
+  5016→
+  5017→Import traces:
+  5018→  Client Component Browser:
+  5019→    ./src/app/page.tsx [Client Component Browser]
+  5020→    ./src/app/page.tsx [Server Component]
+  5021→
+  5022→  Client Component SSR:
+  5023→    ./src/app/page.tsx [Client Component SSR]
+  5024→    ./src/app/page.tsx [Server Component]
+  5025→
+  5026→https://nextjs.org/docs/messages/module-not-found
+  5027→
+  5028→
+  5029→⨯ ./src/app/page.tsx
+  5030→Module not found: Can't resolve '@/components/app/kasir'
+  5031→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5032→
+  5033→
+  5034→Import traces:
+  5035→  Client Component Browser:
+  5036→    ./src/app/page.tsx [Client Component Browser]
+  5037→    ./src/app/page.tsx [Server Component]
+  5038→
+  5039→  Client Component SSR:
+  5040→    ./src/app/page.tsx [Client Component SSR]
+  5041→    ./src/app/page.tsx [Server Component]
+  5042→
+  5043→https://nextjs.org/docs/messages/module-not-found
+  5044→
+  5045→
+  5046→⨯ ./src/app/page.tsx:23:29
+  5047→Module not found: Can't resolve '@/components/app/kasir'
+  5048→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5049→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5050→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5051→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  5052→ [90m 24 |[39m
+  5053→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  5054→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  5055→
+  5056→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5057→
+  5058→
+  5059→Import traces:
+  5060→  Client Component Browser:
+  5061→    ./src/app/page.tsx [Client Component Browser]
+  5062→    ./src/app/page.tsx [Server Component]
+  5063→
+  5064→  Client Component SSR:
+  5065→    ./src/app/page.tsx [Client Component SSR]
+  5066→    ./src/app/page.tsx [Server Component]
+  5067→
+  5068→https://nextjs.org/docs/messages/module-not-found
+  5069→
+  5070→
+  5071→✓ Compiled in 178ms
+  5072→ GET /api/dashboard 500 in 21ms (compile: 8ms, render: 13ms)
+  5073→ GET /api/dashboard 500 in 19ms (compile: 6ms, render: 13ms)
+  5074→ GET /api/notifications 500 in 21ms (compile: 7ms, render: 14ms)
+  5075→ GET /api/notifications 500 in 22ms (compile: 8ms, render: 14ms)
+  5076→⨯ ./src/app/page.tsx
+  5077→Module not found: Can't resolve '@/components/app/kasir'
+  5078→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5079→
+  5080→
+  5081→Import traces:
+  5082→  Client Component Browser:
+  5083→    ./src/app/page.tsx [Client Component Browser]
+  5084→    ./src/app/page.tsx [Server Component]
+  5085→
+  5086→  Client Component SSR:
+  5087→    ./src/app/page.tsx [Client Component SSR]
+  5088→    ./src/app/page.tsx [Server Component]
+  5089→
+  5090→https://nextjs.org/docs/messages/module-not-found
+  5091→
+  5092→
+  5093→⨯ ./src/app/page.tsx
+  5094→Module not found: Can't resolve '@/components/app/kasir'
+  5095→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5096→
+  5097→
+  5098→Import traces:
+  5099→  Client Component Browser:
+  5100→    ./src/app/page.tsx [Client Component Browser]
+  5101→    ./src/app/page.tsx [Server Component]
+  5102→
+  5103→  Client Component SSR:
+  5104→    ./src/app/page.tsx [Client Component SSR]
+  5105→    ./src/app/page.tsx [Server Component]
+  5106→
+  5107→https://nextjs.org/docs/messages/module-not-found
+  5108→
+  5109→
+  5110→⨯ ./src/app/page.tsx:23:29
+  5111→Module not found: Can't resolve '@/components/app/kasir'
+  5112→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5113→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5114→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5115→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  5116→ [90m 24 |[39m
+  5117→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  5118→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  5119→
+  5120→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5121→
+  5122→
+  5123→Import traces:
+  5124→  Client Component Browser:
+  5125→    ./src/app/page.tsx [Client Component Browser]
+  5126→    ./src/app/page.tsx [Server Component]
+  5127→
+  5128→  Client Component SSR:
+  5129→    ./src/app/page.tsx [Client Component SSR]
+  5130→    ./src/app/page.tsx [Server Component]
+  5131→
+  5132→https://nextjs.org/docs/messages/module-not-found
+  5133→
+  5134→
+  5135→⨯ ./src/app/page.tsx
+  5136→Module not found: Can't resolve '@/components/app/kasir'
+  5137→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5138→
+  5139→
+  5140→Import traces:
+  5141→  Client Component Browser:
+  5142→    ./src/app/page.tsx [Client Component Browser]
+  5143→    ./src/app/page.tsx [Server Component]
+  5144→
+  5145→  Client Component SSR:
+  5146→    ./src/app/page.tsx [Client Component SSR]
+  5147→    ./src/app/page.tsx [Server Component]
+  5148→
+  5149→https://nextjs.org/docs/messages/module-not-found
+  5150→
+  5151→
+  5152→⨯ ./src/app/page.tsx
+  5153→Module not found: Can't resolve '@/components/app/kasir'
+  5154→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5155→
+  5156→
+  5157→Import traces:
+  5158→  Client Component Browser:
+  5159→    ./src/app/page.tsx [Client Component Browser]
+  5160→    ./src/app/page.tsx [Server Component]
+  5161→
+  5162→  Client Component SSR:
+  5163→    ./src/app/page.tsx [Client Component SSR]
+  5164→    ./src/app/page.tsx [Server Component]
+  5165→
+  5166→https://nextjs.org/docs/messages/module-not-found
+  5167→
+  5168→
+  5169→⨯ ./src/app/page.tsx:23:29
+  5170→Module not found: Can't resolve '@/components/app/kasir'
+  5171→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5172→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5173→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5174→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  5175→ [90m 24 |[39m
+  5176→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  5177→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  5178→
+  5179→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5180→
+  5181→
+  5182→Import traces:
+  5183→  Client Component Browser:
+  5184→    ./src/app/page.tsx [Client Component Browser]
+  5185→    ./src/app/page.tsx [Server Component]
+  5186→
+  5187→  Client Component SSR:
+  5188→    ./src/app/page.tsx [Client Component SSR]
+  5189→    ./src/app/page.tsx [Server Component]
+  5190→
+  5191→https://nextjs.org/docs/messages/module-not-found
+  5192→
+  5193→
+  5194→⨯ ./src/app/page.tsx
+  5195→Module not found: Can't resolve '@/components/app/kasir'
+  5196→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5197→
+  5198→
+  5199→Import traces:
+  5200→  Client Component Browser:
+  5201→    ./src/app/page.tsx [Client Component Browser]
+  5202→    ./src/app/page.tsx [Server Component]
+  5203→
+  5204→  Client Component SSR:
+  5205→    ./src/app/page.tsx [Client Component SSR]
+  5206→    ./src/app/page.tsx [Server Component]
+  5207→
+  5208→https://nextjs.org/docs/messages/module-not-found
+  5209→
+  5210→
+  5211→⨯ ./src/app/page.tsx
+  5212→Module not found: Can't resolve '@/components/app/kasir'
+  5213→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5214→
+  5215→
+  5216→Import traces:
+  5217→  Client Component Browser:
+  5218→    ./src/app/page.tsx [Client Component Browser]
+  5219→    ./src/app/page.tsx [Server Component]
+  5220→
+  5221→  Client Component SSR:
+  5222→    ./src/app/page.tsx [Client Component SSR]
+  5223→    ./src/app/page.tsx [Server Component]
+  5224→
+  5225→https://nextjs.org/docs/messages/module-not-found
+  5226→
+  5227→
+  5228→⨯ ./src/app/page.tsx:23:29
+  5229→Module not found: Can't resolve '@/components/app/kasir'
+  5230→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5231→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5232→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5233→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  5234→ [90m 24 |[39m
+  5235→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  5236→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  5237→
+  5238→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5239→
+  5240→
+  5241→Import traces:
+  5242→  Client Component Browser:
+  5243→    ./src/app/page.tsx [Client Component Browser]
+  5244→    ./src/app/page.tsx [Server Component]
+  5245→
+  5246→  Client Component SSR:
+  5247→    ./src/app/page.tsx [Client Component SSR]
+  5248→    ./src/app/page.tsx [Server Component]
+  5249→
+  5250→https://nextjs.org/docs/messages/module-not-found
+  5251→
+  5252→
+  5253→⨯ ./src/app/page.tsx
+  5254→Module not found: Can't resolve '@/components/app/kasir'
+  5255→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5256→
+  5257→
+  5258→Import traces:
+  5259→  Client Component Browser:
+  5260→    ./src/app/page.tsx [Client Component Browser]
+  5261→    ./src/app/page.tsx [Server Component]
+  5262→
+  5263→  Client Component SSR:
+  5264→    ./src/app/page.tsx [Client Component SSR]
+  5265→    ./src/app/page.tsx [Server Component]
+  5266→
+  5267→https://nextjs.org/docs/messages/module-not-found
+  5268→
+  5269→
+  5270→⨯ ./src/app/page.tsx
+  5271→Module not found: Can't resolve '@/components/app/kasir'
+  5272→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5273→
+  5274→
+  5275→Import traces:
+  5276→  Client Component Browser:
+  5277→    ./src/app/page.tsx [Client Component Browser]
+  5278→    ./src/app/page.tsx [Server Component]
+  5279→
+  5280→  Client Component SSR:
+  5281→    ./src/app/page.tsx [Client Component SSR]
+  5282→    ./src/app/page.tsx [Server Component]
+  5283→
+  5284→https://nextjs.org/docs/messages/module-not-found
+  5285→
+  5286→
+  5287→⨯ ./src/app/page.tsx:23:29
+  5288→Module not found: Can't resolve '@/components/app/kasir'
+  5289→[0m [90m 21 |[39m [36mconst[39m [33mReports[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/reports'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5290→ [90m 22 |[39m [36mconst[39m [33mSettings[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/settings'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5291→[31m[1m>[22m[39m[90m 23 |[39m [36mconst[39m [33mKasir[39m [33m=[39m dynamic(() [33m=>[39m [36mimport[39m([32m'@/components/app/kasir'[39m)[33m,[39m { ssr[33m:[39m [36mfalse[39m })
+  5292→ [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+  5293→ [90m 24 |[39m
+  5294→ [90m 25 |[39m [36mconst[39m pageComponents[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m [33mReact[39m[33m.[39m[33mComponentType[39m[33m>[39m [33m=[39m {
+  5295→ [90m 26 |[39m   dashboard[33m:[39m [33mDashboard[39m[33m,[39m[0m
+  5296→
+  5297→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5298→
+  5299→
+  5300→Import traces:
+  5301→  Client Component Browser:
+  5302→    ./src/app/page.tsx [Client Component Browser]
+  5303→    ./src/app/page.tsx [Server Component]
+  5304→
+  5305→  Client Component SSR:
+  5306→    ./src/app/page.tsx [Client Component SSR]
+  5307→    ./src/app/page.tsx [Server Component]
+  5308→
+  5309→https://nextjs.org/docs/messages/module-not-found
+  5310→
+  5311→
+  5312→⨯ ./src/app/page.tsx
+  5313→Module not found: Can't resolve '@/components/app/kasir'
+  5314→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5315→
+  5316→
+  5317→Import traces:
+  5318→  Client Component Browser:
+  5319→    ./src/app/page.tsx [Client Component Browser]
+  5320→    ./src/app/page.tsx [Server Component]
+  5321→
+  5322→  Client Component SSR:
+  5323→    ./src/app/page.tsx [Client Component SSR]
+  5324→    ./src/app/page.tsx [Server Component]
+  5325→
+  5326→https://nextjs.org/docs/messages/module-not-found
+  5327→
+  5328→
+  5329→⨯ ./src/app/page.tsx
+  5330→Module not found: Can't resolve '@/components/app/kasir'
+  5331→Import map: aliased to relative './src/components/app/kasir' inside of [project]/
+  5332→
+  5333→
+  5334→Import traces:
+  5335→  Client Component Browser:
+  5336→    ./src/app/page.tsx [Client Component Browser]
+  5337→    ./src/app/page.tsx [Server Component]
+  5338→
+  5339→  Client Component SSR:
+
+[showing lines 3340-5339 of 7263; use offset=5340 with limit to continue reading]

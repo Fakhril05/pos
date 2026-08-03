@@ -34,6 +34,7 @@ const SHORTCUTS: Shortcut[] = [
   { keys: ['D'], description: 'Dark/Light Mode Toggle' },
   { keys: ['N'], description: 'Buat Payment Link Baru' },
   { keys: ['T'], description: 'Ke Halaman Transaksi' },
+  { keys: ['K'], description: 'Buka Kasir' },
   { keys: ['?'], description: 'Tampilkan Pintasan Keyboard' },
   { keys: ['Esc'], description: 'Tutup Dialog / Overlay' },
 ];

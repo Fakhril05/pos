@@ -649,3 +649,134 @@ Stage Summary:
 6. **Enhancement:** Improve mobile landscape layout for table pages
 7. **Enhancement:** Add more keyboard shortcuts for in-page actions
 8. **Enhancement:** Add data export to PDF/Excel for reports
+
+---
+Task ID: 9
+Agent: Main Coordinator (Cron Review Round 5)
+Task: QA assessment, new features (Kasir POS, Customer/Merchant detail drawers, Reports enhancements), styling improvements, bug fixes
+
+Work Log:
+- **QA Testing:** Tested all pages via agent-browser (desktop 1920x1080, mobile 375x812) — initially found Kasir page crashing with client-side error
+- **Bug Fix 1:** Kasir component used named export (`export function Kasir`) but `next/dynamic` expected default export — fixed with `.then(m => ({ default: m.Kasir }))` in page.tsx
+- **Bug Fix 2:** `Page` type in app-store.ts was declared with `type` (not exported) — changed to `export type Page` to fix TS2459 errors in command-palette.tsx and mobile-nav.tsx
+- **Bug Fix 3:** `reports.tsx` had `handleExportSummary` useCallback referencing `reportData` before it was declared — moved `reportData` useMemo block before the export handlers
+- **New Feature: Kasir (POS Cashier) Page** — Complete POS terminal with:
+  - 15 Indonesian food products in 4 categories (Makanan, Minuman, Snack, Lainnya)
+  - Product catalog grid with search and category filter tabs
+  - Shopping cart with quantity controls, subtotal, PPN 11% tax calculation
+  - Payment dialog with 7 payment methods (QRIS, GoPay, OVO, Dana, ShopeePay, Bank Transfer, Kartu Kredit)
+  - Merchant selector dropdown, optional customer info fields
+  - Animated success state with receipt summary and print functionality
+  - Mobile-responsive with bottom sheet cart
+  - Keyboard shortcut 'K' to navigate to Kasir
+- **New Feature: Customer Detail Drawer** — Sheet component (side="right") with:
+  - Gradient avatar with initials, name, email, status badge
+  - 3 stat cards (Total Belanja, Total Transaksi, Rata-rata Belanja) with AnimatedCounter
+  - Contact info section (Email, Phone, Address, Member since)
+  - Mini bar chart showing 6-month transaction activity
+  - Transaction history mini-table with colored status/method badges
+  - Action buttons (Kirim Notifikasi, Buat Transaksi)
+  - Customer name in table is now clickable to open drawer
+- **New Feature: Merchant Detail Drawer** — Sheet component (side="right") with:
+  - Gradient avatar, name, email, status badge, masked API key with show/hide toggle + copy
+  - 4 stat cards (Total Penjualan, Total Transaksi, Tingkat Keberhasilan, Rata-rata Transaksi)
+  - Contact info section
+  - Revenue area chart (6 months, emerald gradient fill)
+  - Payment links list with status and sold/max qty
+  - Recent transactions mini-table (last 5)
+  - Action buttons (Lihat Semua Transaksi, Buat Payout)
+  - Merchant name in cards is now clickable to open drawer
+- **New Feature: Reports Enhancements:**
+  - CSV export dropdown (Ekspor CSV Transaksi + Ekspor CSV Ringkasan) with blob download
+  - Enhanced date range with 7 preset buttons (Hari Ini, 7 Hari, 30 Hari, 90 Hari, 12 Bulan, Semua, Kustom)
+  - Chart type switching for revenue chart (Area/Bar/Line toggle)
+  - Chart type switching for payment method chart (Pie/Bar horizontal toggle)
+  - 3 period summary stat cards with AnimatedCounter
+- **New API Route:** `/api/quick-pay/route.ts` — POST handler for instant POS payments with fee calculation per payment method
+- **Enhanced API:** `/api/customers/[id]/route.ts` — Returns customer detail with stats, monthly activity, last 10 transactions
+- **Enhanced API:** `/api/merchants/[id]/route.ts` — Returns merchant detail with stats, revenue chart data, payment links, last 10 transactions
+- **Styling Enhancements (16 new CSS utilities):**
+  - `glass-card` — Glassmorphism with backdrop blur
+  - `shimmer` — Shimmer loading animation
+  - `pulse-ring` — Pulsing ring for status indicators
+  - `text-gradient-emerald/warm/cool` — Gradient text effects
+  - `hover-scale` — Scale up/down on hover/active
+  - `animate-count-up/slide-in-right/float-slow` — Animation utilities
+  - `gradient-border` — CSS mask gradient border
+  - `hover-glow-border` — Emerald glow on hover
+  - `pattern-grid` — Subtle emerald grid background
+  - `focus-ring-emerald` — Accessibility focus ring
+  - `table-stripe` — Alternating row backgrounds
+  - `text-shadow-subtle` — Subtle text shadow for headings
+  - `tabular-nums` — Aligned numeric font variant
+- **Cross-component styling applied to:** dashboard.tsx (7 additions), quick-stats.tsx (3), header.tsx (2), page-header.tsx (2), settings.tsx (3 types), transactions.tsx (3), payouts.tsx (3)
+- **Navigation updates:** Kasir added to sidebar (before Merchants), mobile nav (replaced Reports in primary), keyboard shortcuts (K key)
+- **ESLint:** zero errors after all fixes
+
+Stage Summary:
+- **1 new page:** Kasir (POS Cashier) — 9th page in the app
+- **2 detail drawers:** Customer and Merchant with full stats, charts, and transaction history
+- **3 bug fixes:** Kasir dynamic import, Page type export, Reports variable ordering
+- **Reports enhancements:** CSV export, date presets, chart type switching, period summary cards
+- **16 new CSS utilities** applied across 7 component files
+- **1 new API route:** /api/quick-pay
+- **2 enhanced API routes:** customers/[id], merchants/[id]
+- **Total pages:** 9 (Dashboard, Transactions, Payment Links, Customers, Merchants, **Kasir**, Payouts, Reports, Settings)
+- **ESLint:** zero errors
+- **QA:** All 9 pages verified (desktop, mobile) — zero runtime errors
+
+## Current Project Status Assessment
+
+### What's Working (Verified ✅)
+- All 9 pages render correctly: Dashboard, Transactions, Payment Links, Customers, Merchants, **Kasir**, Payouts, Reports, Settings
+- 16+ API routes with full CRUD + detail endpoints + quick-pay
+- Database with 10 merchants, 15 customers, 200 transactions, 20 payment links, 15 payouts, 5 notifications
+- Dark/light mode toggle (D keyboard shortcut)
+- Responsive design (mobile-first) with mobile bottom navigation bar
+- Sidebar collapse/expand with smooth animations
+- Command Palette (⌘K/Ctrl+K)
+- Welcome banner with quick action buttons
+- Live activity feed with WebSocket real-time transaction streaming
+- Glassmorphism KPI cards with AnimatedCounter
+- PageHeader component on all 9 pages with gradient icon containers
+- bg-mesh and pattern-grid gradient backgrounds
+- card-elevated and hover-glow-border on cards
+- table-header-enhanced and table-stripe on data tables
+- Refund dialog with reason input
+- **NEW:** Kasir POS page with 15 products, cart, payment dialog, success animation
+- **NEW:** Customer detail drawer (stats, chart, transaction history, action buttons)
+- **NEW:** Merchant detail drawer (stats, revenue chart, payment links, API key, transactions)
+- **NEW:** Reports CSV export (transactions + summary)
+- **NEW:** Reports date range presets (7 options)
+- **NEW:** Reports chart type switching (Area/Bar/Line for revenue, Pie/Bar for payment methods)
+- **NEW:** Reports period summary stat cards with AnimatedCounter
+- **NEW:** 16 additional CSS utility classes
+- **NEW:** K keyboard shortcut for Kasir navigation
+- Sticky footer with branding
+- Keyboard shortcuts overlay (15 shortcuts)
+- Webhook configuration tab in Settings
+- Loading progress bar
+- Live notification center
+- WebSocket mini-service on port 3004
+
+### Architecture
+- `/src/app/page.tsx` - SPA with client-side routing, 9 page components
+- `/src/components/app/*.tsx` - 20 component files
+- `/src/lib/receipt-generator.ts` - HTML receipt generation utility
+- `/src/hooks/use-socket.ts` - WebSocket hook
+- `/src/app/api/*/route.ts` - 16+ API route files
+- `/src/stores/app-store.ts` - Zustand store with exported Page type
+- `/src/lib/db.ts` - Prisma client
+- `/mini-services/notification-service/` - WebSocket on port 3004
+
+### Unresolved Issues / Next Phase Recommendations
+1. **Medium Priority:** Implement 2FA with QR code setup
+2. **Medium Priority:** Add transaction receipt PDF generation (currently HTML-only)
+3. **Medium Priority:** Add conversion funnel analytics
+4. **Low Priority:** Add multi-currency support
+5. **Low Priority:** Add merchant self-service onboarding flow
+6. **Enhancement:** Improve mobile landscape layout for table pages
+7. **Enhancement:** Add data export to PDF for reports
+8. **Enhancement:** Add print stylesheet for better receipt printing
+9. **Enhancement:** Add sound effects on POS payment success
+10. **Enhancement:** Offline mode for Kasir (PWA support)

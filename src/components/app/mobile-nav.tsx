@@ -6,6 +6,7 @@ import {
   ArrowLeftRight,
   Link2,
   BarChart3,
+  Calculator,
   MoreHorizontal,
   Users,
   Store,
@@ -26,10 +27,11 @@ const primaryNavItems: { id: Page; label: string; icon: React.ReactNode }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   { id: 'transactions', label: 'Transaksi', icon: <ArrowLeftRight className="h-5 w-5" /> },
   { id: 'payment-links', label: 'Payment Link', icon: <Link2 className="h-5 w-5" /> },
-  { id: 'reports', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
+  { id: 'kasir', label: 'Kasir', icon: <Calculator className="h-5 w-5" /> },
 ]
 
 const moreNavItems: { id: Page; label: string; icon: React.ReactNode }[] = [
+  { id: 'reports', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
   { id: 'customers', label: 'Pelanggan', icon: <Users className="h-5 w-5" /> },
   { id: 'merchants', label: 'Merchant', icon: <Store className="h-5 w-5" /> },
   { id: 'payouts', label: 'Payout', icon: <Banknote className="h-5 w-5" /> },
