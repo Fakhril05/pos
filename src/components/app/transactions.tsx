@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,6 +24,7 @@ import {
   Receipt,
   CircleDot,
   Printer,
+  TriangleAlert,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,6 +64,7 @@ import {
   PaginationEllipsis,
 } from '@/components/ui/pagination';
 import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/app/page-header';
 import { toast } from 'sonner';
 import { generateReceiptHtml } from '@/lib/receipt-generator';
 
@@ -272,18 +276,24 @@ function TransactionDetailDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const queryClient = useQueryClient();
-  const [refunding, setRefunding] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundReasonError, setRefundReasonError] = useState('');
 
   const timeline = useMemo(() => (tx ? buildTimeline(tx) : []), [tx]);
 
   const handleRefund = async () => {
     if (!tx) return;
+    if (!refundReason.trim()) {
+      setRefundReasonError('Alasan refund wajib diisi');
+      return;
+    }
     setRefunding(true);
     try {
       const res = await fetch(`/api/transactions/${tx.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: tx.amount, reason: 'Permintaan refund dari dashboard' }),
+        body: JSON.stringify({ amount: tx.amount, reason: refundReason.trim() }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Gagal memproses refund' }));
@@ -291,6 +301,8 @@ function TransactionDetailDialog({
       }
       toast.success('Refund berhasil diajukan');
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      setRefundDialogOpen(false);
+      setRefundReason('');
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Gagal memproses refund');
@@ -492,16 +504,108 @@ function TransactionDetailDialog({
           {tx.status === 'success' && (
             <Button
               variant="destructive"
-              onClick={handleRefund}
+              onClick={() => { setRefundDialogOpen(true); setRefundReason(''); setRefundReasonError(''); }}
               disabled={refunding}
               className="w-full gap-2 sm:w-auto"
             >
               <RotateCcw className="h-4 w-4" />
-              {refunding ? 'Memproses...' : 'Proses Refund'}
+              Ajukan Refund
             </Button>
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Refund Reason Dialog */}
+      <Dialog open={refundDialogOpen} onOpenChange={(v) => { setRefundDialogOpen(v); if (!v) setRefundReasonError(''); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50">
+                <TriangleAlert className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-base">Konfirmasi Refund</DialogTitle>
+                <DialogDescription className="text-xs">
+                  Tindakan ini tidak dapat dibatalkan
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Warning banner */}
+            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+              <div className="text-sm">
+                <p className="font-medium text-red-800 dark:text-red-300">Refund sebesar {tx ? formatRp(tx.amount) : ''}</p>
+                <p className="text-red-600 dark:text-red-400 mt-0.5">
+                  Dana akan dikembalikan ke {tx?.customerName || tx?.customer?.name || 'pelanggan'}. Proses membutuhkan 1-3 hari kerja.
+                </p>
+              </div>
+            </div>
+
+            {/* Refund reason */}
+            <div className="space-y-2">
+              <Label htmlFor="refund-reason" className="text-sm font-medium">
+                Alasan Refund <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="refund-reason"
+                placeholder="Masukkan alasan refund, misal: Produk rusak saat pengiriman"
+                value={refundReason}
+                onChange={(e) => { setRefundReason(e.target.value); setRefundReasonError(''); }}
+                className={`min-h-[80px] resize-none ${refundReasonError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+              />
+              {refundReasonError && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <TriangleAlert className="h-3 w-3" /> {refundReasonError}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {refundReason.length}/200 karakter
+              </p>
+            </div>
+
+            {/* Quick reasons */}
+            <div className="flex flex-wrap gap-1.5">
+              {['Produk rusak', 'Tidak sesuai pesanan', 'Pembayaran ganda', 'Permintaan pelanggan'].map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => { setRefundReason(reason); setRefundReasonError(''); }}
+                  className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRefund}
+              disabled={refunding || !refundReason.trim()}
+              className="gap-2"
+            >
+              {refunding ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" />
+                  Konfirmasi Refund
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
@@ -789,14 +893,26 @@ export default function Transactions() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 bg-mesh">
+      <PageHeader
+        title="Transaksi"
+        description="Kelola dan pantau semua transaksi pembayaran"
+        icon={ArrowLeftRight}
+        iconGradient="emerald"
+      >
+        <Button onClick={handleExportCSV} variant="outline" className="gap-2 btn-press">
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Ekspor CSV</span>
+        </Button>
+      </PageHeader>
+
       {/* ─── Filter Bar ─────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="shadow-sm card-hover">
+        <Card className="shadow-sm card-hover card-elevated">
           <CardContent className="p-4">
             <form
               onSubmit={handleSearch}
@@ -867,16 +983,7 @@ export default function Transactions() {
                 placeholder="Sampai tanggal"
               />
 
-              {/* Export Button */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleExportCSV}
-                className="w-full gap-2 lg:w-auto btn-press"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Ekspor CSV</span>
-              </Button>
+
             </form>
           </CardContent>
         </Card>
@@ -966,7 +1073,7 @@ export default function Transactions() {
             {/* Table */}
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
+                <TableHeader className="table-header-enhanced">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="pl-4">Invoice</TableHead>
                     <TableHead>Merchant</TableHead>

@@ -31,6 +31,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/app/page-header';
+import { AnimatedCounter } from '@/components/app/animated-counter';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -217,28 +219,31 @@ function getKpiCards(stats: DashboardStats) {
   return [
     {
       label: 'Total Pendapatan',
-      value: formatRp(stats.totalRevenue),
+      rawValue: stats.totalRevenue,
+      formatFn: formatRp,
       icon: DollarSign,
       change: 12.5,
       gradient: 'from-emerald-500 to-teal-400',
     },
     {
       label: 'Total Transaksi',
-      value: stats.totalTransactions.toLocaleString('id-ID'),
+      rawValue: stats.totalTransactions,
       icon: ArrowLeftRight,
       change: 8.2,
       gradient: 'from-green-500 to-emerald-400',
     },
     {
       label: 'Tingkat Keberhasilan',
-      value: `${stats.successRate}%`,
+      rawValue: stats.successRate,
+      formatFn: (v: number) => `${v}%`,
       icon: TrendingUp,
       change: 2.1,
       gradient: 'from-teal-500 to-cyan-400',
     },
     {
       label: 'Rata-rata Transaksi',
-      value: formatRp(stats.avgTransaction),
+      rawValue: stats.avgTransaction,
+      formatFn: formatRp,
       icon: CreditCard,
       change: -3.4,
       gradient: 'from-lime-500 to-green-400',
@@ -369,6 +374,7 @@ function ActivityFeed() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-emerald-500" />
+              <span className="rounded-full w-2 h-2 bg-emerald-500 inline-block mr-2 status-dot" />
               <CardTitle className="text-base">Aktivitas Terkini</CardTitle>
             </div>
             <span className="relative flex h-2.5 w-2.5">
@@ -522,19 +528,36 @@ export default function Dashboard() {
     }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-mesh">
+      {/* ─── Page Header ────────────────────────────────────────── */}
+      <PageHeader
+        title="Dashboard"
+        description="Ringkasan aktivitas dan performa bisnis Anda"
+        icon={TrendingUp}
+        iconGradient="emerald"
+      >
+        <Button onClick={() => setActivePage('payment-links')} className="gap-2 btn-press">
+          <Link2 className="h-4 w-4" />
+          <span className="hidden sm:inline">Buat Payment Link</span>
+        </Button>
+        <Button variant="outline" onClick={() => setActivePage('transactions')} className="gap-2 btn-press">
+          <ArrowLeftRight className="h-4 w-4" />
+          <span className="hidden sm:inline">Lihat Transaksi</span>
+        </Button>
+      </PageHeader>
+
       {/* ─── Welcome Banner ──────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white glow-emerald-sm">
+        <div className="card-elevated relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 p-6 text-white glow-emerald-sm">
           {/* Decorative circles */}
-          <div className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/10" />
-          <div className="pointer-events-none absolute -bottom-12 right-16 h-40 w-40 rounded-full bg-white/[0.07]" />
-          <div className="pointer-events-none absolute left-1/2 -top-4 h-24 w-24 rounded-full bg-white/[0.05]" />
-          <div className="pointer-events-none absolute bottom-2 left-8 h-16 w-16 rounded-full bg-white/[0.06]" />
+          <div className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 animate-float rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-12 right-16 h-40 w-40 animate-float rounded-full bg-white/[0.07]" />
+          <div className="pointer-events-none absolute left-1/2 -top-4 h-24 w-24 animate-float rounded-full bg-white/[0.05]" />
+          <div className="pointer-events-none absolute bottom-2 left-8 h-16 w-16 animate-float rounded-full bg-white/[0.06]" />
 
           <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-lg">
@@ -544,23 +567,6 @@ export default function Dashboard() {
               <p className="mt-2 text-sm leading-relaxed text-white/80 sm:text-base">
                 Kelola semua transaksi dan pantau pertumbuhan bisnis Anda dari satu tempat.
               </p>
-            </div>
-            <div className="flex shrink-0 gap-3">
-              <Button
-                variant="outline"
-                className="border-white/30 bg-transparent text-white hover:bg-white/15 hover:text-white hover-lift"
-                onClick={() => setActivePage('payment-links')}
-              >
-                <Link2 className="mr-2 h-4 w-4" />
-                Buat Payment Link
-              </Button>
-              <Button
-                className="bg-white text-emerald-700 hover:bg-white/90 hover-lift"
-                onClick={() => setActivePage('transactions')}
-              >
-                <ArrowLeftRight className="mr-2 h-4 w-4" />
-                Lihat Transaksi
-              </Button>
             </div>
           </div>
         </div>
@@ -589,12 +595,14 @@ export default function Dashboard() {
                       <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                         {card.label}
                       </p>
-                      <p className={cn(
-                        "text-2xl font-bold tracking-tight",
-                        card.label === 'Total Pendapatan' && "gradient-text-emerald",
-                      )}>
-                        {card.value}
-                      </p>
+                      <AnimatedCounter
+                        value={card.rawValue}
+                        formatFn={'formatFn' in card && card.formatFn ? card.formatFn : undefined}
+                        className={cn(
+                          "text-2xl font-bold tracking-tight",
+                          card.label === 'Total Pendapatan' && "gradient-text-emerald",
+                        )}
+                      />
                       <div
                         className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 ${
                           isPositive

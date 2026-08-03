@@ -49,6 +49,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { PageHeader } from '@/components/app/page-header';
 
 // ── Payment method types ─────────────────────────────────────────────────────
 
@@ -1222,7 +1224,7 @@ function WebhookTab() {
         <CardContent>
           <div className="overflow-x-auto -mx-6 px-6">
             <Table>
-              <TableHeader>
+              <TableHeader className="table-header-enhanced">
                 <TableRow className="border-border/50 hover:bg-transparent">
                   <TableHead className="text-xs">Event Type</TableHead>
                   <TableHead className="text-xs">URL</TableHead>
@@ -1287,7 +1289,13 @@ function WebhookTab() {
 
 export default function Settings() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-mesh">
+      <PageHeader
+        title="Pengaturan"
+        description="Konfigurasi akun, webhook, dan metode pembayaran"
+        icon={SettingsIcon}
+        iconGradient="emerald"
+      />
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

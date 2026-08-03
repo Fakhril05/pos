@@ -1,0 +1,1236 @@
+     1→'use client';
+     2→
+     3→import { useState, useCallback, useEffect } from 'react';
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import { toast } from 'sonner';
+     7→import {
+     8→  Link2,
+     9→  Plus,
+    10→  Search,
+    11→  Copy,
+    12→  Pencil,
+    13→  Trash2,
+    14→  Store,
+    15→  CalendarDays,
+    16→  Clock,
+    17→  Layers,
+    18→  Tag,
+    19→  LinkIcon,
+    20→  MoreHorizontal,
+    21→  Eye,
+    22→  TrendingUp,
+    23→  DollarSign,
+    24→} from 'lucide-react';
+    25→import { Card, CardContent } from '@/components/ui/card';
+    26→import { Button } from '@/components/ui/button';
+    27→import { Input } from '@/components/ui/input';
+    28→import { Label } from '@/components/ui/label';
+    29→import { Textarea } from '@/components/ui/textarea';
+    30→import { Badge } from '@/components/ui/badge';
+    31→import { Progress } from '@/components/ui/progress';
+    32→import { Skeleton } from '@/components/ui/skeleton';
+    33→import {
+    34→  Select,
+    35→  SelectContent,
+    36→  SelectItem,
+    37→  SelectTrigger,
+    38→  SelectValue,
+    39→} from '@/components/ui/select';
+    40→import {
+    41→  Dialog,
+    42→  DialogContent,
+    43→  DialogHeader,
+    44→  DialogTitle,
+    45→  DialogDescription,
+    46→  DialogFooter,
+    47→} from '@/components/ui/dialog';
+    48→import {
+    49→  AlertDialog,
+    50→  AlertDialogAction,
+    51→  AlertDialogCancel,
+    52→  AlertDialogContent,
+    53→  AlertDialogDescription,
+    54→  AlertDialogFooter,
+    55→  AlertDialogHeader,
+    56→  AlertDialogTitle,
+    57→} from '@/components/ui/alert-dialog';
+    58→import {
+    59→  DropdownMenu,
+    60→  DropdownMenuContent,
+    61→  DropdownMenuItem,
+    62→  DropdownMenuSeparator,
+    63→  DropdownMenuTrigger,
+    64→} from '@/components/ui/dropdown-menu';
+    65→import { PageHeader } from '@/components/app/page-header';
+    66→import {
+    67→  Pagination,
+    68→  PaginationContent,
+    69→  PaginationItem,
+    70→  PaginationLink,
+    71→  PaginationPrevious,
+    72→  PaginationNext,
+    73→  PaginationEllipsis,
+    74→} from '@/components/ui/pagination';
+    75→
+    76→// ── Helpers ──────────────────────────────────────────────────────────────────
+    77→
+    78→const formatRp = (amount: number) =>
+    79→  new Intl.NumberFormat('id-ID', {
+    80→    style: 'currency',
+    81→    currency: 'IDR',
+    82→    minimumFractionDigits: 0,
+    83→  }).format(amount);
+    84→
+    85→const formatDate = (dateStr: string) => {
+    86→  const d = new Date(dateStr);
+    87→  return d.toLocaleDateString('id-ID', {
+    88→    day: 'numeric',
+    89→    month: 'short',
+    90→    year: 'numeric',
+    91→  });
+    92→};
+    93→
+    94→const isExpired = (link: PaymentLinkItem) => {
+    95→  if (link.status === 'expired') return true;
+    96→  if (link.expiresAt && new Date(link.expiresAt) < new Date()) return true;
+    97→  return false;
+    98→};
+    99→
+   100→// ── Types ────────────────────────────────────────────────────────────────────
+   101→
+   102→interface PaymentLinkItem {
+   103→  id: string;
+   104→  title: string;
+   105→  description: string | null;
+   106→  amount: number;
+   107→  merchantId: string;
+   108→  status: string;
+   109→  type: string;
+   110→  maxQty: number;
+   111→  soldQty: number;
+   112→  expiresAt: string | null;
+   113→  createdAt: string;
+   114→  updatedAt: string;
+   115→  merchant: { id: string; name: string; logo: string | null };
+   116→  _count: { transactions: number };
+   117→}
+   118→
+   119→interface MerchantOption {
+   120→  id: string;
+   121→  name: string;
+   122→}
+   123→
+   124→interface PaginationInfo {
+   125→  page: number;
+   126→  limit: number;
+   127→  total: number;
+   128→  totalPages: number;
+   129→}
+   130→
+   131→// ── Form state type ──────────────────────────────────────────────────────────
+   132→
+   133→type FormData = {
+   134→  title: string;
+   135→  description: string;
+   136→  amount: string;
+   137→  merchantId: string;
+   138→  type: string;
+   139→  maxQty: string;
+   140→  expiresAt: string;
+   141→};
+   142→
+   143→const emptyForm: FormData = {
+   144→  title: '',
+   145→  description: '',
+   146→  amount: '',
+   147→  merchantId: '',
+   148→  type: 'single',
+   149→  maxQty: '1',
+   150→  expiresAt: '',
+   151→};
+   152→
+   153→// ── Page range helper ────────────────────────────────────────────────────────
+   154→
+   155→function getPageRange(current: number, total: number) {
+   156→  const pages: (number | 'ellipsis')[] = [];
+   157→  if (total <= 7) {
+   158→    for (let i = 1; i <= total; i++) pages.push(i);
+   159→  } else {
+   160→    pages.push(1);
+   161→    if (current > 3) pages.push('ellipsis');
+   162→    const start = Math.max(2, current - 1);
+   163→    const end = Math.min(total - 1, current + 1);
+   164→    for (let i = start; i <= end; i++) pages.push(i);
+   165→    if (current < total - 2) pages.push('ellipsis');
+   166→    pages.push(total);
+   167→  }
+   168→  return pages;
+   169→}
+   170→
+   171→// ── Status badge ─────────────────────────────────────────────────────────────
+   172→
+   173→function StatusBadge({ status }: { status: string }) {
+   174→  const expired = status === 'expired';
+   175→  return (
+   176→    <Badge
+   177→      variant="outline"
+   178→      className={
+   179→        expired
+   180→          ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'
+   181→          : 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800'
+   182→      }
+   183→    >
+   184→      <span className={`mr-1 inline-block h-1.5 w-1.5 rounded-full ${expired ? 'bg-gray-500' : 'bg-emerald-500'}`} />
+   185→      {expired ? 'Kedaluwarsa' : 'Aktif'}
+   186→    </Badge>
+   187→  );
+   188→}
+   189→
+   190→// ── Type badge ───────────────────────────────────────────────────────────────
+   191→
+   192→function TypeBadge({ type }: { type: string }) {
+   193→  if (type === 'multi') {
+   194→    return (
+   195→      <Badge variant="outline" className="bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800">
+   196→        <Layers className="mr-1 h-3 w-3" />
+   197→        Multi Pakai
+   198→      </Badge>
+   199→    );
+   200→  }
+   201→  return (
+   202→    <Badge variant="outline" className="bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800">
+   203→      <Tag className="mr-1 h-3 w-3" />
+   204→      Sekali Pakai
+   205→    </Badge>
+   206→  );
+   207→}
+   208→
+   209→// ── Mock analytics data ───────────────────────────────────────────────
+   210→
+   211→const analyticsSummary = [
+   212→  {
+   213→    label: 'Total Klik',
+   214→    value: '15,847',
+   215→    icon: Eye,
+   216→    theme: 'emerald' as const,
+   217→  },
+   218→  {
+   219→    label: 'Konversi',
+   220→    value: '24.3%',
+   221→    icon: TrendingUp,
+   222→    theme: 'emerald' as const,
+   223→    change: '+3.2%',
+   224→  },
+   225→  {
+   226→    label: 'Pendapatan Link',
+   227→    value: 'Rp 189.450.000',
+   228→    icon: DollarSign,
+   229→    theme: 'emerald' as const,
+   230→  },
+   231→];
+   232→
+   233→const topPerformingLinks = [
+   234→  { name: 'Pembayaran Tiket Konser JKT48', clicks: 3842, conversion: '31.2%', revenue: 'Rp 48.200.000', status: 'active' },
+   235→  { name: 'Donasi Bencana Alam', clicks: 2915, conversion: '28.7%', revenue: 'Rp 35.800.000', status: 'active' },
+   236→  { name: 'Langganan Premium Bulanan', clicks: 2543, conversion: '26.4%', revenue: 'Rp 42.100.000', status: 'active' },
+   237→  { name: 'Pendaftaran Seminar Digital', clicks: 2187, conversion: '22.1%', revenue: 'Rp 31.500.000', status: 'active' },
+   238→  { name: 'Pembayaran Sewa Gedung', clicks: 1860, conversion: '19.8%', revenue: 'Rp 31.850.000', status: 'expired' },
+   239→];
+   240→
+   241→// ── Analytics Section ────────────────────────────────────────────────────────
+   242→
+   243→function AnalyticsSection() {
+   244→  return (
+   245→    <motion.div
+   246→      initial={{ opacity: 0, y: 20 }}
+   247→      animate={{ opacity: 1, y: 0 }}
+   248→      transition={{ duration: 0.4, delay: 0.15 }}
+   249→      className="space-y-6"
+   250→    >
+   251→      {/* Analytics Summary Cards */}
+   252→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+   253→        {analyticsSummary.map((item, i) => {
+   254→          const Icon = item.icon;
+   255→          return (
+   256→            <motion.div
+   257→              key={item.label}
+   258→              initial={{ opacity: 0, y: 15, scale: 0.97 }}
+   259→              animate={{ opacity: 1, y: 0, scale: 1 }}
+   260→              transition={{ duration: 0.35, delay: 0.18 + i * 0.08, ease: 'easeOut' }}
+   261→            >
+   262→              <Card className="card-hover stat-card-gradient bg-card border-border/60 shadow-sm">
+   263→                <CardContent className="p-5">
+   264→                  <div className="flex items-center justify-between">
+   265→                    <div className="space-y-1.5">
+   266→                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+   267→                        {item.label}
+   268→                      </p>
+   269→                      <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+   270→                        {item.value}
+   271→                      </p>
+   272→                      {item.change && (
+   273→                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+   274→                          {item.change} vs periode lalu
+   275→                        </p>
+   276→                      )}
+   277→                    </div>
+   278→                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
+   279→                      <Icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+   280→                    </div>
+   281→                  </div>
+   282→                </CardContent>
+   283→              </Card>
+   284→            </motion.div>
+   285→          );
+   286→        })}
+   287→      </div>
+   288→
+   289→      {/* Top Performing Links Table */}
+   290→      <motion.div
+   291→        initial={{ opacity: 0, y: 15 }}
+   292→        animate={{ opacity: 1, y: 0 }}
+   293→        transition={{ duration: 0.4, delay: 0.42 }}
+   294→      >
+   295→        <Card className="card-hover border-border/60 shadow-sm">
+   296→          <CardContent className="p-5">
+   297→            <h3 className="mb-4 text-base font-semibold">Link Terbaik</h3>
+   298→            <div className="overflow-x-auto">
+   299→              <table className="w-full text-sm">
+   300→                <thead>
+   301→                  <tr className="border-b text-left">
+   302→                    <th className="pb-3 pr-4 font-medium text-muted-foreground text-xs uppercase tracking-wide">Nama Link</th>
+   303→                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">Klik</th>
+   304→                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">Konversi</th>
+   305→                    <th className="pb-3 pr-4 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide">Pendapatan</th>
+   306→                    <th className="pb-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Status</th>
+   307→                  </tr>
+   308→                </thead>
+   309→                <tbody>
+   310→                  {topPerformingLinks.map((row, idx) => (
+   311→                    <motion.tr
+   312→                      key={idx}
+   313→                      initial={{ opacity: 0, x: -8 }}
+   314→                      animate={{ opacity: 1, x: 0 }}
+   315→                      transition={{ duration: 0.25, delay: 0.48 + idx * 0.06 }}
+   316→                      className="border-b last:border-0 table-row-hover"
+   317→                    >
+   318→                      <td className="py-3 pr-4 font-medium">{row.name}</td>
+   319→                      <td className="py-3 pr-4 text-right tabular-nums">{row.clicks.toLocaleString('id-ID')}</td>
+   320→                      <td className="py-3 pr-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">{row.conversion}</td>
+   321→                      <td className="py-3 pr-4 text-right tabular-nums">{row.revenue}</td>
+   322→                      <td className="py-3">
+   323→                        <StatusBadge status={row.status} />
+   324→                      </td>
+   325→                    </motion.tr>
+   326→                  ))}
+   327→                </tbody>
+   328→              </table>
+   329→            </div>
+   330→          </CardContent>
+   331→        </Card>
+   332→      </motion.div>
+   333→    </motion.div>
+   334→  );
+   335→}
+   336→
+   337→// ── Loading skeleton ─────────────────────────────────────────────────────────
+   338→
+   339→function PaymentLinksSkeleton() {
+   340→  return (
+   341→    <div className="space-y-6">
+   342→      {/* Filter bar skeleton */}
+   343→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   344→        <Skeleton className="h-10 flex-1" />
+   345→        <Skeleton className="h-10 w-[160px]" />
+   346→      </div>
+   347→      {/* Cards skeleton */}
+   348→      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+   349→        {Array.from({ length: 6 }).map((_, i) => (
+   350→          <Card key={i} className="overflow-hidden">
+   351→            <CardContent className="p-5 space-y-4">
+   352→              <div className="flex items-start justify-between">
+   353→                <div className="space-y-2 flex-1">
+   354→                  <Skeleton className="h-5 w-32" />
+   355→                  <Skeleton className="h-4 w-24" />
+   356→                </div>
+   357→                <Skeleton className="h-6 w-16 rounded-full" />
+   358→              </div>
+   359→              <Skeleton className="h-7 w-36" />
+   360→              <div className="space-y-2">
+   361→                <Skeleton className="h-2.5 w-full" />
+   362→                <Skeleton className="h-2.5 w-full" />
+   363→              </div>
+   364→              <div className="flex gap-2 pt-2">
+   365→                <Skeleton className="h-8 w-8" />
+   366→                <Skeleton className="h-8 w-8" />
+   367→                <Skeleton className="h-8 w-8" />
+   368→              </div>
+   369→            </CardContent>
+   370→          </Card>
+   371→        ))}
+   372→      </div>
+   373→    </div>
+   374→  );
+   375→}
+   376→
+   377→// ── Main component ───────────────────────────────────────────────────────────
+   378→
+   379→export default function PaymentLinks() {
+   380→  const queryClient = useQueryClient();
+   381→
+   382→  // ─── Local state ─────────────────────────────────────────────────────
+   383→  const [page, setPage] = useState(1);
+   384→  const [search, setSearch] = useState('');
+   385→  const [searchInput, setSearchInput] = useState('');
+   386→  const [statusFilter, setStatusFilter] = useState('all');
+   387→  const [createOpen, setCreateOpen] = useState(false);
+   388→  const [editOpen, setEditOpen] = useState(false);
+   389→  const [deleteOpen, setDeleteOpen] = useState(false);
+   390→  const [selectedLink, setSelectedLink] = useState<PaymentLinkItem | null>(null);
+   391→  const [form, setForm] = useState<FormData>(emptyForm);
+   392→
+   393→  // ─── Queries ─────────────────────────────────────────────────────────
+   394→  const { data, isLoading, error } = useQuery<{
+   395→    data: PaymentLinkItem[];
+   396→    pagination: PaginationInfo;
+   397→  }>({
+   398→    queryKey: ['payment-links', page, search, statusFilter],
+   399→    queryFn: () => {
+   400→      const params = new URLSearchParams({
+   401→        page: String(page),
+   402→        limit: '9',
+   403→      });
+   404→      if (search) params.set('search', search);
+   405→      return fetch(`/api/payment-links?${params}`).then((r) => r.json());
+   406→    },
+   407→    staleTime: 15_000,
+   408→  });
+   409→
+   410→  const { data: merchantsData } = useQuery<{ data: MerchantOption[] }>({
+   411→    queryKey: ['merchants-select'],
+   412→    queryFn: () =>
+   413→      fetch('/api/merchants?limit=100').then((r) => r.json()),
+   414→    staleTime: 60_000,
+   415→  });
+   416→
+   417→  const merchants = merchantsData?.data ?? [];
+   418→
+   419→  // Client-side status filtering (API doesn't support status filter directly)
+   420→  const filteredData = data?.data.filter((link) => {
+   421→    if (statusFilter === 'all') return true;
+   422→    if (statusFilter === 'active') return !isExpired(link);
+   423→    if (statusFilter === 'expired') return isExpired(link);
+   424→    return true;
+   425→  });
+   426→
+   427→  const pagination = data?.pagination;
+   428→  const links = filteredData ?? [];
+   429→
+   430→  // ─── Mutations ───────────────────────────────────────────────────────
+   431→  const createMutation = useMutation({
+   432→    mutationFn: (body: Record<string, unknown>) =>
+   433→      fetch('/api/payment-links', {
+   434→        method: 'POST',
+   435→        headers: { 'Content-Type': 'application/json' },
+   436→        body: JSON.stringify(body),
+   437→      }).then((r) => {
+   438→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   439→        return r.json();
+   440→      }),
+   441→    onSuccess: () => {
+   442→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   443→      setCreateOpen(false);
+   444→      setForm(emptyForm);
+   445→      toast.success('Link pembayaran berhasil dibuat');
+   446→    },
+   447→    onError: (err: string) => {
+   448→      toast.error(err || 'Gagal membuat link pembayaran');
+   449→    },
+   450→  });
+   451→
+   452→  const updateMutation = useMutation({
+   453→    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+   454→      fetch(`/api/payment-links/${id}`, {
+   455→        method: 'PUT',
+   456→        headers: { 'Content-Type': 'application/json' },
+   457→        body: JSON.stringify(body),
+   458→      }).then((r) => {
+   459→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   460→        return r.json();
+   461→      }),
+   462→    onSuccess: () => {
+   463→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   464→      setEditOpen(false);
+   465→      setSelectedLink(null);
+   466→      setForm(emptyForm);
+   467→      toast.success('Link pembayaran berhasil diperbarui');
+   468→    },
+   469→    onError: (err: string) => {
+   470→      toast.error(err || 'Gagal memperbarui link pembayaran');
+   471→    },
+   472→  });
+   473→
+   474→  const deleteMutation = useMutation({
+   475→    mutationFn: (id: string) =>
+   476→      fetch(`/api/payment-links/${id}`, { method: 'DELETE' }).then((r) => {
+   477→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   478→        return r.json();
+   479→      }),
+   480→    onSuccess: () => {
+   481→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   482→      setDeleteOpen(false);
+   483→      setSelectedLink(null);
+   484→      toast.success('Link pembayaran berhasil dihapus');
+   485→    },
+   486→    onError: (err: string) => {
+   487→      toast.error(err || 'Gagal menghapus link pembayaran');
+   488→    },
+   489→  });
+   490→
+   491→  // ─── Handlers ────────────────────────────────────────────────────────
+   492→  const handleSearch = useCallback(
+   493→    (e: React.FormEvent) => {
+   494→      e.preventDefault();
+   495→      setSearch(searchInput);
+   496→      setPage(1);
+   497→    },
+   498→    [searchInput],
+   499→  );
+   500→
+   501→  const handleStatusFilter = useCallback((value: string) => {
+   502→    setStatusFilter(value);
+   503→    setPage(1);
+   504→  }, []);
+   505→
+   506→  const openCreate = useCallback(() => {
+   507→    setForm(emptyForm);
+   508→    setCreateOpen(true);
+   509→  }, []);
+   510→
+   511→  const openEdit = useCallback((link: PaymentLinkItem) => {
+   512→    setSelectedLink(link);
+   513→    setForm({
+   514→      title: link.title,
+   515→      description: link.description ?? '',
+   516→      amount: String(link.amount),
+   517→      merchantId: link.merchantId,
+   518→      type: link.type,
+   519→      maxQty: String(link.maxQty),
+   520→      expiresAt: link.expiresAt
+   521→        ? new Date(link.expiresAt).toISOString().split('T')[0]
+   522→        : '',
+   523→    });
+   524→    setEditOpen(true);
+   525→  }, []);
+   526→
+   527→  const openDelete = useCallback((link: PaymentLinkItem) => {
+   528→    setSelectedLink(link);
+   529→    setDeleteOpen(true);
+   530→  }, []);
+   531→
+   532→  const handleCopyLink = useCallback((link: PaymentLinkItem) => {
+   533→    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${link.id}`;
+   534→    navigator.clipboard.writeText(url).then(() => {
+   535→      toast.success('Tautan berhasil disalin ke clipboard');
+   536→    });
+   537→  }, []);
+   538→
+   539→  const handleSubmitCreate = useCallback(() => {
+   540→    if (!form.title || !form.amount || !form.merchantId) {
+   541→      toast.error('Judul, jumlah, dan merchant wajib diisi');
+   542→      return;
+   543→    }
+   544→    createMutation.mutate({
+   545→      title: form.title,
+   546→      description: form.description || undefined,
+   547→      amount: Number(form.amount),
+   548→      merchantId: form.merchantId,
+   549→      type: form.type,
+   550→      maxQty: form.type === 'multi' ? Number(form.maxQty) || 1 : 1,
+   551→      expiresAt: form.expiresAt || undefined,
+   552→    });
+   553→  }, [form, createMutation]);
+   554→
+   555→  const handleSubmitEdit = useCallback(() => {
+   556→    if (!selectedLink || !form.title || !form.amount || !form.merchantId) {
+   557→      toast.error('Judul, jumlah, dan merchant wajib diisi');
+   558→      return;
+   559→    }
+   560→    updateMutation.mutate({
+   561→      id: selectedLink.id,
+   562→      body: {
+   563→        title: form.title,
+   564→        description: form.description || undefined,
+   565→        amount: Number(form.amount),
+   566→        merchantId: form.merchantId,
+   567→        type: form.type,
+   568→        maxQty: form.type === 'multi' ? Number(form.maxQty) || 1 : 1,
+   569→        expiresAt: form.expiresAt || null,
+   570→      },
+   571→    });
+   572→  }, [form, selectedLink, updateMutation]);
+   573→
+   574→  const handleConfirmDelete = useCallback(() => {
+   575→    if (selectedLink) deleteMutation.mutate(selectedLink.id);
+   576→  }, [selectedLink, deleteMutation]);
+   577→
+   578→  const updateField = useCallback((field: keyof FormData, value: string) => {
+   579→    setForm((prev) => {
+   580→      const next = { ...prev, [field]: value };
+   581→      // Reset maxQty when switching to single
+   582→      if (field === 'type' && value === 'single') {
+   583→        next.maxQty = '1';
+   584→      }
+   585→      return next;
+   586→    });
+   587→  }, []);
+   588→
+   589→  // ─── Render ──────────────────────────────────────────────────────────
+   590→
+   591→  if (isLoading) return <PaymentLinksSkeleton />;
+   592→  if (error || !data) {
+   593→    return (
+   594→      <div className="flex items-center justify-center py-20">
+   595→        <p className="text-muted-foreground">
+   596→          Gagal memuat data link pembayaran. Silakan coba lagi.
+   597→        </p>
+   598→      </div>
+   599→    );
+   600→  }
+   601→
+   602→  return (
+   603→    <div className="space-y-6">
+   604→      {/* ─── Header + Filters ────────────────────────────────────── */}
+   605→      <motion.div
+   606→        initial={{ opacity: 0, y: -10 }}
+   607→        animate={{ opacity: 1, y: 0 }}
+   608→        transition={{ duration: 0.3 }}
+   609→      >
+   610→        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   611→          <div>
+   612→            <h2 className="text-xl font-bold tracking-tight">Link Pembayaran</h2>
+   613→            <p className="text-muted-foreground text-sm">
+   614→              Kelola dan pantau semua link pembayaran Anda
+   615→            </p>
+   616→          </div>
+   617→          <Button onClick={openCreate} className="w-full sm:w-auto btn-press">
+   618→            <Plus className="mr-2 h-4 w-4" />
+   619→            Buat Link Baru
+   620→          </Button>
+   621→        </div>
+   622→      </motion.div>
+   623→
+   624→      {/* ─── Filter bar ───────────────────────────────────────────── */}
+   625→      <motion.div
+   626→        initial={{ opacity: 0, y: -5 }}
+   627→        animate={{ opacity: 1, y: 0 }}
+   628→        transition={{ duration: 0.3, delay: 0.1 }}
+   629→        className="flex flex-col gap-3 sm:flex-row sm:items-center"
+   630→      >
+   631→        <form onSubmit={handleSearch} className="relative flex-1">
+   632→          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   633→          <Input
+   634→            placeholder="Cari link atau merchant..."
+   635→            value={searchInput}
+   636→            onChange={(e) => setSearchInput(e.target.value)}
+   637→            className="pl-9"
+   638→          />
+   639→        </form>
+   640→        <Select value={statusFilter} onValueChange={handleStatusFilter}>
+   641→          <SelectTrigger className="w-full sm:w-[180px]">
+   642→            <SelectValue placeholder="Status" />
+   643→          </SelectTrigger>
+   644→          <SelectContent>
+   645→            <SelectItem value="all">Semua Status</SelectItem>
+   646→            <SelectItem value="active">Aktif</SelectItem>
+   647→            <SelectItem value="expired">Kedaluwarsa</SelectItem>
+   648→          </SelectContent>
+   649→        </Select>
+   650→      </motion.div>
+   651→
+   652→      {/* ─── Analytics Section ────────────────────────────────────── */}
+   653→      <AnalyticsSection />
+   654→
+   655→      {/* ─── Summary bar ──────────────────────────────────────────── */}
+   656→      <motion.div
+   657→        initial={{ opacity: 0 }}
+   658→        animate={{ opacity: 1 }}
+   659→        transition={{ duration: 0.3, delay: 0.15 }}
+   660→        className="flex items-center gap-2 text-sm text-muted-foreground"
+   661→      >
+   662→        <Link2 className="h-4 w-4" />
+   663→        <span>
+   664→          Menampilkan {links.length} dari {pagination?.total ?? 0} link pembayaran
+   665→        </span>
+   666→        {search && (
+   667→          <Badge variant="secondary" className="ml-2">
+   668→            &ldquo;{search}&rdquo;
+   669→            <button
+   670→              onClick={() => {
+   671→                setSearch('');
+   672→                setSearchInput('');
+   673→                setPage(1);
+   674→              }}
+   675→              className="ml-1.5 hover:text-foreground"
+   676→              aria-label="Hapus pencarian"
+   677→            >
+   678→              ✕
+   679→            </button>
+   680→          </Badge>
+   681→        )}
+   682→      </motion.div>
+   683→
+   684→      {/* ─── Cards Grid ───────────────────────────────────────────── */}
+   685→      {links.length === 0 ? (
+   686→        <motion.div
+   687→          initial={{ opacity: 0, scale: 0.95 }}
+   688→          animate={{ opacity: 1, scale: 1 }}
+   689→          transition={{ duration: 0.3 }}
+   690→          className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16"
+   691→        >
+   692→          <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-2xl">
+   693→            <LinkIcon className="text-muted-foreground h-8 w-8" />
+   694→          </div>
+   695→          <p className="mt-4 text-lg font-medium">Tidak ada link pembayaran</p>
+   696→          <p className="text-muted-foreground mt-1 text-sm">
+   697→            {search || statusFilter !== 'all'
+   698→              ? 'Coba ubah filter pencarian Anda'
+   699→              : 'Buat link pembayaran pertama Anda'}
+   700→          </p>
+   701→        </motion.div>
+   702→      ) : (
+   703→        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+   704→          <AnimatePresence mode="popLayout">
+   705→            {links.map((link, idx) => {
+   706→              const expired = isExpired(link);
+   707→              const progressPct =
+   708→                link.maxQty > 0
+   709→                  ? Math.min(100, (link.soldQty / link.maxQty) * 100)
+   710→                  : 0;
+   711→
+   712→              return (
+   713→                <motion.div
+   714→                  key={link.id}
+   715→                  layout
+   716→                  initial={{ opacity: 0, y: 20, scale: 0.97 }}
+   717→                  animate={{ opacity: 1, y: 0, scale: 1 }}
+   718→                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
+   719→                  transition={{
+   720→                    duration: 0.35,
+   721→                    delay: idx * 0.05,
+   722→                    ease: 'easeOut',
+   723→                  }}
+   724→                >
+   725→                  <Card
+   726→                    className={
+   727→                      'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg card-hover' +
+   728→                      (expired ? ' opacity-70' : '')
+   729→                    }
+   730→                  >
+   731→                    {/* Gradient accent top */}
+   732→                    <div
+   733→                      className={
+   734→                        'absolute left-0 top-0 h-1 w-full bg-gradient-to-r ' +
+   735→                        (expired
+   736→                          ? 'from-gray-400 to-gray-300 dark:from-gray-600 dark:to-gray-500'
+   737→                          : 'from-emerald-500 to-teal-400')
+   738→                      }
+   739→                    />
+   740→
+   741→                    <CardContent className="p-5">
+   742→                      {/* Top row: badges + menu */}
+   743→                      <div className="flex items-start justify-between gap-2">
+   744→                        <div className="flex flex-wrap items-center gap-1.5">
+   745→                          <StatusBadge status={expired ? 'expired' : link.status} />
+   746→                          <TypeBadge type={link.type} />
+   747→                        </div>
+   748→                        <DropdownMenu>
+   749→                          <DropdownMenuTrigger asChild>
+   750→                            <Button
+   751→                              variant="ghost"
+   752→                              size="icon"
+   753→                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+   754→                            >
+   755→                              <MoreHorizontal className="h-4 w-4" />
+   756→                              <span className="sr-only">Menu</span>
+   757→                            </Button>
+   758→                          </DropdownMenuTrigger>
+   759→                          <DropdownMenuContent align="end">
+   760→                            <DropdownMenuItem onClick={() => handleCopyLink(link)}>
+   761→                              <Copy className="mr-2 h-4 w-4" />
+   762→                              Salin Tautan
+   763→                            </DropdownMenuItem>
+   764→                            <DropdownMenuItem onClick={() => openEdit(link)}>
+   765→                              <Pencil className="mr-2 h-4 w-4" />
+   766→                              Edit
+   767→                            </DropdownMenuItem>
+   768→                            <DropdownMenuSeparator />
+   769→                            <DropdownMenuItem
+   770→                              onClick={() => openDelete(link)}
+   771→                              className="text-red-600 focus:text-red-600 dark:text-red-400"
+   772→                            >
+   773→                              <Trash2 className="mr-2 h-4 w-4" />
+   774→                              Hapus
+   775→                            </DropdownMenuItem>
+   776→                          </DropdownMenuContent>
+   777→                        </DropdownMenu>
+   778→                      </div>
+   779→
+   780→                      {/* Title + merchant */}
+   781→                      <div className="mt-3 space-y-1">
+   782→                        <h3 className="truncate text-base font-semibold leading-tight">
+   783→                          {link.title}
+   784→                        </h3>
+   785→                        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+   786→                          <Store className="h-3.5 w-3.5" />
+   787→                          <span className="truncate">{link.merchant.name}</span>
+   788→                        </div>
+   789→                      </div>
+   790→
+   791→                      {/* Description */}
+   792→                      {link.description && (
+   793→                        <p className="text-muted-foreground mt-2 line-clamp-2 text-xs leading-relaxed">
+   794→                          {link.description}
+   795→                        </p>
+   796→                      )}
+   797→
+   798→                      {/* Amount */}
+   799→                      <div className="mt-4">
+   800→                        <p className="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+   801→                          {formatRp(link.amount)}
+   802→                        </p>
+   803→                      </div>
+   804→
+   805→                      {/* Progress bar (for multi-use) */}
+   806→                      <div className="mt-3 space-y-1.5">
+   807→                        <div className="flex items-center justify-between text-xs">
+   808→                          <span className="text-muted-foreground">
+   809→                            {link.type === 'multi' ? 'Terjual' : 'Transaksi'}
+   810→                          </span>
+   811→                          <span className="font-medium">
+   812→                            {link.soldQty}
+   813→                            {link.type === 'multi' && (
+   814→                              <span className="text-muted-foreground">
+   815→                                {' '}/ {link.maxQty}
+   816→                              </span>
+   817→                            )}
+   818→                          </span>
+   819→                        </div>
+   820→                        {link.type === 'multi' && (
+   821→                          <Progress
+   822→                            value={progressPct}
+   823→                            className="h-2"
+   824→                          />
+   825→                        )}
+   826→                      </div>
+   827→
+   828→                      {/* Footer: dates */}
+   829→                      <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs">
+   830→                        <div className="flex items-center gap-1">
+   831→                          <CalendarDays className="h-3 w-3" />
+   832→                          <span>{formatDate(link.createdAt)}</span>
+   833→                        </div>
+   834→                        {link.expiresAt && (
+   835→                          <div className="flex items-center gap-1">
+   836→                            <Clock className="h-3 w-3" />
+   837→                            <span className={expired ? 'text-gray-500' : ''}>
+   838→                              {formatDate(link.expiresAt)}
+   839→                            </span>
+   840→                          </div>
+   841→                        )}
+   842→                      </div>
+   843→
+   844→                      {/* Quick action: copy link button */}
+   845→                      <Button
+   846→                        variant="outline"
+   847→                        size="sm"
+   848→                        className="mt-3 w-full gap-2 text-xs"
+   849→                        onClick={() => handleCopyLink(link)}
+   850→                      >
+   851→                        <Copy className="h-3.5 w-3.5" />
+   852→                        Salin Tautan Pembayaran
+   853→                      </Button>
+   854→                    </CardContent>
+   855→                  </Card>
+   856→                </motion.div>
+   857→              );
+   858→            })}
+   859→          </AnimatePresence>
+   860→        </div>
+   861→      )}
+   862→
+   863→      {/* ─── Pagination ────────────────────────────────────────────── */}
+   864→      {pagination && pagination.totalPages > 1 && (
+   865→        <motion.div
+   866→          initial={{ opacity: 0 }}
+   867→          animate={{ opacity: 1 }}
+   868→          transition={{ duration: 0.3, delay: 0.3 }}
+   869→          className="flex flex-col items-center gap-3"
+   870→        >
+   871→          <Pagination>
+   872→            <PaginationContent>
+   873→              <PaginationItem>
+   874→                <PaginationPrevious
+   875→                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+   876→                  className={
+   877→                    page <= 1
+   878→                      ? 'pointer-events-none opacity-50'
+   879→                      : 'cursor-pointer'
+   880→                  }
+   881→                  aria-disabled={page <= 1}
+   882→                />
+   883→              </PaginationItem>
+   884→              {getPageRange(page, pagination.totalPages).map((p, i) =>
+   885→                p === 'ellipsis' ? (
+   886→                  <PaginationItem key={`el-${i}`}>
+   887→                    <PaginationEllipsis />
+   888→                  </PaginationItem>
+   889→                ) : (
+   890→                  <PaginationItem key={p}>
+   891→                    <PaginationLink
+   892→                      isActive={p === page}
+   893→                      onClick={() => setPage(p)}
+   894→                      className="cursor-pointer"
+   895→                    >
+   896→                      {p}
+   897→                    </PaginationLink>
+   898→                  </PaginationItem>
+   899→                ),
+   900→              )}
+   901→              <PaginationItem>
+   902→                <PaginationNext
+   903→                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+   904→                  className={
+   905→                    page >= pagination.totalPages
+   906→                      ? 'pointer-events-none opacity-50'
+   907→                      : 'cursor-pointer'
+   908→                  }
+   909→                  aria-disabled={page >= pagination.totalPages}
+   910→                />
+   911→              </PaginationItem>
+   912→            </PaginationContent>
+   913→          </Pagination>
+   914→          <p className="text-muted-foreground text-xs">
+   915→            Halaman {page} dari {pagination.totalPages}
+   916→          </p>
+   917→        </motion.div>
+   918→      )}
+   919→
+   920→      {/* ─── Create Dialog ─────────────────────────────────────────── */}
+   921→      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+   922→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+   923→          <DialogHeader>
+   924→            <DialogTitle className="flex items-center gap-2">
+   925→              <Plus className="h-5 w-5 text-emerald-500" />
+   926→              Buat Link Pembayaran Baru
+   927→            </DialogTitle>
+   928→            <DialogDescription>
+   929→              Isi detail di bawah untuk membuat link pembayaran baru.
+   930→            </DialogDescription>
+   931→          </DialogHeader>
+   932→
+   933→          <div className="grid gap-4 py-2">
+   934→            {/* Title */}
+   935→            <div className="grid gap-2">
+   936→              <Label htmlFor="create-title">Judul *</Label>
+   937→              <Input
+   938→                id="create-title"
+   939→                placeholder="contoh: Pembayaran Tiket Konser"
+   940→                value={form.title}
+   941→                onChange={(e) => updateField('title', e.target.value)}
+   942→              />
+   943→            </div>
+   944→
+   945→            {/* Description */}
+   946→            <div className="grid gap-2">
+   947→              <Label htmlFor="create-desc">Deskripsi</Label>
+   948→              <Textarea
+   949→                id="create-desc"
+   950→                placeholder="Deskripsi singkat tentang link pembayaran ini (opsional)"
+   951→                value={form.description}
+   952→                onChange={(e) => updateField('description', e.target.value)}
+   953→                rows={3}
+   954→              />
+   955→            </div>
+   956→
+   957→            {/* Amount */}
+   958→            <div className="grid gap-2">
+   959→              <Label htmlFor="create-amount">Jumlah (IDR) *</Label>
+   960→              <div className="relative">
+   961→                <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+   962→                  Rp
+   963→                </span>
+   964→                <Input
+   965→                  id="create-amount"
+   966→                  type="number"
+   967→                  placeholder="0"
+   968→                  className="pl-10"
+   969→                  value={form.amount}
+   970→                  onChange={(e) => updateField('amount', e.target.value)}
+   971→                />
+   972→              </div>
+   973→              {form.amount && Number(form.amount) > 0 && (
+   974→                <p className="text-muted-foreground text-xs">
+   975→                  {formatRp(Number(form.amount))}
+   976→                </p>
+   977→              )}
+   978→            </div>
+   979→
+   980→            {/* Merchant */}
+   981→            <div className="grid gap-2">
+   982→              <Label>Merchant *</Label>
+   983→              <Select
+   984→                value={form.merchantId}
+   985→                onValueChange={(v) => updateField('merchantId', v)}
+   986→              >
+   987→                <SelectTrigger className="w-full">
+   988→                  <SelectValue placeholder="Pilih merchant" />
+   989→                </SelectTrigger>
+   990→                <SelectContent>
+   991→                  {merchants.map((m) => (
+   992→                    <SelectItem key={m.id} value={m.id}>
+   993→                      {m.name}
+   994→                    </SelectItem>
+   995→                  ))}
+   996→                </SelectContent>
+   997→              </Select>
+   998→            </div>
+   999→
+  1000→            {/* Type */}
+  1001→            <div className="grid gap-2">
+  1002→              <Label>Tipe</Label>
+  1003→              <Select
+  1004→                value={form.type}
+  1005→                onValueChange={(v) => updateField('type', v)}
+  1006→              >
+  1007→                <SelectTrigger className="w-full">
+  1008→                  <SelectValue />
+  1009→                </SelectTrigger>
+  1010→                <SelectContent>
+  1011→                  <SelectItem value="single">Sekali Pakai</SelectItem>
+  1012→                  <SelectItem value="multi">Multi Pakai</SelectItem>
+  1013→                </SelectContent>
+  1014→              </Select>
+  1015→            </div>
+  1016→
+  1017→            {/* Max Qty (multi only) */}
+  1018→            {form.type === 'multi' && (
+  1019→              <motion.div
+  1020→                initial={{ opacity: 0, height: 0 }}
+  1021→                animate={{ opacity: 1, height: 'auto' }}
+  1022→                exit={{ opacity: 0, height: 0 }}
+  1023→                className="grid gap-2"
+  1024→              >
+  1025→                <Label htmlFor="create-maxqty">Jumlah Maksimal</Label>
+  1026→                <Input
+  1027→                  id="create-maxqty"
+  1028→                  type="number"
+  1029→                  min="1"
+  1030→                  placeholder="1"
+  1031→                  value={form.maxQty}
+  1032→                  onChange={(e) => updateField('maxQty', e.target.value)}
+  1033→                />
+  1034→              </motion.div>
+  1035→            )}
+  1036→
+  1037→            {/* Expiry */}
+  1038→            <div className="grid gap-2">
+  1039→              <Label htmlFor="create-expiry">Tanggal Kedaluwarsa</Label>
+  1040→              <Input
+  1041→                id="create-expiry"
+  1042→                type="date"
+  1043→                value={form.expiresAt}
+  1044→                onChange={(e) => updateField('expiresAt', e.target.value)}
+  1045→                min={new Date().toISOString().split('T')[0]}
+  1046→              />
+  1047→            </div>
+  1048→          </div>
+  1049→
+  1050→          <DialogFooter>
+  1051→            <Button
+  1052→              variant="outline"
+  1053→              onClick={() => setCreateOpen(false)}
+  1054→              disabled={createMutation.isPending}
+  1055→            >
+  1056→              Batal
+  1057→            </Button>
+  1058→            <Button
+  1059→              onClick={handleSubmitCreate}
+  1060→              disabled={createMutation.isPending}
+  1061→              className="bg-emerald-600 hover:bg-emerald-700"
+  1062→            >
+  1063→              {createMutation.isPending ? 'Menyimpan...' : 'Buat Link'}
+  1064→            </Button>
+  1065→          </DialogFooter>
+  1066→        </DialogContent>
+  1067→      </Dialog>
+  1068→
+  1069→      {/* ─── Edit Dialog ───────────────────────────────────────────── */}
+  1070→      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+  1071→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  1072→          <DialogHeader>
+  1073→            <DialogTitle className="flex items-center gap-2">
+  1074→              <Pencil className="h-5 w-5 text-emerald-500" />
+  1075→              Edit Link Pembayaran
+  1076→            </DialogTitle>
+  1077→            <DialogDescription>
+  1078→              Perbarui detail link pembayaran.
+  1079→            </DialogDescription>
+  1080→          </DialogHeader>
+  1081→
+  1082→          <div className="grid gap-4 py-2">
+  1083→            <div className="grid gap-2">
+  1084→              <Label htmlFor="edit-title">Judul *</Label>
+  1085→              <Input
+  1086→                id="edit-title"
+  1087→                value={form.title}
+  1088→                onChange={(e) => updateField('title', e.target.value)}
+  1089→              />
+  1090→            </div>
+  1091→
+  1092→            <div className="grid gap-2">
+  1093→              <Label htmlFor="edit-desc">Deskripsi</Label>
+  1094→              <Textarea
+  1095→                id="edit-desc"
+  1096→                value={form.description}
+  1097→                onChange={(e) => updateField('description', e.target.value)}
+  1098→                rows={3}
+  1099→              />
+  1100→            </div>
+  1101→
+  1102→            <div className="grid gap-2">
+  1103→              <Label htmlFor="edit-amount">Jumlah (IDR) *</Label>
+  1104→              <div className="relative">
+  1105→                <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+  1106→                  Rp
+  1107→                </span>
+  1108→                <Input
+  1109→                  id="edit-amount"
+  1110→                  type="number"
+  1111→                  className="pl-10"
+  1112→                  value={form.amount}
+  1113→                  onChange={(e) => updateField('amount', e.target.value)}
+  1114→                />
+  1115→              </div>
+  1116→              {form.amount && Number(form.amount) > 0 && (
+  1117→                <p className="text-muted-foreground text-xs">
+  1118→                  {formatRp(Number(form.amount))}
+  1119→                </p>
+  1120→              )}
+  1121→            </div>
+  1122→
+  1123→            <div className="grid gap-2">
+  1124→              <Label>Merchant *</Label>
+  1125→              <Select
+  1126→                value={form.merchantId}
+  1127→                onValueChange={(v) => updateField('merchantId', v)}
+  1128→              >
+  1129→                <SelectTrigger className="w-full">
+  1130→                  <SelectValue placeholder="Pilih merchant" />
+  1131→                </SelectTrigger>
+  1132→                <SelectContent>
+  1133→                  {merchants.map((m) => (
+  1134→                    <SelectItem key={m.id} value={m.id}>
+  1135→                      {m.name}
+  1136→                    </SelectItem>
+  1137→                  ))}
+  1138→                </SelectContent>
+  1139→              </Select>
+  1140→            </div>
+  1141→
+  1142→            <div className="grid gap-2">
+  1143→              <Label>Tipe</Label>
+  1144→              <Select
+  1145→                value={form.type}
+  1146→                onValueChange={(v) => updateField('type', v)}
+  1147→              >
+  1148→                <SelectTrigger className="w-full">
+  1149→                  <SelectValue />
+  1150→                </SelectTrigger>
+  1151→                <SelectContent>
+  1152→                  <SelectItem value="single">Sekali Pakai</SelectItem>
+  1153→                  <SelectItem value="multi">Multi Pakai</SelectItem>
+  1154→                </SelectContent>
+  1155→              </Select>
+  1156→            </div>
+  1157→
+  1158→            {form.type === 'multi' && (
+  1159→              <motion.div
+  1160→                initial={{ opacity: 0, height: 0 }}
+  1161→                animate={{ opacity: 1, height: 'auto' }}
+  1162→                exit={{ opacity: 0, height: 0 }}
+  1163→                className="grid gap-2"
+  1164→              >
+  1165→                <Label htmlFor="edit-maxqty">Jumlah Maksimal</Label>
+  1166→                <Input
+  1167→                  id="edit-maxqty"
+  1168→                  type="number"
+  1169→                  min="1"
+  1170→                  value={form.maxQty}
+  1171→                  onChange={(e) => updateField('maxQty', e.target.value)}
+  1172→                />
+  1173→              </motion.div>
+  1174→            )}
+  1175→
+  1176→            <div className="grid gap-2">
+  1177→              <Label htmlFor="edit-expiry">Tanggal Kedaluwarsa</Label>
+  1178→              <Input
+  1179→                id="edit-expiry"
+  1180→                type="date"
+  1181→                value={form.expiresAt}
+  1182→                onChange={(e) => updateField('expiresAt', e.target.value)}
+  1183→              />
+  1184→            </div>
+  1185→          </div>
+  1186→
+  1187→          <DialogFooter>
+  1188→            <Button
+  1189→              variant="outline"
+  1190→              onClick={() => setEditOpen(false)}
+  1191→              disabled={updateMutation.isPending}
+  1192→            >
+  1193→              Batal
+  1194→            </Button>
+  1195→            <Button
+  1196→              onClick={handleSubmitEdit}
+  1197→              disabled={updateMutation.isPending}
+  1198→              className="bg-emerald-600 hover:bg-emerald-700"
+  1199→            >
+  1200→              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+  1201→            </Button>
+  1202→          </DialogFooter>
+  1203→        </DialogContent>
+  1204→      </Dialog>
+  1205→
+  1206→      {/* ─── Delete AlertDialog ────────────────────────────────────── */}
+  1207→      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+  1208→        <AlertDialogContent>
+  1209→          <AlertDialogHeader>
+  1210→            <AlertDialogTitle>Hapus Link Pembayaran?</AlertDialogTitle>
+  1211→            <AlertDialogDescription>
+  1212→              Tindakan ini tidak dapat dibatalkan. Link pembayaran{" "}
+  1213→              <span className="font-semibold text-foreground">
+  1214→                &ldquo;{selectedLink?.title}&rdquo;
+  1215→              </span>{" "}
+  1216→              akan dihapus secara permanen beserta data terkait.
+  1217→            </AlertDialogDescription>
+  1218→          </AlertDialogHeader>
+  1219→          <AlertDialogFooter>
+  1220→            <AlertDialogCancel disabled={deleteMutation.isPending}>
+  1221→              Batal
+  1222→            </AlertDialogCancel>
+  1223→            <AlertDialogAction
+  1224→              onClick={handleConfirmDelete}
+  1225→              disabled={deleteMutation.isPending}
+  1226→              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+  1227→            >
+  1228→              {deleteMutation.isPending ? 'Menghapus...' : 'Ya, Hapus'}
+  1229→            </AlertDialogAction>
+  1230→          </AlertDialogFooter>
+  1231→        </AlertDialogContent>
+  1232→      </AlertDialog>
+  1233→    </div>
+  1234→  );
+  1235→}
+  1236→

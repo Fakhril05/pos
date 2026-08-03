@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PageHeader } from '@/components/app/page-header';
 import {
   Dialog,
   DialogContent,
@@ -327,7 +328,23 @@ export default function Payouts() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-mesh">
+      {/* ── Page Header ── */}
+      <PageHeader
+        title="Payout"
+        description="Kelola pencairan dana merchant ke rekening bank"
+        icon={Banknote}
+        iconGradient="teal"
+      >
+        <Button
+          className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press"
+          onClick={() => setCreateOpen(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Buat Pencairan
+        </Button>
+      </PageHeader>
+
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
@@ -341,7 +358,7 @@ export default function Payouts() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: i * 0.08 }}
           >
-            <Card className="shadow-sm hover:shadow-md transition-shadow card-hover">
+            <Card className="card-elevated card-inner-shadow shadow-sm hover:shadow-md transition-shadow card-hover">
               <CardContent className="p-4 sm:p-6 flex items-center gap-4">
                 <div className={`flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                   <stat.icon className="h-5 w-5 text-white" />
@@ -356,7 +373,7 @@ export default function Payouts() {
         ))}
       </div>
 
-      {/* ── Filter Bar + Create Button ── */}
+      {/* ── Filter Bar ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -378,13 +395,6 @@ export default function Payouts() {
             </SelectContent>
           </Select>
         </div>
-        <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto btn-press"
-          onClick={() => setCreateOpen(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Buat Pencairan
-        </Button>
       </motion.div>
 
       {/* ── Active filter indicator ── */}
@@ -450,7 +460,7 @@ export default function Payouts() {
             ) : (
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="table-header-enhanced">
                     <TableRow>
                       <TableHead className="pl-6">Merchant</TableHead>
                       <TableHead>Bank</TableHead>
@@ -593,7 +603,9 @@ export default function Payouts() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-emerald-600" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg icon-glow-emerald">
+                <Plus className="h-5 w-5 text-white" />
+              </div>
               Buat Pencairan Baru
             </DialogTitle>
             <DialogDescription>
@@ -603,7 +615,7 @@ export default function Payouts() {
 
           <form onSubmit={handleSubmitCreate} className="space-y-4">
             {/* Merchant Select */}
-            <div className="space-y-2">
+            <div className="space-y-2 input-glow">
               <Label htmlFor="merchant-select" className="flex items-center gap-1.5">
                 <Store className="h-3.5 w-3.5" />
                 Merchant <span className="text-red-500">*</span>
@@ -624,7 +636,7 @@ export default function Payouts() {
 
             {/* Amount + Fee */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-2 input-glow">
                 <Label htmlFor="payout-amount" className="flex items-center gap-1.5">
                   <Banknote className="h-3.5 w-3.5" />
                   Jumlah <span className="text-red-500">*</span>
@@ -642,7 +654,7 @@ export default function Payouts() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 input-glow">
                 <Label htmlFor="payout-fee" className="flex items-center gap-1.5">
                   Biaya
                 </Label>
@@ -683,7 +695,7 @@ export default function Payouts() {
               Detail Rekening Bank
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-2 input-glow">
               <Label htmlFor="bank-name" className="flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5" />
                 Nama Bank <span className="text-red-500">*</span>
@@ -701,7 +713,7 @@ export default function Payouts() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-2 input-glow">
                 <Label htmlFor="account-no" className="flex items-center gap-1.5">
                   Nomor Rekening <span className="text-red-500">*</span>
                 </Label>
@@ -712,7 +724,7 @@ export default function Payouts() {
                   onChange={(e) => setFormAccountNo(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 input-glow">
                 <Label htmlFor="account-name" className="flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5" />
                   Nama Pemilik <span className="text-red-500">*</span>
@@ -727,7 +739,7 @@ export default function Payouts() {
             </div>
 
             {/* Notes */}
-            <div className="space-y-2">
+            <div className="space-y-2 input-glow">
               <Label htmlFor="payout-notes">Catatan</Label>
               <Textarea
                 id="payout-notes"
@@ -751,7 +763,7 @@ export default function Payouts() {
               </Button>
               <Button
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press"
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? (

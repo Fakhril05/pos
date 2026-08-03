@@ -1,0 +1,302 @@
+     1→    50→    79→    79→    79→- **NEW:** Button press effect (btn-press) on 7 action buttons
+     2→    51→    80→    80→    80→- **NEW:** Rich CSS utility library: glassmorphism, shimmer, floating animation, pulse glow, text gradient, status badge variants, separator gradient
+     3→    52→    81→    81→    81→- **NEW:** Realistic seed data (70% success rate, weighted status distribution)
+     4→    53→    82→    82→    82→- ESLint: zero errors
+     5→    54→    83→    83→    83→
+     6→    55→    84→    84→    84→### Architecture
+     7→    56→    85→    85→    85→- `/src/app/page.tsx` - Single page app with client-side routing via Zustand, includes footer, LoadingBar, MobileNav
+     8→    57→    86→    86→    86→- `/src/components/app/*.tsx` - 15 component files (dashboard, transactions, payment-links, customers, merchants, payouts, reports, settings, sidebar, header, command-palette, query-provider, loading-bar, mobile-nav)
+     9→    58→    87→    87→    87→- `/src/hooks/use-socket.ts` - WebSocket hook for real-time transaction notifications
+    10→    59→    88→    88→    88→- `/src/app/api/*/route.ts` - 13 API route files (dashboard, transactions, transactions/[id], payment-links, payment-links/[id], customers, customers/[id], merchants, merchants/[id], payouts, payouts/[id], seed, notifications)
+    11→    60→    89→    89→    89→- `/src/stores/app-store.ts` - Zustand store for navigation state
+    12→    61→    90→    90→    90→- `/src/lib/db.ts` - Prisma client
+    13→    62→    91→    91→    91→- `/mini-services/notification-service/` - WebSocket notification mini-service on port 3004
+    14→    63→    92→    92→    92→
+    15→    64→    93→    93→    93→### Unresolved Issues / Next Phase Recommendations
+    16→    65→    94→    94→    94→1. **High Priority:** Add CSV export functionality for transactions and reports (already has button UI, needs implementation)
+    17→    66→    95→    95→    95→2. **Medium Priority:** Implement webhook URL configuration with delivery logs
+    18→    67→    96→    96→    96→3. **Medium Priority:** Add 2FA implementation with QR code setup
+    19→    68→    97→    97→    97→4. **Medium Priority:** Add transaction receipt PDF generation (downloadable)
+    20→    69→    98→    98→    98→5. **Low Priority:** Add more sophisticated analytics (conversion funnels, cohort analysis)
+    21→    70→    99→    99→    99→6. **Low Priority:** Add multi-currency support
+    22→    71→   100→   100→   100→7. **Low Priority:** Add merchant self-service onboarding flow
+    23→    72→   101→   101→   101→8. **Enhancement:** Add data table bulk actions (select all, bulk export, bulk status change)
+    24→    73→   102→   102→   102→9. **Enhancement:** Add dark mode-specific chart color refinements
+    25→    74→   103→   103→   103→10. **Enhancement:** Add keyboard shortcuts for common actions beyond ⌘K
+    26→    75→   104→   104→   104→
+    27→    76→   105→   105→   105→---
+    28→    77→   106→   106→   106→Task ID: 5-a
+    29→    78→   107→   107→   107→Agent: Subagent (Mobile Nav + Loading Bar + Notification Center)
+    30→    79→   108→   108→   108→Task: Add mobile bottom nav, loading progress bar, and enhanced notification center
+    31→    80→   109→   109→   109→
+    32→    81→   110→   110→   110→Work Log:
+    33→    82→   111→   111→   111→- Created `/src/app/api/notifications/route.ts` with GET (returns all notifications + unread count) and PATCH (marks all as read) endpoints
+    34→    83→   112→   112→   112→- Created `/src/components/app/loading-bar.tsx` — NProgress-style loading bar using the `nprogress-bar` CSS class, animates 0→90% then snaps to 100% and fades out
+    35→    84→   113→   113→   113→- Created `/src/components/app/mobile-nav.tsx` — fixed bottom nav bar (md:hidden) with 4 primary items (Dashboard, Transaksi, Payment Link, Laporan) + 'Lainnya' sheet opening remaining pages (Pelanggan, Merchant, Payout, Pengaturan); framer-motion `layoutId` active indicator animation; emerald highlight for active item
+    36→    85→   114→   114→   114→- Updated `/src/components/app/sidebar.tsx` — added `hidden md:flex` to `<aside>` to hide on mobile
+    37→    86→   115→   115→   115→- Rewrote `/src/components/app/header.tsx` — replaced static notification dropdown with TanStack Query-powered live notifications; fetches from `/api/notifications` with 30s refetch; animated unread badge (AnimatePresence + badge-bounce); type-based icons (success=green check, warning=amber alert, info=blue info); time-ago formatting in Bahasa Indonesia; unread dot indicator per item; "Tandai semua dibaca" button with PATCH call and toast feedback; extracted page descriptions into a map
+    38→    87→   116→   116→   116→- Updated `/src/app/page.tsx` — added LoadingBar above sidebar, MobileNav at bottom, `pb-20 md:pb-0` on main for mobile bottom nav clearance
+    39→    88→   117→   117→   117→- Cleaned up unused imports (X, useEffect, useRef, AnimatePresence)
+    40→    89→   118→   118→   118→- ESLint passes cleanly with zero errors
+    41→    90→   119→   119→   119→
+    42→    91→   120→   120→   120→Stage Summary:
+    43→    92→   121→   121→   121→- **Mobile bottom nav** replaces sidebar on mobile with 4 primary icons + 'Lainnya' bottom sheet for remaining pages
+    44→    93→   122→   122→   122→- **Loading progress bar** shows emerald gradient bar on app load (NProgress-style)
+    45→    94→   123→   123→   123→- **Live notification center** fetches real-time count and items from API, auto-refreshes every 30s, supports mark-all-as-read
+    46→    95→   124→   124→   124→- 2 new files created: `loading-bar.tsx`, `mobile-nav.tsx`
+    47→    96→   125→   125→   125→- 1 new API route: `notifications/route.ts` (GET + PATCH)
+    48→    97→   126→   126→   126→- 3 files modified: `page.tsx`, `header.tsx`, `sidebar.tsx`
+    49→    98→   127→   127→   127→
+    50→    99→   128→   128→   128→---
+    51→   100→   129→   129→   129→Task ID: 5-b
+    52→   101→   130→   130→   130→Agent: Subagent (WebSocket Notification Service)
+    53→   102→   131→   131→   131→Task: Create WebSocket mini-service for real-time transaction notifications
+    54→   103→   132→   132→   132→
+    55→   104→   133→   133→   133→Work Log:
+    56→   105→   134→   134→   134→- Created `/home/z/my-project/mini-services/notification-service/` with `package.json`, `tsconfig.json`, and `index.ts`
+    57→   106→   135→   135→   135→- Notification service runs on port 3004 using socket.io with path `/` for Caddy gateway compatibility
+    58→   107→   136→   136→   136→- Service broadcasts `new-transaction` events every 15–30 seconds with realistic Indonesian transaction payloads (10 merchants, 15 customers, 5 payment methods with mapped channels)
+    59→   108→   137→   137→   137→- Added heartbeat logging (every 20s) and unhandled error catchers for process stability
+    60→   109→   138→   138→   138→- Installed `socket.io-client` in main project (`bun add socket.io-client`)
+    61→   110→   139→   139→   139→- Created `/home/z/my-project/src/hooks/use-socket.ts` — custom `useTransactionSocket` hook connecting via `io("/?XTransformPort=3004")`, with auto-reconnect, callback ref pattern to avoid reconnections on callback change
+    62→   111→   140→   140→   140→- Integrated socket hook into `ActivityFeed` component in `/src/components/app/dashboard.tsx`:
+    63→   112→   141→   141→   141→  - Live transactions are stored in `useState<SocketTransaction[]>` and prepended to the activity feed
+    64→   113→   142→   142→   142→  - Each new transaction triggers a sonner toast: "Pembayaran Baru!" with amount, customer, and merchant info + CreditCard icon
+    65→   114→   143→   143→   143→  - Activity feed renders both DB-sourced `ActivityTransaction` (nested) and socket-sourced `SocketTransaction` (flat) with unified accessor logic
+    66→   115→   144→   144→   144→  - Live items get a subtle emerald highlight background for visual distinction
+    67→   116→   145→   145→   145→- ESLint passes cleanly with zero errors
+    68→   117→   146→   146→   146→
+    69→   118→   147→   147→   147→Stage Summary:
+    70→   119→   148→   148→   148→- **WebSocket notification service** on port 3004 broadcasting realistic simulated Indonesian payment transactions every 15–30s
+    71→   120→   149→   149→   149→- **Client-side hook** `useTransactionSocket` with auto-reconnect and callback pattern
+    72→   121→   150→   150→   150→- **Dashboard integration**: live transactions appear instantly in activity feed with emerald highlight + sonner toast notifications
+    73→   122→   151→   151→   151→- 3 new files: `mini-services/notification-service/{package.json,tsconfig.json,index.ts}`, `src/hooks/use-socket.ts`
+    74→   123→   152→   152→   152→- 1 file modified: `src/components/app/dashboard.tsx`
+    75→   124→   153→   153→   153→
+    76→   125→   154→   154→   154→---
+    77→   126→   155→   155→   155→Task ID: 9
+    78→   127→   156→   156→   156→Agent: Subagent (CSS Utility Enhancements)
+    79→   128→   157→   157→   157→Task: Apply card-hover, table-row-hover, btn-press CSS utilities to all page components
+    80→   129→   158→   158→   158→
+    81→   130→   159→   159→   159→Work Log:
+    82→   131→   160→   160→   160→- Read all 8 target files and the worklog.md for context
+    83→   132→   161→   161→   161→- Identified all Card, TableRow/motion.tr, Button, and CommandItem elements requiring utility classes
+    84→   133→   162→   162→   162→- Applied `card-hover` to 25 Card components across 7 files (transactions, payment-links, customers, merchants, payouts, reports, settings)
+    85→   134→   163→   163→   163→- Applied `table-row-hover` to table body rows in 4 files (transactions, customers, payouts, reports) — both `<TableRow>` and `<motion.tr>` elements
+    86→   135→   164→   164→   164→- Applied `btn-press` to 7 primary action buttons across 4 files (transactions Ekspor CSV, payment-links Buat Link Baru, merchants Cari, payouts Buat Pencairan, settings 4× Simpan buttons)
+    87→   136→   165→   165→   165→- Applied `focus-ring` to all 12 CommandItem elements in command-palette.tsx (8 nav commands + 4 action commands)
+    88→   137→   166→   166→   166→- Skipped skeleton/loading Card elements, dialog content cards, and the main settings tabs wrapper Card
+    89→   138→   167→   167→   167→- Ran `bun run lint` — zero errors
+    90→   139→   168→   168→   168→
+    91→   140→   169→   169→   169→Stage Summary:
+    92→   141→   170→   170→   170→- **8 files enhanced** with CSS utility classes: transactions, payment-links, customers, merchants, payouts, reports, settings, command-palette
+    93→   142→   171→   171→   171→- **25 cards** received `card-hover` (lift + shadow on hover)
+    94→   143→   172→   172→   172→- **5 table body row types** received `table-row-hover` (subtle background on hover)
+    95→   144→   173→   173→   173→- **7 action buttons** received `btn-press` (scale-down on click)
+    96→   145→   174→   174→   174→- **12 command palette items** received `focus-ring` (enhanced focus indicator)
+    97→   146→   175→   175→   175→- ESLint: zero errors
+    98→   147→   176→   176→   176→
+    99→   148→   177→   177→   177→---
+   100→   149→   178→   178→   178→Task ID: 6 (Cron Review Round 2)
+   101→   150→   179→   179→   179→Agent: Main Coordinator
+   102→   151→   180→   180→   180→Task: QA assessment, bug fixes, styling improvements, and new feature development
+   103→   152→   181→   181→   181→
+   104→   153→   182→   182→   182→Work Log:
+   105→   154→   183→   183→   183→- **QA Testing:** Tested all 8 pages via agent-browser — zero runtime errors, all pages render correctly
+   106→   155→   184→   184→   184→- **Bug Fix:** Fixed unrealistic seed data success rate (21% → 70%) by using weighted status array distribution
+   107→   156→   185→   185→   185→- **Global CSS Enhancement:** Massively expanded globals.css from 150 lines to 300+ lines with:
+   108→   157→   186→   186→   186→  - 8 new gradient utilities (emerald, dark, card, welcome, gold, rose, blue, violet)
+   109→   158→   187→   187→   187→  - 2 glassmorphism utilities (glass, glass-subtle) with dark mode variants
+   110→   159→   188→   188→   188→  - Shimmer animation for skeleton loading states
+   111→   160→   189→   189→   189→  - Floating animation (3s ease-in-out infinite)
+   112→   161→   190→   190→   190→  - Pulse glow animation for accent elements
+   113→   162→   191→   191→   191→  - NProgress loading bar with emerald gradient shimmer
+   114→   163→   192→   192→   192→  - Card hover effect (translateY -2px + multi-layer shadow)
+   115→   164→   193→   193→   193→  - Table row hover with light/dark mode support
+   116→   165→   194→   194→   194→  - Button press scale effect
+   117→   166→   195→   195→   195→  - Focus ring enhancement
+   118→   167→   196→   196→   196→  - Badge color variants (success, warning, danger) with dark mode
+   119→   168→   197→   197→   197→  - Text gradient utility (emerald → teal → cyan)
+   120→   169→   198→   198→   198→  - Status dot pulse animation
+   121→   170→   199→   199→   199→  - Slide-in animations (right, up)
+   122→   171→   200→   200→   200→  - Mobile nav styling with safe area insets
+   123→   172→   201→   201→   201→  - Notification badge bounce
+   124→   173→   202→   202→   202→  - Subtle dot pattern background
+   125→   174→   203→   203→   203→  - KPI accent bar variants (emerald, teal, amber, rose)
+   126→   175→   204→   204→   204→  - Gradient separator line
+   127→   176→   205→   205→   205→  - Enhanced scrollbar styling
+   128→   177→   206→   206→   206→  - Font smoothing and ligatures
+   129→   178→   207→   207→   207→- **Dashboard Enhancements:** Applied card-hover to all 5 dashboard cards, enhanced merchant ranking badges with gradient avatars, improved pie chart legend items with hover states and ring borders, thicker gradient accent bars on KPI cards
+   130→   179→   208→   208→   208→- **Feature: Mobile Bottom Navigation** (via subagent): Fixed bottom nav with 4 primary icons + 'Lainnya' bottom sheet, framer-motion layoutId active indicator
+   131→   180→   209→   209→   209→- **Feature: Loading Progress Bar** (via subagent): NProgress-style emerald gradient bar with shimmer on app load
+   132→   181→   210→   210→   210→- **Feature: Live Notification Center** (via subagent): TanStack Query-powered notifications from API, type-based icons, unread badge, mark-all-as-read, 30s auto-refresh
+   133→   182→   211→   211→   211→- **Feature: WebSocket Real-Time Notifications** (via subagent): Mini-service on port 3004 broadcasting simulated transactions every 15-30s, socket.io client hook with auto-reconnect, dashboard activity feed integration with sonner toasts
+   134→   183→   212→   212→   212→- **CSS Utility Rollout** (via subagent): Applied card-hover (25 cards), table-row-hover (5 table types), btn-press (7 buttons), focus-ring (12 command items) across 8 component files
+   135→   184→   213→   213→   213→
+   136→   185→   214→   214→   214→Stage Summary:
+   137→   186→   215→   215→   215→- **6 new features** added: Mobile Bottom Nav, Loading Bar, Live Notifications, WebSocket Service, Enhanced CSS Library, Realistic Seed Data
+   138→   187→   216→   216→   216→- **30+ CSS utility classes** defined in globals.css for consistent, elegant micro-interactions
+   139→   188→   217→   217→   217→- **0 bugs found** during QA testing
+   140→   189→   218→   218→   218→- **Total new files:** 5 (loading-bar.tsx, mobile-nav.tsx, use-socket.ts, notifications/route.ts, notification-service/index.ts + config)
+   141→   190→   219→   219→   219→- **Total modified files:** 12 (globals.css, page.tsx, header.tsx, sidebar.tsx, dashboard.tsx, transactions.tsx, payment-links.tsx, customers.tsx, merchants.tsx, payouts.tsx, reports.tsx, settings.tsx, command-palette.tsx, seed/route.ts)
+   142→   191→   220→   220→   220→- **ESLint:** zero errors
+   143→   192→   221→   221→   221→- **QA:** All 8 pages verified, notification API verified, WebSocket service verified running on port 3004
+   144→   193→   222→   222→   222→
+   145→   194→   223→   223→   223→---
+   146→   195→   224→   224→   224→Task ID: 7 (Cron Review Round 3)
+   147→   196→   225→   225→   225→Agent: Main Coordinator
+   148→   197→   226→   226→   226→Task: QA assessment, bug fixes, new CRUD features, styling enhancements, dark mode chart refinements
+   149→   198→   227→   227→   227→
+   150→   199→   228→   228→   228→Work Log:
+   151→   200→   229→   229→   229→- **QA Testing:** Tested all 8 pages via agent-browser — zero runtime errors across all pages (desktop 1920x1080 and mobile iPhone 14 emulation)
+   152→   201→   230→   230→   230→- **Bug Fix:** Mobile 'Lainnya' bottom nav button z-index increased from z-40 to z-50 (agent-browser detection precision issue — JS click confirms button works; native click was false positive due to device emulation scaling)
+   153→   202→   231→   231→   231→- **API Enhancement:** Added `pendingTransactions` count to dashboard API stats (6th parallel DB query)
+   154→   203→   232→   232→   232→- **New Feature: Customer Creation Dialog** (subagent 4-a):
+   155→   204→   233→   233→   233→  - Added POST endpoint to `/api/customers/route.ts` with name/email validation and duplicate email check (409)
+   156→   205→   234→   234→   234→  - Added "Tambah Pelanggan" button and create dialog to customers.tsx with useMutation, form validation, emerald-themed styling
+   157→   206→   235→   235→   235→- **New Feature: Merchant Creation Dialog** (subagent 4-b):
+   158→   207→   236→   236→   236→  - Added POST endpoint to `/api/merchants/route.ts` with auto-generated API key (`pk_ril_` + 10-char hex), name/email validation
+   159→   208→   237→   237→   237→  - Added "Tambah Merchant" button and create dialog to merchants.tsx with 4 fields (Nama, Email, Telepon, Alamat), loading states, emerald styling
+   160→   209→   238→   238→   238→- **New Feature: Quick Stats Bar** — Real-time metrics bar between header and content showing 5 KPIs (Hari Ini revenue, Total Transaksi, Menunggu count, Keberhasilan rate, Merchant Aktif) — hidden on mobile, uses skeleton loading, refetches every 60s
+   161→   210→   239→   239→   239→- **CSS Enhancement:** Added 10 new CSS utility classes to globals.css:
+   162→   211→   240→   240→   240→  - `quick-stats-bar` + `quick-stat-item` + `quick-stat-divider` — gradient background stats bar with dark mode variants
+   163→   212→   241→   241→   241→  - `animate-count-up` — number entrance animation
+   164→   213→   242→   242→   242→  - `border-glow` — hover border gradient glow effect
+   165→   214→   243→   243→   243→  - `ripple` — radial gradient hover effect
+   166→   215→   244→   244→   244→  - `skeleton-card` — enhanced shimmer skeleton with dark mode
+   167→   216→   245→   245→   245→  - `chip` + `chip-emerald` — inline tag/chip component
+   168→   217→   246→   246→   246→  - `tooltip-pretty` — CSS-only tooltip with fade animation
+   169→   218→   247→   247→   247→  - `number-transition` — smooth number transition
+   170→   219→   248→   248→   248→  - Dark mode chart grid refinements (`.dark .recharts-cartesian-grid-*`)
+   171→   220→   249→   249→   249→  - `error-state` + `empty-state` — gradient background states
+   172→   221→   250→   250→   250→  - `accent-underline` — emerald gradient underline
+   173→   222→   251→   251→   251→  - `section-divider` — decorative gradient section separator
+   174→   223→   252→   252→   252→- **Dark Mode Chart Refinements:** Converted all hardcoded hex colors (#10b981, #34d399, etc.) to HSL format in both dashboard.tsx and reports.tsx for better dark mode color perception. Updated chart configs (areaChartConfig, barChartConfig, pieChartConfig, statusChartConfig, PIE_COLORS) and all gradient stopColor/activeDot fill values.
+   175→   224→   253→   253→   253→- **ESLint:** Zero errors after all changes
+   176→   225→   254→   254→   254→
+   177→   226→   255→   255→   255→Stage Summary:
+   178→   227→   256→   256→   256→- **2 new CRUD dialogs** added: Customer creation + Merchant creation (with API endpoints)
+   179→   228→   257→   257→   257→- **1 new component** created: `quick-stats.tsx` (real-time header metrics bar)
+   180→   229→   258→   258→   258→- **1 new API field** added: `pendingTransactions` in dashboard stats
+   181→   230→   259→   259→   259→- **10+ new CSS utility classes** in globals.css
+   182→   231→   260→   260→   260→- **Dark mode chart colors** fully converted to HSL for consistent perception
+   183→   232→   261→   261→   261→- **Total new files:** 1 (quick-stats.tsx)
+   184→   233→   262→   262→   262→- **Total modified files:** 9 (mobile-nav.tsx, customers.tsx, merchants.tsx, dashboard.tsx, reports.tsx, globals.css, page.tsx, api/dashboard/route.ts, api/customers/route.ts, api/merchants/route.ts)
+   185→   234→   263→   263→   263→- **ESLint:** Zero errors
+   186→   235→   264→   264→   264→- **QA:** All 8 pages verified, customer create dialog verified, merchant create dialog verified, quick stats bar verified
+   187→   236→   265→   265→   265→
+   188→   237→   266→   266→   266→## Current Project Status Assessment
+   189→   238→   267→   267→   267→
+   190→   239→   268→   268→   268→### What's Working (Verified ✅)
+   191→   240→   269→   269→   269→- All 8 pages render correctly: Dashboard, Transactions, Payment Links, Customers, Merchants, Payouts, Reports, Settings
+   192→   241→   270→   270→   270→- 13 API routes with full CRUD operations (11 original + notifications GET/PATCH + merchants POST + customers POST)
+   193→   242→   271→   271→   271→- Database with 10 merchants, 15 customers, 200 transactions, 20 payment links, 15 payouts, 5 notifications
+   194→   243→   272→   272→   272→- Dark/light mode toggle
+   195→   244→   273→   273→   273→- Responsive design (mobile-first) with mobile bottom navigation bar (z-50)
+   196→   245→   274→   274→   274→- Sidebar collapse/expand with smooth animations (hidden on mobile, replaced by bottom nav)
+   197→   246→   275→   275→   275→- Command Palette (⌘K/Ctrl+K) for quick navigation
+   198→   247→   276→   276→   276→- Welcome banner with quick action buttons
+   199→   248→   277→   277→   277→- Live activity feed with auto-refresh + WebSocket real-time transaction streaming
+   200→   249→   278→   278→   278→- Glassmorphism KPI cards with glow effects and card-hover animations
+   201→   250→   279→   279→   279→- Sticky footer with branding
+   202→   251→   280→   280→   280→- User profile section in sidebar with online indicator
+   203→   252→   281→   281→   281→- **NEW:** Quick Stats real-time metrics bar (Hari Ini, Total Transaksi, Menunggu, Keberhasilan, Merchant Aktif)
+   204→   253→   282→   282→   282→- **NEW:** Customer creation dialog (Nama, Email, Telepon) with form validation
+   205→   254→   283→   283→   283→- **NEW:** Merchant creation dialog (Nama, Email, Telepon, Alamat) with API key auto-generation
+   206→   255→   284→   284→   284→- **NEW:** 10+ new CSS utility classes (border-glow, ripple, skeleton-card, chip, tooltip-pretty, etc.)
+   207→   256→   285→   285→   285→- **NEW:** Dark mode chart refinements (HSL colors, grid styling, gradient opacity)
+   208→   257→   286→   286→   286→- **NEW:** Enhanced empty state and error state CSS backgrounds
+   209→   258→   287→   287→   287→- **NEW:** Section divider and accent underline utilities
+   210→   259→   288→   288→   288→- **NEW:** Animated counter and number transition utilities
+   211→   260→   289→   289→   289→- Loading progress bar (NProgress-style) on app load
+   212→   261→   290→   290→   290→- Mobile bottom navigation with 4 primary icons + 'Lainnya' bottom sheet
+   213→   262→   291→   291→   291→- Live notification center with unread count from API
+   214→   263→   292→   292→   292→- WebSocket mini-service on port 3004 broadcasting real-time simulated transactions every 15-30s
+   215→   264→   293→   293→   293→- Card hover lift effect (card-hover) on 25+ cards across all pages
+   216→   265→   294→   294→   294→- Table row hover highlighting (table-row-hover) on 4 table pages
+   217→   266→   295→   295→   295→- Button press effect (btn-press) on 7+ action buttons
+   218→   267→   296→   296→   296→- Rich CSS utility library: glassmorphism, shimmer, floating animation, pulse glow, text gradient, status badges
+   219→   268→   297→   297→   297→- Realistic seed data (70% success rate, weighted status distribution)
+   220→   269→   298→   298→   298→- ESLint: zero errors
+   221→   270→   299→   299→   299→
+   222→   271→   300→   300→   300→### Architecture
+   223→   272→   301→   301→   301→- `/src/app/page.tsx` - Single page app with client-side routing via Zustand, includes footer, LoadingBar, QuickStats, MobileNav
+   224→   273→   302→   302→   302→- `/src/components/app/*.tsx` - 16 component files (dashboard, transactions, payment-links, customers, merchants, payouts, reports, settings, sidebar, header, command-palette, query-provider, loading-bar, mobile-nav, quick-stats)
+   225→   274→   303→   303→   303→- `/src/hooks/use-socket.ts` - WebSocket hook for real-time transaction notifications
+   226→   275→   304→   304→   304→- `/src/app/api/*/route.ts` - 15 API route files
+   227→   276→   305→   305→   305→- `/src/stores/app-store.ts` - Zustand store for navigation state
+   228→   277→   306→   306→   306→- `/src/lib/db.ts` - Prisma client
+   229→   278→   307→   307→   307→- `/mini-services/notification-service/` - WebSocket notification mini-service on port 3004
+   230→   279→   308→   308→   308→
+   231→   280→   309→   309→   309→### Unresolved Issues / Next Phase Recommendations
+   232→   281→   310→   310→   310→1. **Medium Priority:** Implement webhook URL configuration with delivery logs
+   233→   282→   311→   311→   311→2. **Medium Priority:** Add 2FA implementation with QR code setup
+   234→   283→   312→   312→   312→3. **Medium Priority:** Add transaction receipt PDF generation (downloadable)
+   235→   284→   313→   313→   313→4. **Low Priority:** Add more sophisticated analytics (conversion funnels, cohort analysis)
+   236→   285→   314→   314→   314→5. **Low Priority:** Add multi-currency support
+   237→   286→   315→   315→   315→6. **Low Priority:** Add merchant self-service onboarding flow
+   238→   287→   316→   316→   316→7. **Enhancement:** Add data table bulk actions (select all, bulk export, bulk status change)
+   239→   288→   317→   317→   317→8. **Enhancement:** Add keyboard shortcuts for common actions beyond ⌘K
+   240→   289→   318→   318→   318→9. **Enhancement:** Add transaction refund reason input (currently uses default text)
+   241→   290→   319→   319→   319→10. **Enhancement:** Improve mobile landscape layout for table pages
+   242→   291→   320→   320→   320→---
+   243→   292→   321→   321→   321→Task ID: 2-a
+   244→   293→   322→   322→   322→Agent: Transactions Enhancements
+   245→   294→   323→   323→   323→Task: Fix CSV export and add bulk actions to transactions table
+   246→   295→   324→   324→   324→
+   247→   296→   325→   325→   325→Work Log:
+   248→   297→   326→   326→   326→- Added imports: `Checkbox` from `@/components/ui/checkbox`, `FileDown`, `X`, `Trash2` from `lucide-react`, `useEffect` from React
+   249→   298→   327→   327→   327→- Fixed `handleExportCSV` to use fetch + blob download approach instead of `window.open` (now triggers proper file download with filename `transaksi-posril-YYYY-MM-DD.csv`, with loading/success/error toasts)
+   250→   299→   328→   328→   328→- Added `selectedIds` (Set<string>) and `selectAll` (boolean) state for bulk selection
+   251→   300→   329→   329→   329→- Added `useEffect` to clear selection on page/filter changes (page, search, status, paymentMethod, dateFrom, dateTo)
+   252→   301→   330→   330→   330→- Added `handleToggleSelect(id)`, `handleToggleSelectAll()`, `handleClearSelection()` handlers
+   253→   302→   331→   331→   331→- Added `handleExportSelected()` to export only selected transactions via fetch + blob with `?export=csv&ids=...` query param
+   254→   303→   332→   332→   332→- Added checkbox column as first column in table header with select-all functionality (emerald-styled when checked)
+   255→   304→   333→   333→   333→- Added checkbox per table row with `stopPropagation` on click to prevent row detail dialog from opening
+   256→   305→   334→   334→   334→- Added emerald highlight background on selected rows (`bg-emerald-50/50` / `dark:bg-emerald-950/20`)
+   257→   306→   335→   335→   335→- Updated empty state colspan from 9 to 10 to account for new checkbox column
+   258→   307→   336→   336→   336→- Added floating bulk action bar with `AnimatePresence` + `motion.div` (slides up from bottom), emerald gradient styling, showing: selected count, "Ekspor Terpilih" button (FileDown icon), "Hapus Pilihan" button (Trash2 icon)
+   259→   308→   337→   337→   337→- Ran `bun run lint` — zero errors
+   260→   309→   338→   338→   338→
+   261→   310→   339→   339→   339→Stage Summary:
+   262→   311→   340→   340→   340→- **CSV export fixed** — now uses fetch + blob approach for proper file download with progress toasts
+   263→   312→   341→   341→   341→- **Bulk actions added** — checkbox selection per row, select-all in header, floating action bar with export and clear
+   264→   313→   342→   342→   342→- **1 file modified:** `src/components/app/transactions.tsx`
+   265→   314→   343→   343→   343→- **ESLint:** zero errors
+   266→   315→   344→   344→   344→---
+   267→   316→   345→   345→   345→Task ID: 2-b
+   268→   317→   346→   346→   346→Agent: Subagent (Webhook Logs + Keyboard Shortcuts)
+   269→   318→   347→   347→   347→Task: Add Webhook Delivery Logs tab in Settings and Keyboard Shortcuts overlay
+   270→   319→   348→   348→   348→
+   271→   320→   349→   349→   349→Work Log:
+   272→   321→   350→   350→   350→- **Webhook Tab in Settings:** Added new `WebhookTab` component inside `settings.tsx` with:
+   273→   322→   351→   351→   351→  - Webhook Configuration Card: URL input, masked secret key with show/hide toggle, active/inactive Switch toggle
+   274→   323→   352→   352→   352→  - Event Subscription Toggles: 5 events (payment.success, payment.failed, payment.expired, refund.created, payout.processed) with Checkbox and description
+   275→   324→   353→   353→   353→  - Delivery Stats: 4 stat cards (Total Terkirim 1,247, Gagal 23, Rata-rata Response 189ms, Success Rate 98.2%) with colored icon containers
+   276→   325→   354→   354→   354→  - Recent Delivery Logs Table: 10 mock webhook logs with columns for Event Type (colored badges), URL (truncated), Status Code (colored), Response Time, Timestamp (Bahasa Indonesia time-ago), and Kirim Ulang action button
+   277→   326→   355→   355→   355→  - Test Webhook Button: Sends simulated test payload with loading state and success toast
+   278→   327→   356→   356→   356→  - New TabsTrigger with Globe icon and value="webhook" added to Settings tabs
+   279→   328→   357→   357→   357→  - New imports: Globe, Zap, Clock, Send, XCircle from lucide-react; Table, Checkbox from UI
+   280→   329→   358→   358→   358→- **Keyboard Shortcuts Overlay:** Created `/src/components/app/keyboard-shortcuts.tsx` with:
+   281→   330→   359→   359→   359→  - Dialog-based overlay with emerald gradient keyboard icon header
+   282→   331→   360→   360→   360→  - 14 shortcuts displayed in a 2-column grid with Kbd-styled key combos
+   283→   332→   361→   361→   361→  - Staggered motion entrance animation per shortcut card
+   284→   333→   362→   362→   362→  - Internal `?` key listener to open the overlay (disabled when already open)
+   285→   334→   363→   363→   363→  - Kbd component with monospace, border, rounded, shadow styling
+   286→   335→   364→   364→   364→- **Page.tsx Integration:** Updated `page.tsx` with:
+   287→   336→   365→   365→   365→  - Imported `KeyboardShortcutsOverlay` and `useTheme`
+   288→   337→   366→   366→   366→  - Added `shortcutsOpen` state and `setActivePage` from store
+   289→   338→   367→   367→   367→  - Added `useEffect` with global keyboard listener (only fires when no input/textarea/select focused):
+   290→   339→   368→   368→   368→    - Keys 1-8: Navigate to Dashboard, Transaksi, Payment Links, Pelanggan, Merchant, Payout, Laporan, Pengaturan
+   291→   340→   369→   369→   369→    - D: Toggle dark/light mode
+   292→   341→   370→   370→   370→    - N: Navigate to payment links page
+   293→   342→   371→   371→   371→    - T: Navigate to transactions page
+   294→   343→   372→   372→   372→    - ?: Toggle shortcuts overlay
+   295→   344→   373→   373→   373→  - Rendered `<KeyboardShortcutsOverlay>` at the bottom of the component tree
+   296→   345→   374→   374→   374→- **ESLint:** Zero errors
+   297→   346→   375→   375→   375→
+   298→   347→   376→   376→   376→Stage Summary:
+   299→   348→   377→   377→   377→- **1 new file created:** `src/components/app/keyboard-shortcuts.tsx`
+   300→   349→   378→   378→   378→- **2 files modified:** `src/components/app/settings.tsx` (+~340 lines for WebhookTab), `src/app/page.tsx` (keyboard shortcut listener + overlay integration)
+   301→
+   302→[showing lines 50-349 of 453; use offset=350 with limit to continue reading]

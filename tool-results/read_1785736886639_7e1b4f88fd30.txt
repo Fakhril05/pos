@@ -1,0 +1,712 @@
+    60→} from '@/components/ui/pagination';
+    61→
+    62→// ─── Helpers ───────────────────────────────────────────────────────────────
+    63→
+    64→const formatMoney = (amount: number) =>
+    65→  new Intl.NumberFormat('id-ID', {
+    66→    style: 'currency',
+    67→    currency: 'IDR',
+    68→    minimumFractionDigits: 0,
+    69→  }).format(amount);
+    70→
+    71→const formatDate = (d: string) =>
+    72→  new Date(d).toLocaleDateString('id-ID', {
+    73→    day: 'numeric',
+    74→    month: 'short',
+    75→    year: 'numeric',
+    76→    hour: '2-digit',
+    77→    minute: '2-digit',
+    78→  });
+    79→
+    80→const statusLabel: Record<string, string> = {
+    81→  pending: 'Menunggu',
+    82→  processing: 'Diproses',
+    83→  completed: 'Berhasil',
+    84→  failed: 'Gagal',
+    85→  cancelled: 'Dibatalkan',
+    86→};
+    87→
+    88→const statusColor: Record<string, string> = {
+    89→  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    90→  processing: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+    91→  completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    92→  failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+    93→  cancelled: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    94→};
+    95→
+    96→const statusIcon: Record<string, typeof CheckCircle2> = {
+    97→  pending: Clock,
+    98→  processing: Loader2,
+    99→  completed: CheckCircle2,
+   100→  failed: X,
+   101→  cancelled: X,
+   102→};
+   103→
+   104→const statusFilters = [
+   105→  { value: 'all', label: 'Semua' },
+   106→  { value: 'completed', label: 'Berhasil' },
+   107→  { value: 'pending', label: 'Menunggu' },
+   108→  { value: 'processing', label: 'Diproses' },
+   109→];
+   110→
+   111→// ─── Types ─────────────────────────────────────────────────────────────────
+   112→
+   113→interface Payout {
+   114→  id: string;
+   115→  merchantId: string;
+   116→  amount: number;
+   117→  fee: number;
+   118→  status: string;
+   119→  bankName: string;
+   120→  accountNo: string;
+   121→  accountName: string;
+   122→  notes: string | null;
+   123→  processedAt: string | null;
+   124→  createdAt: string;
+   125→  updatedAt: string;
+   126→  merchant: { id: string; name: string; logo: string | null };
+   127→}
+   128→
+   129→interface MerchantOption {
+   130→  id: string;
+   131→  name: string;
+   132→  email: string;
+   133→}
+   134→
+   135→// ─── Component ─────────────────────────────────────────────────────────────
+   136→
+   137→export default function Payouts() {
+   138→  const queryClient = useQueryClient();
+   139→  const [page, setPage] = useState(1);
+   140→  const [statusFilter, setStatusFilter] = useState('all');
+   141→  const [createOpen, setCreateOpen] = useState(false);
+   142→
+   143→  // ── Form state ──
+   144→  const [formMerchant, setFormMerchant] = useState('');
+   145→  const [formAmount, setFormAmount] = useState('');
+   146→  const [formFee, setFormFee] = useState('0');
+   147→  const [formBankName, setFormBankName] = useState('');
+   148→  const [formAccountNo, setFormAccountNo] = useState('');
+   149→  const [formAccountName, setFormAccountName] = useState('');
+   150→  const [formNotes, setFormNotes] = useState('');
+   151→
+   152→  // ── Fetch paginated payouts ──
+   153→  const { data, isLoading, isError } = useQuery({
+   154→    queryKey: ['payouts', page, statusFilter],
+   155→    queryFn: async () => {
+   156→      const params = new URLSearchParams({
+   157→        page: String(page),
+   158→        limit: '10',
+   159→      });
+   160→      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
+   161→      const res = await fetch(`/api/payouts?${params}`);
+   162→      if (!res.ok) throw new Error('Gagal memuat data pencairan');
+   163→      const json = await res.json();
+   164→      return json as {
+   165→        data: Payout[];
+   166→        pagination: { page: number; limit: number; total: number; totalPages: number };
+   167→      };
+   168→    },
+   169→    staleTime: 15_000,
+   170→  });
+   171→
+   172→  // ── Fetch stats ──
+   173→  const { data: statsData } = useQuery({
+   174→    queryKey: ['payouts-stats'],
+   175→    queryFn: async () => {
+   176→      const [allRes, successRes, pendingRes] = await Promise.all([
+   177→        fetch('/api/payouts?limit=1'),
+   178→        fetch('/api/payouts?status=completed&limit=1'),
+   179→        fetch('/api/payouts?status=pending&limit=1'),
+   180→      ]);
+   181→      const [all, success, pending] = await Promise.all([
+   182→        allRes.json(),
+   183→        successRes.json(),
+   184→        pendingRes.json(),
+   185→      ]);
+   186→      return {
+   187→        total: all.pagination?.total ?? 0,
+   188→        completed: success.pagination?.total ?? 0,
+   189→        pending: pending.pagination?.total ?? 0,
+   190→      };
+   191→    },
+   192→    staleTime: 30_000,
+   193→  });
+   194→
+   195→  // ── Fetch merchants for create form ──
+   196→  const { data: merchants } = useQuery({
+   197→    queryKey: ['merchants-select'],
+   198→    queryFn: async () => {
+   199→      const res = await fetch('/api/merchants?limit=9999');
+   200→      if (!res.ok) throw new Error('Gagal memuat daftar merchant');
+   201→      const json = await res.json();
+   202→      return json.data as MerchantOption[];
+   203→    },
+   204→    staleTime: 60_000,
+   205→  });
+   206→
+   207→  // ── Process payout mutation ──
+   208→  const processMutation = useMutation({
+   209→    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+   210→      const res = await fetch(`/api/payouts/${id}`, {
+   211→        method: 'PUT',
+   212→        headers: { 'Content-Type': 'application/json' },
+   213→        body: JSON.stringify({ status }),
+   214→      });
+   215→      if (!res.ok) {
+   216→        const err = await res.json();
+   217→        throw new Error(err.error || 'Gagal memproses pencairan');
+   218→      }
+   219→      return res.json();
+   220→    },
+   221→    onSuccess: () => {
+   222→      toast.success('Pencairan berhasil diproses');
+   223→      queryClient.invalidateQueries({ queryKey: ['payouts'] });
+   224→      queryClient.invalidateQueries({ queryKey: ['payouts-stats'] });
+   225→    },
+   226→    onError: (err) => {
+   227→      toast.error(err.message);
+   228→    },
+   229→  });
+   230→
+   231→  // ── Create payout mutation ──
+   232→  const createMutation = useMutation({
+   233→    mutationFn: async () => {
+   234→      const res = await fetch('/api/payouts', {
+   235→        method: 'POST',
+   236→        headers: { 'Content-Type': 'application/json' },
+   237→        body: JSON.stringify({
+   238→          merchantId: formMerchant,
+   239→          amount: Number(formAmount),
+   240→          fee: Number(formFee) || 0,
+   241→          bankName: formBankName,
+   242→          accountNo: formAccountNo,
+   243→          accountName: formAccountName,
+   244→          notes: formNotes || undefined,
+   245→        }),
+   246→      });
+   247→      if (!res.ok) {
+   248→        const err = await res.json();
+   249→        throw new Error(err.error || 'Gagal membuat pencairan');
+   250→      }
+   251→      return res.json();
+   252→    },
+   253→    onSuccess: () => {
+   254→      toast.success('Pencairan berhasil dibuat');
+   255→      queryClient.invalidateQueries({ queryKey: ['payouts'] });
+   256→      queryClient.invalidateQueries({ queryKey: ['payouts-stats'] });
+   257→      setCreateOpen(false);
+   258→      resetForm();
+   259→    },
+   260→    onError: (err) => {
+   261→      toast.error(err.message);
+   262→    },
+   263→  });
+   264→
+   265→  const payouts = data?.data ?? [];
+   266→  const payoutPagination = data?.pagination;
+   267→
+   268→  const resetForm = () => {
+   269→    setFormMerchant('');
+   270→    setFormAmount('');
+   271→    setFormFee('0');
+   272→    setFormBankName('');
+   273→    setFormAccountNo('');
+   274→    setFormAccountName('');
+   275→    setFormNotes('');
+   276→  };
+   277→
+   278→  const handleFilterChange = (val: string) => {
+   279→    setStatusFilter(val);
+   280→    setPage(1);
+   281→  };
+   282→
+   283→  const handleSubmitCreate = (e: React.FormEvent) => {
+   284→    e.preventDefault();
+   285→    if (!formMerchant || !formAmount || !formBankName || !formAccountNo || !formAccountName) {
+   286→      toast.error('Lengkapi semua field yang wajib diisi');
+   287→      return;
+   288→    }
+   289→    createMutation.mutate();
+   290→  };
+   291→
+   292→  const handleProcess = (id: string) => {
+   293→    processMutation.mutate({ id, status: 'processing' });
+   294→  };
+   295→
+   296→  // ── Page range ──
+   297→  const pageRange = useMemo(() => {
+   298→    if (!payoutPagination) return [];
+   299→    const { page: p, totalPages: tp } = payoutPagination;
+   300→    const pages: (number | 'ellipsis')[] = [];
+   301→    if (tp <= 7) {
+   302→      for (let i = 1; i <= tp; i++) pages.push(i);
+   303→    } else {
+   304→      pages.push(1);
+   305→      if (p > 3) pages.push('ellipsis');
+   306→      const start = Math.max(2, p - 1);
+   307→      const end = Math.min(tp - 1, p + 1);
+   308→      for (let i = start; i <= end; i++) pages.push(i);
+   309→      if (p < tp - 2) pages.push('ellipsis');
+   310→      pages.push(tp);
+   311→    }
+   312→    return pages;
+   313→  }, [payoutPagination]);
+   314→
+   315→  // ─── Render ───────────────────────────────────────────────────────────
+   316→
+   317→  if (isError) {
+   318→    return (
+   319→      <div className="flex flex-col items-center justify-center py-20">
+   320→        <Banknote className="h-12 w-12 text-muted-foreground mb-4" />
+   321→        <p className="text-muted-foreground">Gagal memuat data pencairan</p>
+   322→        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+   323→          Coba Lagi
+   324→        </Button>
+   325→      </div>
+   326→    );
+   327→  }
+   328→
+   329→  return (
+   330→    <div className="space-y-6">
+   331→      {/* ── Stats Row ── */}
+   332→      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   333→        {[
+   334→          { label: 'Total Payout', value: (statsData?.total ?? 0).toLocaleString('id-ID'), icon: Banknote, gradient: 'from-emerald-500 to-teal-500' },
+   335→          { label: 'Payout Berhasil', value: (statsData?.completed ?? 0).toLocaleString('id-ID'), icon: CheckCircle2, gradient: 'from-emerald-600 to-green-500' },
+   336→          { label: 'Payout Menunggu', value: (statsData?.pending ?? 0).toLocaleString('id-ID'), icon: Clock, gradient: 'from-amber-500 to-orange-400' },
+   337→        ].map((stat, i) => (
+   338→          <motion.div
+   339→            key={stat.label}
+   340→            initial={{ opacity: 0, y: 20 }}
+   341→            animate={{ opacity: 1, y: 0 }}
+   342→            transition={{ duration: 0.4, delay: i * 0.08 }}
+   343→          >
+   344→            <Card className="shadow-sm hover:shadow-md transition-shadow card-hover">
+   345→              <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+   346→                <div className={`flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
+   347→                  <stat.icon className="h-5 w-5 text-white" />
+   348→                </div>
+   349→                <div className="min-w-0">
+   350→                  <p className="text-sm text-muted-foreground truncate">{stat.label}</p>
+   351→                  <p className="text-lg font-bold truncate">{stat.value}</p>
+   352→                </div>
+   353→              </CardContent>
+   354→            </Card>
+   355→          </motion.div>
+   356→        ))}
+   357→      </div>
+   358→
+   359→      {/* ── Filter Bar + Create Button ── */}
+   360→      <motion.div
+   361→        initial={{ opacity: 0, y: 12 }}
+   362→        animate={{ opacity: 1, y: 0 }}
+   363→        transition={{ duration: 0.35, delay: 0.2 }}
+   364→        className="flex flex-col sm:flex-row items-start sm:items-center gap-3"
+   365→      >
+   366→        <div className="relative flex-1 w-full sm:w-auto">
+   367→          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   368→          <Select value={statusFilter} onValueChange={handleFilterChange}>
+   369→            <SelectTrigger className="pl-9 w-full sm:w-48">
+   370→              <SelectValue placeholder="Filter status" />
+   371→            </SelectTrigger>
+   372→            <SelectContent>
+   373→              {statusFilters.map((f) => (
+   374→                <SelectItem key={f.value} value={f.value}>
+   375→                  {f.label}
+   376→                </SelectItem>
+   377→              ))}
+   378→            </SelectContent>
+   379→          </Select>
+   380→        </div>
+   381→        <Button
+   382→          className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto btn-press"
+   383→          onClick={() => setCreateOpen(true)}
+   384→        >
+   385→          <Plus className="h-4 w-4 mr-2" />
+   386→          Buat Pencairan
+   387→        </Button>
+   388→      </motion.div>
+   389→
+   390→      {/* ── Active filter indicator ── */}
+   391→      <AnimatePresence>
+   392→        {statusFilter !== 'all' && (
+   393→          <motion.div
+   394→            initial={{ opacity: 0, height: 0 }}
+   395→            animate={{ opacity: 1, height: 'auto' }}
+   396→            exit={{ opacity: 0, height: 0 }}
+   397→            className="flex items-center gap-2"
+   398→          >
+   399→            <span className="text-sm text-muted-foreground">Filter:</span>
+   400→            <Badge variant="secondary" className="gap-1 pr-1">
+   401→              {statusFilters.find((f) => f.value === statusFilter)?.label || statusFilter}
+   402→              <button
+   403→                onClick={() => handleFilterChange('all')}
+   404→                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+   405→              >
+   406→                <X className="h-3 w-3" />
+   407→              </button>
+   408→            </Badge>
+   409→          </motion.div>
+   410→        )}
+   411→      </AnimatePresence>
+   412→
+   413→      {/* ── Payouts Table ── */}
+   414→      <motion.div
+   415→        initial={{ opacity: 0, y: 16 }}
+   416→        animate={{ opacity: 1, y: 0 }}
+   417→        transition={{ duration: 0.35, delay: 0.28 }}
+   418→      >
+   419→        <Card>
+   420→          <CardHeader className="pb-3">
+   421→            <div className="flex items-center justify-between">
+   422→              <CardTitle className="flex items-center gap-2 text-base">
+   423→                <Banknote className="h-5 w-5 text-emerald-600" />
+   424→                Daftar Pencairan
+   425→              </CardTitle>
+   426→              {payoutPagination && (
+   427→                <span className="text-xs text-muted-foreground">
+   428→                  {payoutPagination.total} pencairan
+   429→                </span>
+   430→              )}
+   431→            </div>
+   432→          </CardHeader>
+   433→          <CardContent className="p-0">
+   434→            {isLoading ? (
+   435→              <div className="p-6 space-y-3">
+   436→                {Array.from({ length: 5 }).map((_, i) => (
+   437→                  <Skeleton key={i} className="h-12 w-full" />
+   438→                ))}
+   439→              </div>
+   440→            ) : payouts.length === 0 ? (
+   441→              <div className="flex flex-col items-center justify-center py-16">
+   442→                <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-4">
+   443→                  <Banknote className="h-7 w-7 text-muted-foreground" />
+   444→                </div>
+   445→                <p className="text-muted-foreground font-medium">Tidak ada pencairan ditemukan</p>
+   446→                <p className="text-sm text-muted-foreground mt-1">
+   447→                  {statusFilter ? 'Coba ubah filter status' : 'Buat pencairan pertama Anda'}
+   448→                </p>
+   449→              </div>
+   450→            ) : (
+   451→              <div className="overflow-x-auto">
+   452→                <Table>
+   453→                  <TableHeader>
+   454→                    <TableRow>
+   455→                      <TableHead className="pl-6">Merchant</TableHead>
+   456→                      <TableHead>Bank</TableHead>
+   457→                      <TableHead className="text-right">Jumlah</TableHead>
+   458→                      <TableHead className="text-right hidden sm:table-cell">Biaya</TableHead>
+   459→                      <TableHead className="text-right hidden md:table-cell">Jumlah Bersih</TableHead>
+   460→                      <TableHead>Status</TableHead>
+   461→                      <TableHead className="hidden lg:table-cell">Tanggal</TableHead>
+   462→                      <TableHead className="pr-6 text-right">Aksi</TableHead>
+   463→                    </TableRow>
+   464→                  </TableHeader>
+   465→                  <TableBody>
+   466→                    <AnimatePresence>
+   467→                      {payouts.map((po, i) => {
+   468→                        const StatusIcon = statusIcon[po.status] || Clock;
+   469→                        return (
+   470→                          <motion.tr
+   471→                            key={po.id}
+   472→                            initial={{ opacity: 0, y: 6 }}
+   473→                            animate={{ opacity: 1, y: 0 }}
+   474→                            exit={{ opacity: 0, y: -4 }}
+   475→                            transition={{ duration: 0.2, delay: i * 0.03 }}
+   476→                            className="hover:bg-muted/50 transition-colors table-row-hover"
+   477→                          >
+   478→                            <TableCell className="pl-6">
+   479→                              <div className="flex items-center gap-2">
+   480→                                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+   481→                                  {po.merchant.name.charAt(0).toUpperCase()}
+   482→                                </div>
+   483→                                <span className="font-medium text-sm truncate max-w-[140px]">
+   484→                                  {po.merchant.name}
+   485→                                </span>
+   486→                              </div>
+   487→                            </TableCell>
+   488→                            <TableCell>
+   489→                              <div className="text-sm">
+   490→                                <p className="font-medium">{po.bankName}</p>
+   491→                                <p className="text-xs text-muted-foreground">
+   492→                                  {po.accountNo} • {po.accountName}
+   493→                                </p>
+   494→                              </div>
+   495→                            </TableCell>
+   496→                            <TableCell className="text-right">
+   497→                              <span className="text-sm font-semibold">{formatMoney(po.amount)}</span>
+   498→                            </TableCell>
+   499→                            <TableCell className="text-right hidden sm:table-cell">
+   500→                              <span className="text-sm text-muted-foreground">{formatMoney(po.fee)}</span>
+   501→                            </TableCell>
+   502→                            <TableCell className="text-right hidden md:table-cell">
+   503→                              <span className="text-sm font-medium text-emerald-600">
+   504→                                {formatMoney(po.amount - po.fee)}
+   505→                              </span>
+   506→                            </TableCell>
+   507→                            <TableCell>
+   508→                              <Badge className={`text-xs ${statusColor[po.status] || ''}`}>
+   509→                                <StatusIcon className={`h-3 w-3 mr-1 ${po.status === 'processing' ? 'animate-spin' : ''}`} />
+   510→                                {statusLabel[po.status] || po.status}
+   511→                              </Badge>
+   512→                            </TableCell>
+   513→                            <TableCell className="hidden lg:table-cell">
+   514→                              <span className="text-sm text-muted-foreground">{formatDate(po.createdAt)}</span>
+   515→                            </TableCell>
+   516→                            <TableCell className="pr-6 text-right">
+   517→                              {po.status === 'pending' && (
+   518→                                <Button
+   519→                                  size="sm"
+   520→                                  variant="outline"
+   521→                                  className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:border-emerald-700 dark:hover:bg-emerald-950"
+   522→                                  onClick={() => handleProcess(po.id)}
+   523→                                  disabled={processMutation.isPending}
+   524→                                >
+   525→                                  {processMutation.isPending ? (
+   526→                                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+   527→                                  ) : (
+   528→                                    <Play className="h-3.5 w-3.5 mr-1" />
+   529→                                  )}
+   530→                                  Proses
+   531→                                </Button>
+   532→                              )}
+   533→                            </TableCell>
+   534→                          </motion.tr>
+   535→                        );
+   536→                      })}
+   537→                    </AnimatePresence>
+   538→                  </TableBody>
+   539→                </Table>
+   540→              </div>
+   541→            )}
+   542→          </CardContent>
+   543→        </Card>
+   544→      </motion.div>
+   545→
+   546→      {/* ── Pagination ── */}
+   547→      {payoutPagination && payoutPagination.totalPages > 1 && (
+   548→        <div className="space-y-3">
+   549→          <Pagination>
+   550→            <PaginationContent>
+   551→              <PaginationItem>
+   552→                <PaginationPrevious
+   553→                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+   554→                  className={page === 1 ? 'pointer-events-none opacity-40' : 'cursor-pointer'}
+   555→                />
+   556→              </PaginationItem>
+   557→              {pageRange.map((p, i) =>
+   558→                p === 'ellipsis' ? (
+   559→                  <PaginationItem key={`e${i}`}>
+   560→                    <PaginationEllipsis />
+   561→                  </PaginationItem>
+   562→                ) : (
+   563→                  <PaginationItem key={p}>
+   564→                    <PaginationLink
+   565→                      isActive={p === page}
+   566→                      onClick={() => setPage(p as number)}
+   567→                      className="cursor-pointer"
+   568→                    >
+   569→                      {p}
+   570→                    </PaginationLink>
+   571→                  </PaginationItem>
+   572→                ),
+   573→              )}
+   574→              <PaginationItem>
+   575→                <PaginationNext
+   576→                  onClick={() => setPage((p) => Math.min(payoutPagination.totalPages, p + 1))}
+   577→                  className={page === payoutPagination.totalPages ? 'pointer-events-none opacity-40' : 'cursor-pointer'}
+   578→                />
+   579→              </PaginationItem>
+   580→            </PaginationContent>
+   581→          </Pagination>
+   582→          <p className="text-center text-sm text-muted-foreground">
+   583→            Menampilkan {(page - 1) * payoutPagination.limit + 1}&ndash;{Math.min(page * payoutPagination.limit, payoutPagination.total)} dari {payoutPagination.total} pencairan
+   584→          </p>
+   585→        </div>
+   586→      )}
+   587→
+   588→      {/* ── Create Payout Dialog ── */}
+   589→      <Dialog open={createOpen} onOpenChange={(open) => {
+   590→        if (!open) resetForm();
+   591→        setCreateOpen(open);
+   592→      }}>
+   593→        <DialogContent className="max-w-lg">
+   594→          <DialogHeader>
+   595→            <DialogTitle className="flex items-center gap-2">
+   596→              <Plus className="h-5 w-5 text-emerald-600" />
+   597→              Buat Pencairan Baru
+   598→            </DialogTitle>
+   599→            <DialogDescription>
+   600→              Isi detail pencairan dana untuk merchant
+   601→            </DialogDescription>
+   602→          </DialogHeader>
+   603→
+   604→          <form onSubmit={handleSubmitCreate} className="space-y-4">
+   605→            {/* Merchant Select */}
+   606→            <div className="space-y-2">
+   607→              <Label htmlFor="merchant-select" className="flex items-center gap-1.5">
+   608→                <Store className="h-3.5 w-3.5" />
+   609→                Merchant <span className="text-red-500">*</span>
+   610→              </Label>
+   611→              <Select value={formMerchant} onValueChange={setFormMerchant}>
+   612→                <SelectTrigger id="merchant-select">
+   613→                  <SelectValue placeholder="Pilih merchant" />
+   614→                </SelectTrigger>
+   615→                <SelectContent className="max-h-60">
+   616→                  {Array.isArray(merchants) && merchants.map((m) => (
+   617→                    <SelectItem key={m.id} value={m.id}>
+   618→                      {m.name} ({m.email})
+   619→                    </SelectItem>
+   620→                  ))}
+   621→                </SelectContent>
+   622→              </Select>
+   623→            </div>
+   624→
+   625→            {/* Amount + Fee */}
+   626→            <div className="grid grid-cols-2 gap-3">
+   627→              <div className="space-y-2">
+   628→                <Label htmlFor="payout-amount" className="flex items-center gap-1.5">
+   629→                  <Banknote className="h-3.5 w-3.5" />
+   630→                  Jumlah <span className="text-red-500">*</span>
+   631→                </Label>
+   632→                <div className="relative">
+   633→                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+   634→                  <Input
+   635→                    id="payout-amount"
+   636→                    type="number"
+   637→                    placeholder="0"
+   638→                    className="pl-10"
+   639→                    value={formAmount}
+   640→                    onChange={(e) => setFormAmount(e.target.value)}
+   641→                    min="0"
+   642→                  />
+   643→                </div>
+   644→              </div>
+   645→              <div className="space-y-2">
+   646→                <Label htmlFor="payout-fee" className="flex items-center gap-1.5">
+   647→                  Biaya
+   648→                </Label>
+   649→                <div className="relative">
+   650→                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+   651→                  <Input
+   652→                    id="payout-fee"
+   653→                    type="number"
+   654→                    placeholder="0"
+   655→                    className="pl-10"
+   656→                    value={formFee}
+   657→                    onChange={(e) => setFormFee(e.target.value)}
+   658→                    min="0"
+   659→                  />
+   660→                </div>
+   661→              </div>
+   662→            </div>
+   663→
+   664→            {/* Live net amount preview */}
+   665→            {formAmount && Number(formAmount) > 0 && (
+   666→              <motion.div
+   667→                initial={{ opacity: 0, height: 0 }}
+   668→                animate={{ opacity: 1, height: 'auto' }}
+   669→                className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3 flex items-center justify-between"
+   670→              >
+   671→                <span className="text-sm text-emerald-700 dark:text-emerald-400">Jumlah Bersih</span>
+   672→                <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+   673→                  {formatMoney(Number(formAmount) - (Number(formFee) || 0))}
+   674→                </span>
+   675→              </motion.div>
+   676→            )}
+   677→
+   678→            <Separator />
+   679→
+   680→            {/* Bank Details */}
+   681→            <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+   682→              <Building2 className="h-3.5 w-3.5" />
+   683→              Detail Rekening Bank
+   684→            </p>
+   685→
+   686→            <div className="space-y-2">
+   687→              <Label htmlFor="bank-name" className="flex items-center gap-1.5">
+   688→                <Building2 className="h-3.5 w-3.5" />
+   689→                Nama Bank <span className="text-red-500">*</span>
+   690→              </Label>
+   691→              <Select value={formBankName} onValueChange={setFormBankName}>
+   692→                <SelectTrigger id="bank-name">
+   693→                  <SelectValue placeholder="Pilih bank" />
+   694→                </SelectTrigger>
+   695→                <SelectContent>
+   696→                  {['BCA', 'BNI', 'BRI', 'Mandiri', 'BSI', 'CIMB Niaga', 'Danamon', 'Permata', 'Bank Mega', 'Bank Sinarmas', 'OCBC NISP', 'Lainnya'].map((b) => (
+   697→                    <SelectItem key={b} value={b}>{b}</SelectItem>
+   698→                  ))}
+   699→                </SelectContent>
+   700→              </Select>
+   701→            </div>
+   702→
+   703→            <div className="grid grid-cols-2 gap-3">
+   704→              <div className="space-y-2">
+   705→                <Label htmlFor="account-no" className="flex items-center gap-1.5">
+   706→                  Nomor Rekening <span className="text-red-500">*</span>
+   707→                </Label>
+   708→                <Input
+   709→                  id="account-no"
+   710→                  placeholder="Masukkan nomor rekening"
+   711→                  value={formAccountNo}
+   712→                  onChange={(e) => setFormAccountNo(e.target.value)}
+   713→                />
+   714→              </div>
+   715→              <div className="space-y-2">
+   716→                <Label htmlFor="account-name" className="flex items-center gap-1.5">
+   717→                  <User className="h-3.5 w-3.5" />
+   718→                  Nama Pemilik <span className="text-red-500">*</span>
+   719→                </Label>
+   720→                <Input
+   721→                  id="account-name"
+   722→                  placeholder="Nama pemilik rekening"
+   723→                  value={formAccountName}
+   724→                  onChange={(e) => setFormAccountName(e.target.value)}
+   725→                />
+   726→              </div>
+   727→            </div>
+   728→
+   729→            {/* Notes */}
+   730→            <div className="space-y-2">
+   731→              <Label htmlFor="payout-notes">Catatan</Label>
+   732→              <Textarea
+   733→                id="payout-notes"
+   734→                placeholder="Catatan opsional..."
+   735→                value={formNotes}
+   736→                onChange={(e) => setFormNotes(e.target.value)}
+   737→                rows={2}
+   738→              />
+   739→            </div>
+   740→
+   741→            <DialogFooter className="pt-2">
+   742→              <Button
+   743→                type="button"
+   744→                variant="outline"
+   745→                onClick={() => {
+   746→                  resetForm();
+   747→                  setCreateOpen(false);
+   748→                }}
+   749→              >
+   750→                Batal
+   751→              </Button>
+   752→              <Button
+   753→                type="submit"
+   754→                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+   755→                disabled={createMutation.isPending}
+   756→              >
+   757→                {createMutation.isPending ? (
+   758→                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+   759→                ) : (
+   760→                  <Plus className="h-4 w-4 mr-2" />
+   761→                )}
+   762→                Buat Pencairan
+   763→              </Button>
+   764→            </DialogFooter>
+   765→          </form>
+   766→        </DialogContent>
+   767→      </Dialog>
+   768→    </div>
+   769→  );
+   770→}
+   771→

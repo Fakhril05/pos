@@ -62,6 +62,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { PageHeader } from '@/components/app/page-header';
 import {
   Pagination,
   PaginationContent,
@@ -599,26 +600,18 @@ export default function PaymentLinks() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* ─── Header + Filters ────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+    <div className="space-y-6 bg-mesh">
+      <PageHeader
+        title="Link Pembayaran"
+        description="Kelola dan pantau semua link pembayaran Anda"
+        icon={Link2}
+        iconGradient="emerald"
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">Link Pembayaran</h2>
-            <p className="text-muted-foreground text-sm">
-              Kelola dan pantau semua link pembayaran Anda
-            </p>
-          </div>
-          <Button onClick={openCreate} className="w-full sm:w-auto btn-press">
-            <Plus className="mr-2 h-4 w-4" />
-            Buat Link Baru
-          </Button>
-        </div>
-      </motion.div>
+        <Button onClick={openCreate} className="w-full sm:w-auto btn-press">
+          <Plus className="mr-2 h-4 w-4" />
+          Buat Link Baru
+        </Button>
+      </PageHeader>
 
       {/* ─── Filter bar ───────────────────────────────────────────── */}
       <motion.div

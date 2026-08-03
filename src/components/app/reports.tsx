@@ -37,6 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/app/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import {
@@ -418,14 +419,21 @@ export default function Reports() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-mesh">
+      <PageHeader
+        title="Laporan"
+        description="Analisis performa transaksi dan pendapatan"
+        icon={BarChart3}
+        iconGradient="violet"
+      />
+
       {/* ─── Date Range Picker ─────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card>
+        <Card className="card-elevated">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
@@ -539,7 +547,7 @@ export default function Reports() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        <Card className="shadow-sm card-hover">
+        <Card className="shadow-sm card-hover card-elevated">
           <CardHeader>
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-emerald-500" />
@@ -638,7 +646,7 @@ export default function Reports() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Card className="shadow-sm card-hover">
+          <Card className="shadow-sm card-hover card-elevated">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-emerald-500" />
@@ -722,7 +730,7 @@ export default function Reports() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Card className="shadow-sm card-hover">
+          <Card className="shadow-sm card-hover card-elevated">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <PieChartIcon className="h-4 w-4 text-emerald-500" />
@@ -804,7 +812,7 @@ export default function Reports() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
       >
-        <Card className="shadow-sm card-hover">
+        <Card className="shadow-sm card-hover card-elevated">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -822,7 +830,7 @@ export default function Reports() {
           </CardHeader>
           <CardContent className="px-2 pb-4">
             <Table>
-              <TableHeader>
+              <TableHeader className="table-header-enhanced">
                 <TableRow>
                   <TableHead className="w-12 pl-4">#</TableHead>
                   <TableHead>Merchant</TableHead>

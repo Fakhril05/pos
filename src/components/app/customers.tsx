@@ -29,6 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/app/page-header';
 import {
   Table,
   TableBody,
@@ -443,7 +444,22 @@ export default function Customers() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-mesh">
+      <PageHeader
+        title="Pelanggan"
+        description="Kelola data pelanggan dan riwayat transaksi"
+        icon={Users}
+        iconGradient="teal"
+      >
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="btn-press bg-emerald-600 hover:bg-emerald-700"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          <span className="hidden sm:inline">Tambah Pelanggan</span>
+        </Button>
+      </PageHeader>
+
       {/* ─── Stats Row ────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -527,7 +543,7 @@ export default function Customers() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card className="shadow-sm card-hover">
+        <Card className="shadow-sm card-hover card-elevated">
           <CardContent className="p-0">
             {/* Header with search */}
             <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -539,13 +555,6 @@ export default function Customers() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  onClick={() => setCreateOpen(true)}
-                  className="w-full sm:w-auto btn-press bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Tambah Pelanggan
-                </Button>
                 <form onSubmit={handleSearch} className="relative w-full sm:w-auto sm:max-w-xs">
                   <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -582,7 +591,7 @@ export default function Customers() {
             {/* Table */}
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
+                <TableHeader className="table-header-enhanced">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="pl-4">Pelanggan</TableHead>
                     <TableHead className="hidden sm:table-cell">Email</TableHead>

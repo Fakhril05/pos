@@ -31,6 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/app/page-header';
 import {
   Dialog,
   DialogContent,
@@ -328,7 +329,22 @@ export default function Merchants() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-mesh">
+      <PageHeader
+        title="Merchant"
+        description="Kelola merchant dan konfigurasi pembayaran"
+        icon={Store}
+        iconGradient="amber"
+      >
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Tambah Merchant</span>
+        </Button>
+      </PageHeader>
+
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
@@ -388,13 +404,7 @@ export default function Merchants() {
             Cari
           </Button>
         </form>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Tambah Merchant
-        </Button>
+
       </motion.div>
 
       {/* ── Active search indicator ── */}
