@@ -1,0 +1,1204 @@
+    50→  Dialog,
+    51→  DialogContent,
+    52→  DialogDescription,
+    53→  DialogFooter,
+    54→  DialogHeader,
+    55→  DialogTitle,
+    56→} from '@/components/ui/dialog';
+    57→import {
+    58→  Pagination,
+    59→  PaginationContent,
+    60→  PaginationItem,
+    61→  PaginationLink,
+    62→  PaginationNext,
+    63→  PaginationPrevious,
+    64→  PaginationEllipsis,
+    65→} from '@/components/ui/pagination';
+    66→import { Separator } from '@/components/ui/separator';
+    67→import { PageHeader } from '@/components/app/page-header';
+    68→import { EmptyState } from '@/components/app/empty-state';
+    69→import { toast } from 'sonner';
+    70→import { generateReceiptHtml } from '@/lib/receipt-generator';
+    71→
+    72→// ── Helpers ──────────────────────────────────────────────────────────────────
+    73→
+    74→const formatRp = (amount: number) =>
+    75→  new Intl.NumberFormat('id-ID', {
+    76→    style: 'currency',
+    77→    currency: 'IDR',
+    78→    minimumFractionDigits: 0,
+    79→  }).format(amount);
+    80→
+    81→const formatDate = (dateStr: string) => {
+    82→  const d = new Date(dateStr);
+    83→  return d.toLocaleDateString('id-ID', {
+    84→    day: 'numeric',
+    85→    month: 'short',
+    86→    year: 'numeric',
+    87→    hour: '2-digit',
+    88→    minute: '2-digit',
+    89→  });
+    90→};
+    91→
+    92→const formatShortDate = (dateStr: string) => {
+    93→  const d = new Date(dateStr);
+    94→  return d.toLocaleDateString('id-ID', {
+    95→    day: 'numeric',
+    96→    month: 'short',
+    97→    year: 'numeric',
+    98→  });
+    99→};
+   100→
+   101→// ── Status Config ────────────────────────────────────────────────────────────
+   102→
+   103→const STATUS_MAP: Record<
+   104→  string,
+   105→  { label: string; color: string; bgClass: string; icon: React.ElementType }
+   106→> = {
+   107→  success: {
+   108→    label: 'Berhasil',
+   109→    color: 'text-emerald-700',
+   110→    bgClass:
+   111→      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+   112→    icon: CheckCircle2,
+   113→  },
+   114→  pending: {
+   115→    label: 'Menunggu',
+   116→    color: 'text-amber-700',
+   117→    bgClass:
+   118→      'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+   119→    icon: Clock,
+   120→  },
+   121→  failed: {
+   122→    label: 'Gagal',
+   123→    color: 'text-red-700',
+   124→    bgClass:
+   125→      'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+   126→    icon: XCircle,
+   127→  },
+   128→  expired: {
+   129→    label: 'Kedaluwarsa',
+   130→    color: 'text-gray-600',
+   131→    bgClass:
+   132→      'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+   133→    icon: AlertTriangle,
+   134→  },
+   135→  refunded: {
+   136→    label: 'Refund',
+   137→    color: 'text-blue-700',
+   138→    bgClass:
+   139→      'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800',
+   140→    icon: RotateCcw,
+   141→  },
+   142→};
+   143→
+   144→// ── Types ────────────────────────────────────────────────────────────────────
+   145→
+   146→interface Transaction {
+   147→  id: string;
+   148→  invoiceNo: string;
+   149→  amount: number;
+   150→  fee: number;
+   151→  netAmount: number;
+   152→  paymentMethod: string;
+   153→  paymentChannel: string;
+   154→  status: string;
+   155→  description: string | null;
+   156→  customerName: string | null;
+   157→  customerEmail: string | null;
+   158→  customerPhone: string | null;
+   159→  paidAt: string | null;
+   160→  expiredAt: string | null;
+   161→  createdAt: string;
+   162→  updatedAt: string;
+   163→  merchant: { id: string; name: string; logo: string | null };
+   164→  customer: { id: string; name: string; email: string } | null;
+   165→}
+   166→
+   167→interface TransactionsResponse {
+   168→  data: Transaction[];
+   169→  pagination: {
+   170→    page: number;
+   171→    limit: number;
+   172→    total: number;
+   173→    totalPages: number;
+   174→  };
+   175→}
+   176→
+   177→interface StatusCount {
+   178→  status: string;
+   179→  count: number;
+   180→}
+   181→
+   182→// ── Status Badge ──────────────────────────────────────────────────────────────
+   183→
+   184→function StatusBadge({ status }: { status: string }) {
+   185→  const s = STATUS_MAP[status] ?? STATUS_MAP.pending;
+   186→  const Icon = s.icon;
+   187→  return (
+   188→    <Badge variant="outline" className={`${s.bgClass} gap-1.5 font-medium`}>
+   189→      <Icon className="h-3 w-3" />
+   190→      {s.label}
+   191→    </Badge>
+   192→  );
+   193→}
+   194→
+   195→// ── Timeline Item ────────────────────────────────────────────────────────────
+   196→
+   197→interface TimelineEvent {
+   198→  label: string;
+   199→  date: string;
+   200→  icon: React.ElementType;
+   201→  color: string;
+   202→}
+   203→
+   204→function buildTimeline(tx: Transaction): TimelineEvent[] {
+   205→  const events: TimelineEvent[] = [
+   206→    {
+   207→      label: 'Transaksi dibuat',
+   208→      date: tx.createdAt,
+   209→      icon: Receipt,
+   210→      color: 'text-emerald-500',
+   211→    },
+   212→  ];
+   213→  if (tx.paidAt) {
+   214→    events.push({
+   215→      label: 'Pembayaran diterima',
+   216→      date: tx.paidAt,
+   217→      icon: CheckCircle2,
+   218→      color: 'text-emerald-500',
+   219→    });
+   220→  }
+   221→  if (tx.expiredAt && (tx.status === 'expired' || tx.status === 'failed')) {
+   222→    events.push({
+   223→      label: 'Transaksi kedaluwarsa',
+   224→      date: tx.expiredAt,
+   225→      icon: AlertTriangle,
+   226→      color: 'text-gray-500',
+   227→    });
+   228→  }
+   229→  if (tx.status === 'failed') {
+   230→    events.push({
+   231→      label: 'Transaksi gagal',
+   232→      date: tx.updatedAt,
+   233→      icon: XCircle,
+   234→      color: 'text-red-500',
+   235→    });
+   236→  }
+   237→  if (tx.status === 'refunded') {
+   238→    events.push({
+   239→      label: 'Refund diproses',
+   240→      date: tx.updatedAt,
+   241→      icon: RotateCcw,
+   242→      color: 'text-blue-500',
+   243→    });
+   244→  }
+   245→  return events;
+   246→}
+   247→
+   248→function TimelineItem({ event, isLast }: { event: TimelineEvent; isLast: boolean }) {
+   249→  const Icon = event.icon;
+   250→  return (
+   251→    <div className="flex gap-3">
+   252→      <div className="flex flex-col items-center">
+   253→        <div
+   254→          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted ${event.color}`}
+   255→        >
+   256→          <Icon className="h-4 w-4" />
+   257→        </div>
+   258→        {!isLast && <div className="w-px flex-1 bg-border" />}
+   259→      </div>
+   260→      <div className={`pb-6 ${isLast ? 'pb-0' : ''}`}>
+   261→        <p className="text-sm font-medium">{event.label}</p>
+   262→        <p className="text-muted-foreground text-xs">{formatDate(event.date)}</p>
+   263→      </div>
+   264→    </div>
+   265→  );
+   266→}
+   267→
+   268→// ── Transaction Detail Dialog ────────────────────────────────────────────────
+   269→
+   270→function TransactionDetailDialog({
+   271→  tx,
+   272→  open,
+   273→  onOpenChange,
+   274→}: {
+   275→  tx: Transaction | null;
+   276→  open: boolean;
+   277→  onOpenChange: (v: boolean) => void;
+   278→}) {
+   279→  const queryClient = useQueryClient();
+   280→  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+   281→  const [refundReason, setRefundReason] = useState('');
+   282→  const [refundReasonError, setRefundReasonError] = useState('');
+   283→  const [refunding, setRefunding] = useState(false);
+   284→
+   285→  const timeline = useMemo(() => (tx ? buildTimeline(tx) : []), [tx]);
+   286→
+   287→  const handleRefund = async () => {
+   288→    if (!tx) return;
+   289→    if (!refundReason.trim()) {
+   290→      setRefundReasonError('Alasan refund wajib diisi');
+   291→      return;
+   292→    }
+   293→    setRefunding(true);
+   294→    try {
+   295→      const res = await fetch(`/api/transactions/${tx.id}`, {
+   296→        method: 'POST',
+   297→        headers: { 'Content-Type': 'application/json' },
+   298→        body: JSON.stringify({ amount: tx.amount, reason: refundReason.trim() }),
+   299→      });
+   300→      if (!res.ok) {
+   301→        const err = await res.json().catch(() => ({ error: 'Gagal memproses refund' }));
+   302→        throw new Error(err.error || 'Gagal memproses refund');
+   303→      }
+   304→      toast.success('Refund berhasil diajukan');
+   305→      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+   306→      setRefundDialogOpen(false);
+   307→      setRefundReason('');
+   308→      onOpenChange(false);
+   309→    } catch (e) {
+   310→      toast.error(e instanceof Error ? e.message : 'Gagal memproses refund');
+   311→    } finally {
+   312→      setRefunding(false);
+   313→    }
+   314→  };
+   315→
+   316→  const handleCopyInvoice = () => {
+   317→    if (tx) {
+   318→      navigator.clipboard.writeText(tx.invoiceNo);
+   319→      toast.success('Nomor invoice disalin');
+   320→    }
+   321→  };
+   322→
+   323→  if (!tx) return null;
+   324→
+   325→  const statusInfo = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+   326→  const StatusIcon = statusInfo.icon;
+   327→
+   328→  return (
+   329→    <Dialog open={open} onOpenChange={onOpenChange}>
+   330→      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   331→        <DialogHeader>
+   332→          <div className="flex items-center gap-3">
+   333→            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
+   334→              <Receipt className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+   335→            </div>
+   336→            <div>
+   337→              <DialogTitle className="text-base">Detail Transaksi</DialogTitle>
+   338→              <DialogDescription>
+   339→                <span className="flex items-center gap-1.5 font-mono text-xs">
+   340→                  {tx.invoiceNo}
+   341→                  <button
+   342→                    onClick={handleCopyInvoice}
+   343→                    className="inline-flex hover:text-foreground transition-colors"
+   344→                  >
+   345→                    <Copy className="h-3 w-3" />
+   346→                  </button>
+   347→                </span>
+   348→              </DialogDescription>
+   349→            </div>
+   350→          </div>
+   351→        </DialogHeader>
+   352→
+   353→        <div className="space-y-5">
+   354→          {/* Status Banner */}
+   355→          <div
+   356→            className={`flex items-center gap-3 rounded-lg border p-4 ${statusInfo.bgClass}`}
+   357→          >
+   358→            <StatusIcon className="h-5 w-5" />
+   359→            <div>
+   360→              <p className="text-sm font-semibold">Status: {statusInfo.label}</p>
+   361→              <p className="text-xs opacity-80">
+   362→                {tx.status === 'success'
+   363→                  ? 'Pembayaran telah berhasil diterima'
+   364→                  : tx.status === 'pending'
+   365→                    ? 'Menunggu pembayaran dari pelanggan'
+   366→                    : tx.status === 'failed'
+   367→                      ? 'Pembayaran gagal diproses'
+   368→                      : tx.status === 'expired'
+   369→                        ? 'Batas waktu pembayaran telah habis'
+   370→                        : 'Dana telah dikembalikan ke pelanggan'}
+   371→              </p>
+   372→            </div>
+   373→          </div>
+   374→
+   375→          {/* Amount Section */}
+   376→          <div className="rounded-lg border bg-muted/30 p-4">
+   377→            <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
+   378→              Jumlah Pembayaran
+   379→            </p>
+   380→            <p className="text-2xl font-bold tracking-tight">{formatRp(tx.amount)}</p>
+   381→            <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
+   382→              <span>
+   383→                Biaya Admin: <span className="font-medium text-foreground">{formatRp(tx.fee)}</span>
+   384→              </span>
+   385→              <span>
+   386→                Jumlah Bersih: <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatRp(tx.netAmount)}</span>
+   387→              </span>
+   388→            </div>
+   389→          </div>
+   390→
+   391→          {/* Details Grid */}
+   392→          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+   393→            <DetailItem
+   394→              icon={Store}
+   395→              label="Merchant"
+   396→              value={tx.merchant.name}
+   397→            />
+   398→            <DetailItem
+   399→              icon={User}
+   400→              label="Pelanggan"
+   401→              value={tx.customerName || tx.customer?.name || '-'}
+   402→            />
+   403→            <DetailItem
+   404→              icon={CreditCard}
+   405→              label="Metode Pembayaran"
+   406→              value={tx.paymentMethod}
+   407→            />
+   408→            <DetailItem
+   409→              icon={CircleDot}
+   410→              label="Saluran"
+   411→              value={tx.paymentChannel}
+   412→            />
+   413→            <DetailItem
+   414→              icon={CalendarDays}
+   415→              label="Tanggal Dibuat"
+   416→              value={formatDate(tx.createdAt)}
+   417→            />
+   418→            {tx.paidAt && (
+   419→              <DetailItem
+   420→                icon={CheckCircle2}
+   421→                label="Tanggal Dibayar"
+   422→                value={formatDate(tx.paidAt)}
+   423→              />
+   424→            )}
+   425→            {tx.customerEmail && (
+   426→              <DetailItem
+   427→                icon={Receipt}
+   428→                label="Email Pelanggan"
+   429→                value={tx.customerEmail}
+   430→              />
+   431→            )}
+   432→            {tx.customerPhone && (
+   433→              <DetailItem
+   434→                icon={Receipt}
+   435→                label="Telepon Pelanggan"
+   436→                value={tx.customerPhone}
+   437→              />
+   438→            )}
+   439→            {tx.description && (
+   440→              <div className="sm:col-span-2">
+   441→                <DetailItem
+   442→                  icon={Receipt}
+   443→                  label="Deskripsi"
+   444→                  value={tx.description}
+   445→                />
+   446→              </div>
+   447→            )}
+   448→          </div>
+   449→
+   450→          <Separator />
+   451→
+   452→          {/* Timeline */}
+   453→          <div>
+   454→            <h4 className="mb-3 text-sm font-semibold">Timeline</h4>
+   455→            <div>
+   456→              {timeline.map((event, idx) => (
+   457→                <TimelineItem
+   458→                  key={idx}
+   459→                  event={event}
+   460→                  isLast={idx === timeline.length - 1}
+   461→                />
+   462→              ))}
+   463→            </div>
+   464→          </div>
+   465→        </div>
+   466→
+   467→        {/* Footer with actions */}
+   468→        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+   469→          <Button variant="outline" onClick={() => {
+   470→            if (!tx) return;
+   471→            const si = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+   472→            const html = generateReceiptHtml({
+   473→              invoiceNo: tx.invoiceNo,
+   474→              amount: tx.amount,
+   475→              fee: tx.fee,
+   476→              netAmount: tx.netAmount,
+   477→              merchantName: tx.merchant.name,
+   478→              customerName: tx.customerName || tx.customer?.name || '-',
+   479→              paymentMethod: tx.paymentMethod,
+   480→              paymentChannel: tx.paymentChannel,
+   481→              status: tx.status,
+   482→              createdAt: tx.createdAt,
+   483→              paidAt: tx.paidAt,
+   484→              description: tx.description,
+   485→              formattedAmount: formatRp(tx.amount),
+   486→              formattedFee: formatRp(tx.fee),
+   487→              formattedNetAmount: formatRp(tx.netAmount),
+   488→              formattedCreatedAt: formatDate(tx.createdAt),
+   489→              formattedPaidAt: tx.paidAt ? formatDate(tx.paidAt) : null,
+   490→              statusLabel: si.label,
+   491→            });
+   492→            const blob = new Blob([html], { type: 'text/html' });
+   493→            const url = URL.createObjectURL(blob);
+   494→            const a = document.createElement('a');
+   495→            a.href = url;
+   496→            a.download = `struk-${tx.invoiceNo}.html`;
+   497→            document.body.appendChild(a);
+   498→            a.click();
+   499→            document.body.removeChild(a);
+   500→            URL.revokeObjectURL(url);
+   501→            toast.success('Struk berhasil diunduh');
+   502→          }} className="w-full gap-2 sm:w-auto">
+   503→            <Printer className="h-4 w-4" />
+   504→            Unduh Struk
+   505→          </Button>
+   506→          {tx.status === 'success' && (
+   507→            <Button
+   508→              variant="destructive"
+   509→              onClick={() => { setRefundDialogOpen(true); setRefundReason(''); setRefundReasonError(''); }}
+   510→              disabled={refunding}
+   511→              className="w-full gap-2 sm:w-auto"
+   512→            >
+   513→              <RotateCcw className="h-4 w-4" />
+   514→              Ajukan Refund
+   515→            </Button>
+   516→          )}
+   517→        </DialogFooter>
+   518→      </DialogContent>
+   519→
+   520→      {/* Refund Reason Dialog */}
+   521→      <Dialog open={refundDialogOpen} onOpenChange={(v) => { setRefundDialogOpen(v); if (!v) setRefundReasonError(''); }}>
+   522→        <DialogContent className="sm:max-w-md">
+   523→          <DialogHeader>
+   524→            <div className="flex items-center gap-3">
+   525→              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/50">
+   526→                <TriangleAlert className="h-5 w-5 text-red-600 dark:text-red-400" />
+   527→              </div>
+   528→              <div>
+   529→                <DialogTitle className="text-base">Konfirmasi Refund</DialogTitle>
+   530→                <DialogDescription className="text-xs">
+   531→                  Tindakan ini tidak dapat dibatalkan
+   532→                </DialogDescription>
+   533→              </div>
+   534→            </div>
+   535→          </DialogHeader>
+   536→
+   537→          <div className="space-y-4">
+   538→            {/* Warning banner */}
+   539→            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
+   540→              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+   541→              <div className="text-sm">
+   542→                <p className="font-medium text-red-800 dark:text-red-300">Refund sebesar {tx ? formatRp(tx.amount) : ''}</p>
+   543→                <p className="text-red-600 dark:text-red-400 mt-0.5">
+   544→                  Dana akan dikembalikan ke {tx?.customerName || tx?.customer?.name || 'pelanggan'}. Proses membutuhkan 1-3 hari kerja.
+   545→                </p>
+   546→              </div>
+   547→            </div>
+   548→
+   549→            {/* Refund reason */}
+   550→            <div className="space-y-2">
+   551→              <Label htmlFor="refund-reason" className="text-sm font-medium">
+   552→                Alasan Refund <span className="text-red-500">*</span>
+   553→              </Label>
+   554→              <Textarea
+   555→                id="refund-reason"
+   556→                placeholder="Masukkan alasan refund, misal: Produk rusak saat pengiriman"
+   557→                value={refundReason}
+   558→                onChange={(e) => { setRefundReason(e.target.value); setRefundReasonError(''); }}
+   559→                className={`min-h-[80px] resize-none ${refundReasonError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+   560→              />
+   561→              {refundReasonError && (
+   562→                <p className="text-xs text-red-500 flex items-center gap-1">
+   563→                  <TriangleAlert className="h-3 w-3" /> {refundReasonError}
+   564→                </p>
+   565→              )}
+   566→              <p className="text-xs text-muted-foreground">
+   567→                {refundReason.length}/200 karakter
+   568→              </p>
+   569→            </div>
+   570→
+   571→            {/* Quick reasons */}
+   572→            <div className="flex flex-wrap gap-1.5">
+   573→              {['Produk rusak', 'Tidak sesuai pesanan', 'Pembayaran ganda', 'Permintaan pelanggan'].map((reason) => (
+   574→                <button
+   575→                  key={reason}
+   576→                  type="button"
+   577→                  onClick={() => { setRefundReason(reason); setRefundReasonError(''); }}
+   578→                  className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
+   579→                >
+   580→                  {reason}
+   581→                </button>
+   582→              ))}
+   583→            </div>
+   584→          </div>
+   585→
+   586→          <DialogFooter className="gap-2 sm:gap-0">
+   587→            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+   588→              Batal
+   589→            </Button>
+   590→            <Button
+   591→              variant="destructive"
+   592→              onClick={handleRefund}
+   593→              disabled={refunding || !refundReason.trim()}
+   594→              className="gap-2"
+   595→            >
+   596→              {refunding ? (
+   597→                <>
+   598→                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+   599→                  Memproses...
+   600→                </>
+   601→              ) : (
+   602→                <>
+   603→                  <RotateCcw className="h-4 w-4" />
+   604→                  Konfirmasi Refund
+   605→                </>
+   606→              )}
+   607→            </Button>
+   608→          </DialogFooter>
+   609→        </DialogContent>
+   610→      </Dialog>
+   611→    </Dialog>
+   612→  );
+   613→}
+   614→
+   615→function DetailItem({
+   616→  icon: Icon,
+   617→  label,
+   618→  value,
+   619→}: {
+   620→  icon: React.ElementType;
+   621→  label: string;
+   622→  value: string;
+   623→}) {
+   624→  return (
+   625→    <div className="flex items-start gap-3 rounded-lg border p-3">
+   626→      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   627→        <Icon className="h-4 w-4 text-muted-foreground" />
+   628→      </div>
+   629→      <div className="min-w-0">
+   630→        <p className="text-muted-foreground text-xs">{label}</p>
+   631→        <p className="truncate text-sm font-medium">{value}</p>
+   632→      </div>
+   633→    </div>
+   634→  );
+   635→}
+   636→
+   637→// ── Loading Skeleton ─────────────────────────────────────────────────────────
+   638→
+   639→function TransactionsSkeleton() {
+   640→  return (
+   641→    <div className="space-y-6">
+   642→      {/* Filter bar skeleton */}
+   643→      <Card>
+   644→        <CardContent className="p-4">
+   645→          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+   646→            <Skeleton className="h-9 w-full lg:w-72" />
+   647→            <Skeleton className="h-9 w-full lg:w-36" />
+   648→            <Skeleton className="h-9 w-full lg:w-36" />
+   649→            <Skeleton className="h-9 w-full lg:w-36" />
+   650→            <Skeleton className="h-9 w-full lg:w-36" />
+   651→            <Skeleton className="h-9 w-full lg:w-28" />
+   652→          </div>
+   653→        </CardContent>
+   654→      </Card>
+   655→
+   656→      {/* Stats skeleton */}
+   657→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+   658→        {Array.from({ length: 5 }).map((_, i) => (
+   659→          <Skeleton key={i} className="h-20 rounded-xl" />
+   660→        ))}
+   661→      </div>
+   662→
+   663→      {/* Table skeleton */}
+   664→      <Card>
+   665→        <CardContent className="p-4">
+   666→          <div className="space-y-3">
+   667→            <Skeleton className="h-10 w-full" />
+   668→            {Array.from({ length: 8 }).map((_, i) => (
+   669→              <Skeleton key={i} className="h-14 w-full" />
+   670→            ))}
+   671→          </div>
+   672→        </CardContent>
+   673→      </Card>
+   674→
+   675→      {/* Pagination skeleton */}
+   676→      <div className="flex justify-center">
+   677→        <Skeleton className="h-9 w-72" />
+   678→      </div>
+   679→    </div>
+   680→  );
+   681→}
+   682→
+   683→// ── Pagination Helper ────────────────────────────────────────────────────────
+   684→
+   685→function getPaginationRange(current: number, total: number) {
+   686→  const delta = 2;
+   687→  const range: (number | 'dots')[] = [];
+   688→  const left = Math.max(2, current - delta);
+   689→  const right = Math.min(total - 1, current + delta);
+   690→
+   691→  range.push(1);
+   692→  if (left > 2) range.push('dots');
+   693→  for (let i = left; i <= right; i++) range.push(i);
+   694→  if (right < total - 1) range.push('dots');
+   695→  if (total > 1) range.push(total);
+   696→
+   697→  return range;
+   698→}
+   699→
+   700→// ── Main Component ───────────────────────────────────────────────────────────
+   701→
+   702→export default function Transactions() {
+   703→  const [search, setSearch] = useState('');
+   704→  const [searchInput, setSearchInput] = useState('');
+   705→  const [status, setStatus] = useState<string>('all');
+   706→  const [paymentMethod, setPaymentMethod] = useState<string>('all');
+   707→  const [dateFrom, setDateFrom] = useState('');
+   708→  const [dateTo, setDateTo] = useState('');
+   709→  const [page, setPage] = useState(1);
+   710→  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+   711→  const [dialogOpen, setDialogOpen] = useState(false);
+   712→
+   713→  const limit = 10;
+   714→
+   715→  const buildQueryParams = useCallback(
+   716→    (overrides?: { page?: number; status?: string; search?: string }) => {
+   717→      const params = new URLSearchParams();
+   718→      params.set('page', String(overrides?.page ?? page));
+   719→      params.set('limit', String(limit));
+   720→      const s = overrides?.search ?? search;
+   721→      if (s) params.set('search', s);
+   722→      const st = overrides?.status ?? status;
+   723→      if (st && st !== 'all') params.set('status', st);
+   724→      if (paymentMethod && paymentMethod !== 'all')
+   725→        params.set('paymentMethod', paymentMethod);
+   726→      if (dateFrom) params.set('dateFrom', dateFrom);
+   727→      if (dateTo) params.set('dateTo', dateTo);
+   728→      return params.toString();
+   729→    },
+   730→    [page, search, status, paymentMethod, dateFrom, dateTo],
+   731→  );
+   732→
+   733→  const { data, isLoading, error } = useQuery<TransactionsResponse>({
+   734→    queryKey: ['transactions', page, search, status, paymentMethod, dateFrom, dateTo],
+   735→    queryFn: () => {
+   736→      const qs = buildQueryParams();
+   737→      return fetch(`/api/transactions?${qs}`).then((r) => r.json());
+   738→    },
+   739→    staleTime: 15_000,
+   740→  });
+   741→
+   742→  // Fetch status counts (always use no filters except what's needed)
+   743→  const { data: statusCountsData } = useQuery<StatusCount[]>({
+   744→    queryKey: ['transactions-status-counts', search, paymentMethod, dateFrom, dateTo],
+   745→    queryFn: async () => {
+   746→      // We query the same endpoint but with different pages to get counts via pagination.total
+   747→      // More efficient: just get all statuses in parallel
+   748→      const statuses = ['success', 'pending', 'failed', 'expired', 'refunded'];
+   749→      const baseParams = new URLSearchParams();
+   750→      baseParams.set('limit', '1');
+   751→      baseParams.set('page', '1');
+   752→      if (search) baseParams.set('search', search);
+   753→      if (paymentMethod && paymentMethod !== 'all')
+   754→        baseParams.set('paymentMethod', paymentMethod);
+   755→      if (dateFrom) baseParams.set('dateFrom', dateFrom);
+   756→      if (dateTo) baseParams.set('dateTo', dateTo);
+   757→
+   758→      const results = await Promise.all(
+   759→        statuses.map(async (s) => {
+   760→          const params = new URLSearchParams(baseParams);
+   761→          params.set('status', s);
+   762→          const res = await fetch(`/api/transactions?${params.toString()}`);
+   763→          const json = await res.json();
+   764→          return { status: s, count: json.pagination?.total ?? 0 };
+   765→        }),
+   766→      );
+   767→      return results;
+   768→    },
+   769→    staleTime: 15_000,
+   770→  });
+   771→
+   772→  const transactions = data?.data ?? [];
+   773→  const pagination = data?.pagination;
+   774→
+   775→  const handleSearch = (e: React.FormEvent) => {
+   776→    e.preventDefault();
+   777→    setSearch(searchInput);
+   778→    setPage(1);
+   779→  };
+   780→
+   781→  const handleStatusFilterChange = (value: string) => {
+   782→    setStatus(value);
+   783→    setPage(1);
+   784→  };
+   785→
+   786→  const handlePaymentMethodChange = (value: string) => {
+   787→    setPaymentMethod(value);
+   788→    setPage(1);
+   789→  };
+   790→
+   791→  const handleDateFromChange = (value: string) => {
+   792→    setDateFrom(value);
+   793→    setPage(1);
+   794→  };
+   795→
+   796→  const handleDateToChange = (value: string) => {
+   797→    setDateTo(value);
+   798→    setPage(1);
+   799→  };
+   800→
+   801→  const handleStatusCardClick = (s: string) => {
+   802→    if (status === s) {
+   803→      setStatus('all');
+   804→    } else {
+   805→      setStatus(s);
+   806→    }
+   807→    setPage(1);
+   808→  };
+   809→
+   810→  const handleExportCSV = () => {
+   811→    const qs = buildQueryParams();
+   812→    window.open(`/api/transactions?export=csv&${qs}`, '_blank');
+   813→    toast.success('File CSV sedang diunduh');
+   814→  };
+   815→
+   816→  const handleRowClick = (tx: Transaction) => {
+   817→    setSelectedTx(tx);
+   818→    setDialogOpen(true);
+   819→  };
+   820→
+   821→  const statusCards = [
+   822→    {
+   823→      key: 'success',
+   824→      label: 'Berhasil',
+   825→      icon: CheckCircle2,
+   826→      gradient: 'from-emerald-500 to-teal-400',
+   827→      bgLight: 'bg-emerald-50 dark:bg-emerald-950/30',
+   828→      borderColor: 'border-emerald-200 dark:border-emerald-800',
+   829→      textColor: 'text-emerald-700 dark:text-emerald-400',
+   830→    },
+   831→    {
+   832→      key: 'pending',
+   833→      label: 'Menunggu',
+   834→      icon: Clock,
+   835→      gradient: 'from-amber-500 to-orange-400',
+   836→      bgLight: 'bg-amber-50 dark:bg-amber-950/30',
+   837→      borderColor: 'border-amber-200 dark:border-amber-800',
+   838→      textColor: 'text-amber-700 dark:text-amber-400',
+   839→    },
+   840→    {
+   841→      key: 'failed',
+   842→      label: 'Gagal',
+   843→      icon: XCircle,
+   844→      gradient: 'from-red-500 to-rose-400',
+   845→      bgLight: 'bg-red-50 dark:bg-red-950/30',
+   846→      borderColor: 'border-red-200 dark:border-red-800',
+   847→      textColor: 'text-red-700 dark:text-red-400',
+   848→    },
+   849→    {
+   850→      key: 'expired',
+   851→      label: 'Kedaluwarsa',
+   852→      icon: AlertTriangle,
+   853→      gradient: 'from-gray-500 to-slate-400',
+   854→      bgLight: 'bg-gray-50 dark:bg-gray-900/30',
+   855→      borderColor: 'border-gray-200 dark:border-gray-700',
+   856→      textColor: 'text-gray-600 dark:text-gray-400',
+   857→    },
+   858→    {
+   859→      key: 'refunded',
+   860→      label: 'Refund',
+   861→      icon: RotateCcw,
+   862→      gradient: 'from-blue-500 to-sky-400',
+   863→      bgLight: 'bg-blue-50 dark:bg-blue-950/30',
+   864→      borderColor: 'border-blue-200 dark:border-blue-800',
+   865→      textColor: 'text-blue-700 dark:text-blue-400',
+   866→    },
+   867→  ];
+   868→
+   869→  const getStatusCount = (key: string) =>
+   870→    statusCountsData?.find((s) => s.status === key)?.count ?? 0;
+   871→
+   872→  const pageRange = useMemo(() => {
+   873→    if (!pagination) return [];
+   874→    return getPaginationRange(pagination.page, pagination.totalPages);
+   875→  }, [pagination]);
+   876→
+   877→  if (isLoading) return <TransactionsSkeleton />;
+   878→  if (error || !data) {
+   879→    return (
+   880→      <div className="flex flex-col items-center justify-center gap-3 py-20">
+   881→        <XCircle className="h-10 w-10 text-muted-foreground" />
+   882→        <p className="text-muted-foreground">
+   883→          Gagal memuat data transaksi. Silakan coba lagi.
+   884→        </p>
+   885→        <Button
+   886→          variant="outline"
+   887→          onClick={() =>
+   888→            window.location.reload()
+   889→          }
+   890→        >
+   891→          Coba Lagi
+   892→        </Button>
+   893→      </div>
+   894→    );
+   895→  }
+   896→
+   897→  return (
+   898→    <div className="space-y-5 bg-mesh">
+   899→      <PageHeader
+   900→        title="Transaksi"
+   901→        description="Kelola dan pantau semua transaksi pembayaran"
+   902→        icon={ArrowLeftRight}
+   903→        iconGradient="emerald"
+   904→      >
+   905→        <Button onClick={handleExportCSV} variant="outline" className="gap-2 btn-press">
+   906→          <Download className="h-4 w-4" />
+   907→          <span className="hidden sm:inline">Ekspor CSV</span>
+   908→        </Button>
+   909→      </PageHeader>
+   910→
+   911→      {/* ─── Filter Bar ─────────────────────────────────────────────── */}
+   912→      <motion.div
+   913→        initial={{ opacity: 0, y: -10 }}
+   914→        animate={{ opacity: 1, y: 0 }}
+   915→        transition={{ duration: 0.3 }}
+   916→      >
+   917→        <Card className="shadow-sm card-hover card-elevated hover-glow-border">
+   918→          <CardContent className="p-4">
+   919→            <form
+   920→              onSubmit={handleSearch}
+   921→              className="flex flex-col gap-3 lg:flex-row lg:items-center"
+   922→            >
+   923→              {/* Search */}
+   924→              <div className="relative flex-1 lg:max-w-xs">
+   925→                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   926→                <Input
+   927→                  placeholder="Cari invoice, pelanggan, merchant..."
+   928→                  value={searchInput}
+   929→                  onChange={(e) => setSearchInput(e.target.value)}
+   930→                  className="pl-9"
+   931→                />
+   932→              </div>
+   933→
+   934→              {/* Status Filter */}
+   935→              <Select
+   936→                value={status}
+   937→                onValueChange={handleStatusFilterChange}
+   938→              >
+   939→                <SelectTrigger className="w-full lg:w-40">
+   940→                  <SelectValue placeholder="Semua Status" />
+   941→                </SelectTrigger>
+   942→                <SelectContent>
+   943→                  <SelectItem value="all">Semua Status</SelectItem>
+   944→                  <SelectItem value="success">Berhasil</SelectItem>
+   945→                  <SelectItem value="pending">Menunggu</SelectItem>
+   946→                  <SelectItem value="failed">Gagal</SelectItem>
+   947→                  <SelectItem value="expired">Kedaluwarsa</SelectItem>
+   948→                  <SelectItem value="refunded">Refund</SelectItem>
+   949→                </SelectContent>
+   950→              </Select>
+   951→
+   952→              {/* Payment Method Filter */}
+   953→              <Select
+   954→                value={paymentMethod}
+   955→                onValueChange={handlePaymentMethodChange}
+   956→              >
+   957→                <SelectTrigger className="w-full lg:w-44">
+   958→                  <SelectValue placeholder="Metode Pembayaran" />
+   959→                </SelectTrigger>
+   960→                <SelectContent>
+   961→                  <SelectItem value="all">Semua Metode</SelectItem>
+   962→                  <SelectItem value="QRIS">QRIS</SelectItem>
+   963→                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+   964→                  <SelectItem value="E-Wallet">E-Wallet</SelectItem>
+   965→                  <SelectItem value="Virtual Account">Virtual Account</SelectItem>
+   966→                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+   967→                </SelectContent>
+   968→              </Select>
+   969→
+   970→              {/* Date From */}
+   971→              <Input
+   972→                type="date"
+   973→                value={dateFrom}
+   974→                onChange={(e) => handleDateFromChange(e.target.value)}
+   975→                className="w-full lg:w-40"
+   976→                placeholder="Dari tanggal"
+   977→              />
+   978→
+   979→              {/* Date To */}
+   980→              <Input
+   981→                type="date"
+   982→                value={dateTo}
+   983→                onChange={(e) => handleDateToChange(e.target.value)}
+   984→                className="w-full lg:w-40"
+   985→                placeholder="Sampai tanggal"
+   986→              />
+   987→
+   988→
+   989→            </form>
+   990→          </CardContent>
+   991→        </Card>
+   992→      </motion.div>
+   993→
+   994→      {/* ─── Stats Summary Bar ──────────────────────────────────────── */}
+   995→      <motion.div
+   996→        initial={{ opacity: 0, y: 10 }}
+   997→        animate={{ opacity: 1, y: 0 }}
+   998→        transition={{ duration: 0.3, delay: 0.1 }}
+   999→      >
+  1000→        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+  1001→          {statusCards.map((card) => {
+  1002→            const count = getStatusCount(card.key);
+  1003→            const isActive = status === card.key;
+  1004→            const Icon = card.icon;
+  1005→            return (
+  1006→              <motion.button
+  1007→                key={card.key}
+  1008→                whileHover={{ scale: 1.02 }}
+  1009→                whileTap={{ scale: 0.98 }}
+  1010→                onClick={() => handleStatusCardClick(card.key)}
+  1011→                className={`group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 ${
+  1012→                  isActive
+  1013→                    ? `${card.bgLight} ${card.borderColor} ring-2 ring-offset-1 ring-offset-background ${card.textColor.replace('text-', 'ring-')}`
+  1014→                    : 'bg-card hover:border-border/80 hover:shadow-sm'
+  1015→                }`}
+  1016→              >
+  1017→                <div className="flex items-center justify-between">
+  1018→                  <div className="flex items-center gap-2.5">
+  1019→                    <div
+  1020→                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+  1021→                        isActive ? `bg-gradient-to-br ${card.gradient}` : 'bg-muted'
+  1022→                      }`}
+  1023→                    >
+  1024→                      <Icon
+  1025→                        className={`h-4 w-4 ${
+  1026→                          isActive ? 'text-white' : 'text-muted-foreground'
+  1027→                        }`}
+  1028→                      />
+  1029→                    </div>
+  1030→                    <div>
+  1031→                      <p className="text-lg font-bold leading-none">{count}</p>
+  1032→                      <p
+  1033→                        className={`text-xs mt-1 ${
+  1034→                          isActive ? card.textColor : 'text-muted-foreground'
+  1035→                        }`}
+  1036→                      >
+  1037→                        {card.label}
+  1038→                      </p>
+  1039→                    </div>
+  1040→                  </div>
+  1041→                  {isActive && (
+  1042→                    <div
+  1043→                      className={`h-2 w-2 rounded-full bg-gradient-to-br ${card.gradient}`}
+  1044→                    />
+  1045→                  )}
+  1046→                </div>
+  1047→              </motion.button>
+  1048→            );
+  1049→          })}
+  1050→        </div>
+  1051→      </motion.div>
+  1052→
+  1053→      {/* ─── Transactions Table ──────────────────────────────────────── */}
+  1054→      <motion.div
+  1055→        initial={{ opacity: 0, y: 10 }}
+  1056→        animate={{ opacity: 1, y: 0 }}
+  1057→        transition={{ duration: 0.3, delay: 0.2 }}
+  1058→      >
+  1059→        <Card className="shadow-sm card-hover hover-glow-border">
+  1060→          <CardContent className="p-0">
+  1061→            {/* Table Header Info */}
+  1062→            <div className="flex items-center justify-between border-b px-4 py-3">
+  1063→              <div className="flex items-center gap-2">
+  1064→                <ArrowLeftRight className="h-4 w-4 text-emerald-500" />
+  1065→                <h3 className="text-sm font-semibold">Daftar Transaksi</h3>
+  1066→                <span className="text-muted-foreground text-xs">
+  1067→                  ({pagination?.total?.toLocaleString('id-ID')} transaksi)
+  1068→                </span>
+  1069→              </div>
+  1070→              <div className="text-muted-foreground text-xs">
+  1071→                Halaman {pagination?.page} dari {pagination?.totalPages}
+  1072→              </div>
+  1073→            </div>
+  1074→
+  1075→            {/* Table */}
+  1076→            <div className="overflow-x-auto">
+  1077→              <Table className="table-stripe">
+  1078→                <TableHeader className="table-header-enhanced">
+  1079→                  <TableRow className="hover:bg-transparent">
+  1080→                    <TableHead className="pl-4">Invoice</TableHead>
+  1081→                    <TableHead>Merchant</TableHead>
+  1082→                    <TableHead>Pelanggan</TableHead>
+  1083→                    <TableHead className="text-right">Jumlah</TableHead>
+  1084→                    <TableHead className="text-right">Biaya</TableHead>
+  1085→                    <TableHead>Metode</TableHead>
+  1086→                    <TableHead>Saluran</TableHead>
+  1087→                    <TableHead>Status</TableHead>
+  1088→                    <TableHead>Tanggal</TableHead>
+  1089→                  </TableRow>
+  1090→                </TableHeader>
+  1091→                <TableBody>
+  1092→                  <AnimatePresence mode="popLayout">
+  1093→                    {transactions.length === 0 ? (
+  1094→                      <TableRow>
+  1095→                        <TableCell
+  1096→                          colSpan={9}
+  1097→                          className="p-0"
+  1098→                        >
+  1099→                          <EmptyState
+  1100→                            title="Tidak ada transaksi ditemukan"
+  1101→                            description="Coba ubah filter atau kata kunci pencarian"
+  1102→                            icon="transaction"
+  1103→                          />
+  1104→                        </TableCell>
+  1105→                      </TableRow>
+  1106→                    ) : (
+  1107→                      transactions.map((tx) => (
+  1108→                        <motion.tr
+  1109→                          key={tx.id}
+  1110→                          initial={{ opacity: 0, x: -8 }}
+  1111→                          animate={{ opacity: 1, x: 0 }}
+  1112→                          exit={{ opacity: 0, x: 8 }}
+  1113→                          transition={{ duration: 0.2 }}
+  1114→                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50 table-row-hover"
+  1115→                          onClick={() => handleRowClick(tx)}
+  1116→                        >
+  1117→                          <TableCell className="pl-4">
+  1118→                            <span className="font-mono text-xs font-medium">
+  1119→                              {tx.invoiceNo}
+  1120→                            </span>
+  1121→                          </TableCell>
+  1122→                          <TableCell>
+  1123→                            <div className="flex items-center gap-2">
+  1124→                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
+  1125→                                <Store className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+  1126→                              </div>
+  1127→                              <span className="max-w-[120px] truncate text-sm">
+  1128→                                {tx.merchant.name}
+  1129→                              </span>
+  1130→                            </div>
+  1131→                          </TableCell>
+  1132→                          <TableCell>
+  1133→                            <span className="text-sm">
+  1134→                              {tx.customerName ||
+  1135→                                tx.customer?.name ||
+  1136→                                '-'}
+  1137→                            </span>
+  1138→                          </TableCell>
+  1139→                          <TableCell className="text-right">
+  1140→                            <span className="text-sm font-semibold">
+  1141→                              {formatRp(tx.amount)}
+  1142→                            </span>
+  1143→                          </TableCell>
+  1144→                          <TableCell className="text-right">
+  1145→                            <span className="text-muted-foreground text-xs">
+  1146→                              {formatRp(tx.fee)}
+  1147→                            </span>
+  1148→                          </TableCell>
+  1149→                          <TableCell>
+  1150→                            <div className="flex items-center gap-1.5">
+  1151→                              <CreditCard className="h-3 w-3 text-muted-foreground" />
+  1152→                              <span className="text-xs">{tx.paymentMethod}</span>
+  1153→                            </div>
+  1154→                          </TableCell>
+  1155→                          <TableCell>
+  1156→                            <span className="text-xs text-muted-foreground">
+  1157→                              {tx.paymentChannel}
+  1158→                            </span>
+  1159→                          </TableCell>
+  1160→                          <TableCell>
+  1161→                            <StatusBadge status={tx.status} />
+  1162→                          </TableCell>
+  1163→                          <TableCell>
+  1164→                            <span className="text-xs text-muted-foreground">
+  1165→                              {formatShortDate(tx.createdAt)}
+  1166→                            </span>
+  1167→                          </TableCell>
+  1168→                        </motion.tr>
+  1169→                      ))
+  1170→                    )}
+  1171→                  </AnimatePresence>
+  1172→                </TableBody>
+  1173→              </Table>
+  1174→            </div>
+  1175→
+  1176→            {/* Pagination */}
+  1177→            {pagination && pagination.totalPages > 1 && (
+  1178→              <div className="flex items-center justify-between border-t px-4 py-3">
+  1179→                <p className="text-muted-foreground text-xs">
+  1180→                  Menampilkan {(pagination.page - 1) * pagination.limit + 1}
+  1181→                  –{Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
+  1182→                  dari {pagination.total} transaksi
+  1183→                </p>
+  1184→                <Pagination>
+  1185→                  <PaginationContent>
+  1186→                    <PaginationItem>
+  1187→                      <PaginationPrevious
+  1188→                        href="#"
+  1189→                        onClick={(e) => {
+  1190→                          e.preventDefault();
+  1191→                          if (pagination.page > 1) setPage(pagination.page - 1);
+  1192→                        }}
+  1193→                        className={
+  1194→                          pagination.page <= 1
+  1195→                            ? 'pointer-events-none opacity-50'
+  1196→                            : 'cursor-pointer'
+  1197→                        }
+  1198→                      />
+  1199→                    </PaginationItem>
+  1200→                    {pageRange.map((p, idx) =>
+  1201→                      p === 'dots' ? (
+  1202→                        <PaginationItem key={`dots-${idx}`}>
+  1203→                          <PaginationEllipsis />
+  1204→                        </PaginationItem>
+  1205→                      ) : (
+  1206→                        <PaginationItem key={p}>
+  1207→                          <PaginationLink
+  1208→                            href="#"
+  1209→                            isActive={pagination.page === p}
+  1210→                            onClick={(e) => {
+  1211→                              e.preventDefault();
+  1212→                              setPage(p as number);
+  1213→                            }}
+  1214→                            className="cursor-pointer"
+  1215→                          >
+  1216→                            {p}
+  1217→                          </PaginationLink>
+  1218→                        </PaginationItem>
+  1219→                      ),
+  1220→                    )}
+  1221→                    <PaginationItem>
+  1222→                      <PaginationNext
+  1223→                        href="#"
+  1224→                        onClick={(e) => {
+  1225→                          e.preventDefault();
+  1226→                          if (pagination.page < pagination.totalPages)
+  1227→                            setPage(pagination.page + 1);
+  1228→                        }}
+  1229→                        className={
+  1230→                          pagination.page >= pagination.totalPages
+  1231→                            ? 'pointer-events-none opacity-50'
+  1232→                            : 'cursor-pointer'
+  1233→                        }
+  1234→                      />
+  1235→                    </PaginationItem>
+  1236→                  </PaginationContent>
+  1237→                </Pagination>
+  1238→              </div>
+  1239→            )}
+  1240→          </CardContent>
+  1241→        </Card>
+  1242→      </motion.div>
+  1243→
+  1244→      {/* ─── Detail Dialog ───────────────────────────────────────────── */}
+  1245→      <TransactionDetailDialog
+  1246→        tx={selectedTx}
+  1247→        open={dialogOpen}
+  1248→        onOpenChange={setDialogOpen}
+  1249→      />
+  1250→    </div>
+  1251→  );
+  1252→}
+  1253→

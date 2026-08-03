@@ -386,7 +386,7 @@ export default function Merchants() {
   }
 
   return (
-    <div className="space-y-6 bg-mesh">
+    <div className="space-y-6 bg-mesh animate-fade-in-up">
       <PageHeader
         title="Merchant"
         description="Kelola merchant dan konfigurasi pembayaran"
@@ -919,7 +919,7 @@ export default function Merchants() {
                                     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                                     return `${months[m - 1]} ${y}`;
                                   }}
-                                  formatter={(value: number) => formatMoney(value)}
+                                  formatter={(value: unknown) => formatMoney(Number(value))}
                                 />
                               }
                             />

@@ -170,6 +170,7 @@ const PIE_COLORS = ['hsl(160, 84%, 39%)', 'hsl(152, 70%, 53%)', 'hsl(160, 60%, 6
 const pieChartConfig = {
   value: {
     label: 'Jumlah Transaksi',
+    color: 'hsl(160, 84%, 39%)',
   },
   QRIS: { label: 'QRIS', color: 'hsl(160, 84%, 39%)' },
   'Bank Transfer': { label: 'Bank Transfer', color: 'hsl(152, 70%, 53%)' },
@@ -377,7 +378,7 @@ function ActivityFeed() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-emerald-500" />
-              <span className="rounded-full w-2 h-2 bg-emerald-500 inline-block mr-2 status-dot" />
+              <span className="rounded-full w-2 h-2 bg-emerald-500 inline-block mr-2 status-dot animate-pulse-subtle" />
               <CardTitle className="text-base">Aktivitas Terkini</CardTitle>
             </div>
             <span className="relative flex h-2.5 w-2.5">
@@ -766,9 +767,11 @@ export default function Dashboard() {
                   content={
                     <ChartTooltipContent
                       labelFormatter={(label) => `Bulan: ${label}`}
-                      formatter={(value: number, name: string) => {
-                        if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
-                        return [value.toLocaleString('id-ID'), 'Transaksi'];
+                      formatter={(value: unknown, name: unknown) => {
+                        const v = Number(value);
+                        const n = String(name);
+                        if (n === 'revenue') return [formatRp(v), 'Pendapatan'];
+                        return [v.toLocaleString('id-ID'), 'Transaksi'];
                       }}
                     />
                   }
@@ -952,11 +955,13 @@ export default function Dashboard() {
                   <ChartTooltip
                     content={
                       <ChartTooltipContent
-                        formatter={(value: number, name: string) => {
-                          const item = pieData.find((p) => p.name === name);
+                        formatter={(value: unknown, name: unknown) => {
+                          const v = Number(value);
+                          const n = String(name);
+                          const item = pieData.find((p) => p.name === n);
                           return [
-                            `${value} tx · ${item ? formatRp(item.amount) : ''}`,
-                            name,
+                            `${v} tx · ${item ? formatRp(item.amount) : ''}`,
+                            n,
                           ];
                         }}
                       />

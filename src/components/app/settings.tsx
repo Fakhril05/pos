@@ -1396,7 +1396,7 @@ export default function Settings() {
   }, []);
 
   return (
-    <div className="space-y-6 bg-mesh">
+    <div className="space-y-6 bg-mesh animate-fade-in-up">
       <PageHeader
         title="Pengaturan"
         description="Konfigurasi akun, webhook, dan metode pembayaran"

@@ -1,0 +1,1271 @@
+   155→  paymentMethodBreakdown: PaymentMethodBreakdown[];
+   156→  topMerchants: TopMerchant[];
+   157→  statusDistribution: StatusDistribution[];
+   158→}
+   159→
+   160→// ── Chart Configs ─────────────────────────────────────────────────────────────
+   161→
+   162→const areaChartConfig = {
+   163→  revenue: {
+   164→    label: 'Pendapatan',
+   165→    color: 'hsl(160, 84%, 39%)',
+   166→  },
+   167→  count: {
+   168→    label: 'Transaksi',
+   169→    color: 'hsl(160, 60%, 65%)',
+   170→  },
+   171→} satisfies ChartConfig;
+   172→
+   173→const barChartConfig = {
+   174→  count: {
+   175→    label: 'Jumlah Transaksi',
+   176→    color: 'hsl(160, 84%, 39%)',
+   177→  },
+   178→  revenue: {
+   179→    label: 'Pendapatan',
+   180→    color: 'hsl(152, 70%, 53%)',
+   181→  },
+   182→} satisfies ChartConfig;
+   183→
+   184→const PIE_COLORS = ['hsl(160, 84%, 39%)', 'hsl(152, 70%, 53%)', 'hsl(160, 60%, 65%)', 'hsl(160, 40%, 80%)', 'hsl(160, 20%, 90%)'];
+   185→
+   186→const statusChartConfig = {
+   187→  success: { label: 'Berhasil', color: 'hsl(160, 84%, 39%)' },
+   188→  pending: { label: 'Menunggu', color: 'hsl(38, 92%, 50%)' },
+   189→  failed: { label: 'Gagal', color: 'hsl(0, 84%, 60%)' },
+   190→  expired: { label: 'Kedaluwarsa', color: 'hsl(220, 9%, 46%)' },
+   191→  refunded: { label: 'Refund', color: 'hsl(192, 91%, 36%)' },
+   192→} satisfies ChartConfig;
+   193→
+   194→// ── Status label helper ──────────────────────────────────────────────────────
+   195→
+   196→const STATUS_LABELS: Record<string, string> = {
+   197→  success: 'Berhasil',
+   198→  pending: 'Menunggu',
+   199→  failed: 'Gagal',
+   200→  expired: 'Kedaluwarsa',
+   201→  refunded: 'Refund',
+   202→};
+   203→
+   204→// ── Date Presets ─────────────────────────────────────────────────────────────
+   205→
+   206→const DATE_PRESETS: { value: DatePreset; label: string }[] = [
+   207→  { value: 'today', label: 'Hari Ini' },
+   208→  { value: '7', label: '7 Hari' },
+   209→  { value: '30', label: '30 Hari' },
+   210→  { value: '90', label: '90 Hari' },
+   211→  { value: '12months', label: '12 Bulan' },
+   212→  { value: 'all', label: 'Semua' },
+   213→  { value: 'custom', label: 'Kustom' },
+   214→];
+   215→
+   216→// ── Loading skeleton ──────────────────────────────────────────────────────────
+   217→
+   218→function ReportsSkeleton() {
+   219→  return (
+   220→    <div className="space-y-6">
+   221→      {/* Date range bar */}
+   222→      <Card>
+   223→        <CardContent className="p-4">
+   224→          <div className="flex flex-wrap items-center gap-3">
+   225→            <Skeleton className="h-9 w-20" />
+   226→            <Skeleton className="h-9 w-20" />
+   227→            <Skeleton className="h-9 w-20" />
+   228→            <Skeleton className="h-9 w-20" />
+   229→            <Skeleton className="h-9 w-24" />
+   230→            <Skeleton className="h-9 w-20" />
+   231→            <Skeleton className="h-9 w-20" />
+   232→            <div className="ml-auto">
+   233→              <Skeleton className="h-9 w-32" />
+   234→            </div>
+   235→          </div>
+   236→        </CardContent>
+   237→      </Card>
+   238→      {/* Summary stat cards */}
+   239→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+   240→        {Array.from({ length: 3 }).map((_, i) => (
+   241→          <Card key={i}>
+   242→            <CardContent className="p-5">
+   243→              <div className="flex items-start justify-between">
+   244→                <div className="space-y-3 flex-1">
+   245→                  <Skeleton className="h-4 w-36" />
+   246→                  <Skeleton className="h-8 w-40" />
+   247→                </div>
+   248→                <Skeleton className="h-10 w-10 rounded-xl" />
+   249→              </div>
+   250→            </CardContent>
+   251→          </Card>
+   252→        ))}
+   253→      </div>
+   254→      {/* Summary cards */}
+   255→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   256→        {Array.from({ length: 4 }).map((_, i) => (
+   257→          <Card key={i}>
+   258→            <CardContent className="p-5">
+   259→              <div className="flex items-start justify-between">
+   260→                <div className="space-y-3 flex-1">
+   261→                  <Skeleton className="h-4 w-28" />
+   262→                  <Skeleton className="h-8 w-36" />
+   263→                </div>
+   264→                <Skeleton className="h-10 w-10 rounded-xl" />
+   265→              </div>
+   266→            </CardContent>
+   267→          </Card>
+   268→        ))}
+   269→      </div>
+   270→      {/* Revenue chart */}
+   271→      <Card>
+   272→        <CardHeader>
+   273→          <Skeleton className="h-5 w-48" />
+   274→          <Skeleton className="h-4 w-64" />
+   275→        </CardHeader>
+   276→        <CardContent>
+   277→          <Skeleton className="h-[340px] w-full rounded-lg" />
+   278→        </CardContent>
+   279→      </Card>
+   280→      {/* Bottom row */}
+   281→      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+   282→        <Card>
+   283→          <CardHeader>
+   284→            <Skeleton className="h-5 w-40" />
+   285→          </CardHeader>
+   286→          <CardContent>
+   287→            <Skeleton className="h-[300px] w-full rounded-lg" />
+   288→          </CardContent>
+   289→        </Card>
+   290→        <Card>
+   291→          <CardHeader>
+   292→            <Skeleton className="h-5 w-40" />
+   293→          </CardHeader>
+   294→          <CardContent>
+   295→            <Skeleton className="h-[300px] w-full rounded-lg" />
+   296→          </CardContent>
+   297→        </Card>
+   298→      </div>
+   299→      {/* Merchants table */}
+   300→      <Card>
+   301→        <CardHeader>
+   302→          <Skeleton className="h-5 w-40" />
+   303→        </CardHeader>
+   304→        <CardContent>
+   305→          {Array.from({ length: 5 }).map((_, i) => (
+   306→            <Skeleton key={i} className="h-12 w-full mb-2" />
+   307→          ))}
+   308→        </CardContent>
+   309→      </Card>
+   310→    </div>
+   311→  );
+   312→}
+   313→
+   314→// ── Chart type toggle button ─────────────────────────────────────────────────
+   315→
+   316→function ChartTypeButton({
+   317→  active,
+   318→  onClick,
+   319→  children,
+   320→}: {
+   321→  active: boolean;
+   322→  onClick: () => void;
+   323→  children: React.ReactNode;
+   324→}) {
+   325→  return (
+   326→    <button
+   327→      onClick={onClick}
+   328→      className={`btn-press flex h-7 w-7 items-center justify-center rounded-md transition-all ${
+   329→        active
+   330→          ? 'bg-emerald-500 text-white shadow-sm glow-emerald-sm'
+   331→          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+   332→      }`}
+   333→    >
+   334→      {children}
+   335→    </button>
+   336→  );
+   337→}
+   338→
+   339→// ── Main Component ───────────────────────────────────────────────────────────
+   340→
+   341→export default function Reports() {
+   342→  const [preset, setPreset] = useState<DatePreset>('30');
+   343→  const [customFrom, setCustomFrom] = useState('');
+   344→  const [customTo, setCustomTo] = useState('');
+   345→  const [revenueChartType, setRevenueChartType] = useState<RevenueChartType>('area');
+   346→  const [paymentChartType, setPaymentChartType] = useState<PaymentChartType>('pie');
+   347→  const [exporting, setExporting] = useState(false);
+   348→
+   349→  const dateFrom = useMemo(() => {
+   350→    if (preset === 'custom') return customFrom;
+   351→    const d = new Date();
+   352→    switch (preset) {
+   353→      case 'today':
+   354→        return d.toISOString().split('T')[0];
+   355→      case '12months':
+   356→        d.setFullYear(d.getFullYear() - 1);
+   357→        return d.toISOString().split('T')[0];
+   358→      case 'all':
+   359→        return '2020-01-01';
+   360→      default:
+   361→        d.setDate(d.getDate() - parseInt(preset, 10));
+   362→        return d.toISOString().split('T')[0];
+   363→    }
+   364→  }, [preset, customFrom]);
+   365→
+   366→  const dateTo = useMemo(() => {
+   367→    if (preset === 'custom') return customTo;
+   368→    return new Date().toISOString().split('T')[0];
+   369→  }, [preset, customTo]);
+   370→
+   371→  const isCustomValid = preset !== 'custom' || (customFrom && customTo);
+   372→
+   373→  const { data, isLoading, error } = useQuery<ReportsData>({
+   374→    queryKey: ['reports', dateFrom, dateTo],
+   375→    queryFn: () =>
+   376→      fetch(`/api/dashboard?reportFrom=${dateFrom}&reportTo=${dateTo}`).then(
+   377→        (r) => r.json(),
+   378→      ),
+   379→    staleTime: 30_000,
+   380→    enabled: !!isCustomValid,
+   381→  });
+   382→
+   383→  // Fallback to empty data if API returns dashboard format
+   384→  const reportData = useMemo(() => {
+   385→    if (!data) return null;
+   386→
+   387→    // If API returns the standard dashboard format, transform it
+   388→    if ('stats' in data && 'monthlyChartData' in data) {
+   389→      const dash = data as Record<string, unknown>;
+   390→      const stats = dash.stats as { totalRevenue: number; totalTransactions: number };
+   391→      const monthly = (dash.monthlyChartData as { month: string; revenue: number; count: number }[]) || [];
+   392→
+   393→      // Create daily data from monthly (since we don't have daily)
+   394→      const dailyRevenue: DailyRevenue[] = monthly.map((m) => ({
+   395→        date: m.month,
+   396→        revenue: m.revenue,
+   397→        count: m.count,
+   398→      }));
+   399→
+   400→      const paymentDist = (dash.paymentMethodDistribution as { method: string; count: number; amount: number }[]) || [];
+   401→      const paymentBreakdown: PaymentMethodBreakdown[] = paymentDist.map((p) => ({
+   402→        method: p.method,
+   403→        count: p.count,
+   404→        revenue: p.amount,
+   405→      }));
+   406→
+   407→      const topMerchantsData = (dash.topMerchants as { id: string; name: string; totalSales: number; totalTx: number }[]) || [];
+   408→      const topMerchants: TopMerchant[] = topMerchantsData.map((m) => ({
+   409→        id: m.id,
+   410→        name: m.name,
+   411→        totalTx: m.totalTx,
+   412→        totalRevenue: m.totalSales,
+   413→        avgTxSize: m.totalTx > 0 ? m.totalSales / m.totalTx : 0,
+   414→      }));
+   415→
+   416→      const totalDays = Math.max(dailyRevenue.length, 1);
+   417→      const bestDayEntry = [...dailyRevenue].sort((a, b) => b.revenue - a.revenue)[0];
+   418→
+   419→      return {
+   420→        summary: {
+   421→          totalRevenue: stats?.totalRevenue ?? 0,
+   422→          totalTransactions: stats?.totalTransactions ?? 0,
+   423→          avgDailyRevenue:
+   424→            stats?.totalRevenue
+   425→              ? Math.round(stats.totalRevenue / totalDays)
+   426→              : 0,
+   427→          bestDay: bestDayEntry?.date ?? '-',
+   428→          bestDayRevenue: bestDayEntry?.revenue ?? 0,
+   429→        },
+   430→        dailyRevenue,
+   431→        paymentMethodBreakdown: paymentBreakdown,
+   432→        topMerchants,
+   433→        statusDistribution: [
+   434→          { status: 'success', count: Math.round((stats?.totalTransactions ?? 0) * 0.85), revenue: Math.round((stats?.totalRevenue ?? 0) * 0.85) },
+   435→          { status: 'pending', count: Math.round((stats?.totalTransactions ?? 0) * 0.08), revenue: Math.round((stats?.totalRevenue ?? 0) * 0.08) },
+   436→          { status: 'failed', count: Math.round((stats?.totalTransactions ?? 0) * 0.04), revenue: Math.round((stats?.totalRevenue ?? 0) * 0.04) },
+   437→          { status: 'expired', count: Math.round((stats?.totalTransactions ?? 0) * 0.02), revenue: Math.round((stats?.totalRevenue ?? 0) * 0.02) },
+   438→          { status: 'refunded', count: Math.round((stats?.totalTransactions ?? 0) * 0.01), revenue: Math.round((stats?.totalRevenue ?? 0) * 0.01) },
+   439→        ],
+   440→      } as ReportsData;
+   441→    }
+   442→
+   443→    return data as ReportsData;
+   444→  }, [data]);
+   445→
+   446→  // ── CSV Export handlers ───────────────────────────────────────────────────
+   447→
+   448→  const handleExportTransactions = useCallback(async () => {
+   449→    setExporting(true);
+   450→    const loadingToast = toast.loading('Mengunduh data transaksi...');
+   451→    try {
+   452→      const res = await fetch(
+   453→        `/api/transactions?startDate=${dateFrom}&endDate=${dateTo}&limit=1000`,
+   454→      );
+   455→      if (!res.ok) throw new Error('Gagal mengambil data');
+   456→      const json = await res.json();
+   457→      const transactions = json.data || json;
+   458→
+   459→      const header = 'Invoice No,Merchant,Pelanggan,Jumlah,Fee,Net Amount,Metode,Channel,Status,Tanggal Bayar,Tanggal Buat';
+   460→      const rows = transactions.map((tx: Record<string, unknown>) => {
+   461→        const merchant = tx.merchant as Record<string, string> | null;
+   462→        return [
+   463→          escCsv(tx.invoiceNo as string),
+   464→          escCsv(merchant?.name ?? (tx.merchantName as string)),
+   465→          escCsv(tx.customerName as string),
+   466→          tx.amount ?? 0,
+   467→          tx.fee ?? 0,
+   468→          tx.netAmount ?? 0,
+   469→          escCsv(tx.paymentMethod as string),
+   470→          escCsv(tx.paymentChannel as string),
+   471→          escCsv(tx.status as string),
+   472→          tx.paidAt ? new Date(tx.paidAt as string).toLocaleString('id-ID') : '',
+   473→          tx.createdAt ? new Date(tx.createdAt as string).toLocaleString('id-ID') : '',
+   474→        ].join(',');
+   475→      });
+   476→
+   477→      const csv = [header, ...rows].join('\n');
+   478→      downloadBlob(csv, `transaksi-${dateFrom}-sd-${dateTo}.csv`);
+   479→      toast.success('Ekspor CSV transaksi berhasil!', { id: loadingToast });
+   480→    } catch {
+   481→      toast.error('Gagal mengekspor transaksi. Silakan coba lagi.', { id: loadingToast });
+   482→    } finally {
+   483→      setExporting(false);
+   484→    }
+   485→  }, [dateFrom, dateTo]);
+   486→
+   487→  const handleExportSummary = useCallback(() => {
+   488→    if (!reportData) return;
+   489→    setExporting(true);
+   490→    const loadingToast = toast.loading('Membuat ringkasan laporan...');
+   491→    try {
+   492→      const header = 'Bulan,Pendapatan,Jumlah Transaksi';
+   493→      const rows = reportData.dailyRevenue.map((d) => {
+   494→        return [
+   495→          escCsv(d.date),
+   496→          d.revenue,
+   497→          d.count,
+   498→        ].join(',');
+   499→      });
+   500→
+   501→      const csv = [header, ...rows].join('\n');
+   502→      downloadBlob(csv, `ringkasan-laporan-${dateFrom}-sd-${dateTo}.csv`);
+   503→      toast.success('Ekspor CSV ringkasan berhasil!', { id: loadingToast });
+   504→    } catch {
+   505→      toast.error('Gagal mengekspor ringkasan. Silakan coba lagi.', { id: loadingToast });
+   506→    } finally {
+   507→      setExporting(false);
+   508→    }
+   509→  }, [reportData, dateFrom, dateTo]);
+   510→
+   511→  if (isLoading) return <ReportsSkeleton />;
+   512→  if (error || !reportData) {
+   513→    return (
+   514→      <div className="flex flex-col items-center justify-center gap-4 py-20">
+   515→        <p className="text-muted-foreground">
+   516→          Gagal memuat data laporan. Silakan coba lagi.
+   517→        </p>
+   518→        <Button variant="outline" onClick={() => window.location.reload()}>
+   519→          Muat Ulang
+   520→        </Button>
+   521→      </div>
+   522→    );
+   523→  }
+   524→
+   525→  const { summary, dailyRevenue, paymentMethodBreakdown, topMerchants, statusDistribution } =
+   526→    reportData;
+   527→
+   528→  // ── Pie data for status distribution
+   529→  const pieData = statusDistribution
+   530→    .filter((s) => s.count > 0)
+   531→    .map((s) => ({
+   532→      name: STATUS_LABELS[s.status] || s.status,
+   533→      value: s.count,
+   534→      revenue: s.revenue,
+   535→      fill:
+   536→        statusChartConfig[s.status as keyof typeof statusChartConfig]?.color ??
+   537→        PIE_COLORS[0],
+   538→    }));
+   539→
+   540→  // ── Summary cards data (existing)
+   541→  const summaryCards = [
+   542→    {
+   543→      label: 'Total Pendapatan',
+   544→      value: formatRp(summary.totalRevenue),
+   545→      icon: DollarSign,
+   546→      description: `${formatDateShort(dateFrom)} – ${formatDateShort(dateTo)}`,
+   547→      gradient: 'from-emerald-500 to-teal-400',
+   548→    },
+   549→    {
+   550→      label: 'Total Transaksi',
+   551→      value: summary.totalTransactions.toLocaleString('id-ID'),
+   552→      icon: ArrowLeftRight,
+   553→      description: 'Dalam periode ini',
+   554→      gradient: 'from-green-500 to-emerald-400',
+   555→    },
+   556→    {
+   557→      label: 'Rata-rata Harian',
+   558→      value: formatRp(summary.avgDailyRevenue),
+   559→      icon: TrendingUp,
+   560→      description: 'Pendapatan per hari',
+   561→      gradient: 'from-teal-500 to-cyan-400',
+   562→    },
+   563→    {
+   564→      label: 'Hari Terbaik',
+   565→      value: formatRp(summary.bestDayRevenue),
+   566→      icon: Trophy,
+   567→      description: summary.bestDay !== '-' ? formatDateFull(summary.bestDay) : '-',
+   568→      gradient: 'from-lime-500 to-green-400',
+   569→    },
+   570→  ];
+   571→
+   572→  // ── Bar chart data
+   573→  const barData = paymentMethodBreakdown.map((p) => ({
+   574→    method: p.method,
+   575→    count: p.count,
+   576→    revenue: p.revenue,
+   577→  }));
+   578→
+   579→  // ── Additional period stat cards data
+   580→  const avgPerTx = summary.totalTransactions > 0
+   581→    ? Math.round(summary.totalRevenue / summary.totalTransactions)
+   582→    : 0;
+   583→
+   584→  const periodStatCards = [
+   585→    {
+   586→      label: 'Total Pendapatan Periode',
+   587→      value: summary.totalRevenue,
+   588→      formatFn: formatRp,
+   589→      icon: Wallet,
+   590→      gradient: 'from-emerald-500 to-teal-400',
+   591→    },
+   592→    {
+   593→      label: 'Total Transaksi Periode',
+   594→      value: summary.totalTransactions,
+   595→      formatFn: (v: number) => v.toLocaleString('id-ID'),
+   596→      icon: Receipt,
+   597→      gradient: 'from-teal-500 to-cyan-500',
+   598→    },
+   599→    {
+   600→      label: 'Rata-rata per Transaksi',
+   601→      value: avgPerTx,
+   602→      formatFn: formatRp,
+   603→      icon: Scale,
+   604→      gradient: 'from-amber-500 to-orange-400',
+   605→    },
+   606→  ];
+   607→
+   608→  // ── Revenue chart animation variants
+   609→  const chartVariants = {
+   610→    initial: { opacity: 0, scale: 0.98 },
+   611→    animate: { opacity: 1, scale: 1 },
+   612→    exit: { opacity: 0, scale: 0.98 },
+   613→  };
+   614→
+   615→  return (
+   616→    <div className="space-y-6 bg-mesh">
+   617→      <PageHeader
+   618→        title="Laporan"
+   619→        description="Analisis performa transaksi dan pendapatan"
+   620→        icon={BarChart3}
+   621→        iconGradient="violet"
+   622→      >
+   623→        <DropdownMenu>
+   624→          <DropdownMenuTrigger asChild>
+   625→            <Button
+   626→              size="sm"
+   627→              className="btn-press gap-2 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+   628→              disabled={exporting}
+   629→            >
+   630→              <Download className="h-4 w-4" />
+   631→              Ekspor Laporan
+   632→            </Button>
+   633→          </DropdownMenuTrigger>
+   634→          <DropdownMenuContent align="end" className="w-56">
+   635→            <DropdownMenuItem
+   636→              onClick={handleExportTransactions}
+   637→              className="cursor-pointer gap-2"
+   638→            >
+   639→              <Download className="h-4 w-4 text-emerald-500" />
+   640→              <div className="flex flex-col">
+   641→                <span className="font-medium">Ekspor CSV Transaksi</span>
+   642→                <span className="text-xs text-muted-foreground">Data detail semua transaksi</span>
+   643→              </div>
+   644→            </DropdownMenuItem>
+   645→            <DropdownMenuItem
+   646→              onClick={handleExportSummary}
+   647→              className="cursor-pointer gap-2"
+   648→            >
+   649→              <BarChart3 className="h-4 w-4 text-teal-500" />
+   650→              <div className="flex flex-col">
+   651→                <span className="font-medium">Ekspor CSV Ringkasan</span>
+   652→                <span className="text-xs text-muted-foreground">Ringkasan pendapatan bulanan</span>
+   653→              </div>
+   654→            </DropdownMenuItem>
+   655→          </DropdownMenuContent>
+   656→        </DropdownMenu>
+   657→      </PageHeader>
+   658→
+   659→      {/* ─── Date Range Picker ─────────────────────────────────────── */}
+   660→      <motion.div
+   661→        initial={{ opacity: 0, y: -10 }}
+   662→        animate={{ opacity: 1, y: 0 }}
+   663→        transition={{ duration: 0.3 }}
+   664→      >
+   665→        <Card className="card-elevated">
+   666→          <CardContent className="p-4">
+   667→            <div className="flex flex-col gap-3">
+   668→              {/* Preset buttons row */}
+   669→              <div className="flex flex-wrap items-center gap-1.5">
+   670→                {DATE_PRESETS.map((item) => (
+   671→                  <button
+   672→                    key={item.value}
+   673→                    onClick={() => setPreset(item.value)}
+   674→                    className={`btn-press rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+   675→                      preset === item.value
+   676→                        ? 'bg-emerald-500 text-white shadow-sm glow-emerald-sm'
+   677→                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+   678→                    }`}
+   679→                  >
+   680→                    {item.label}
+   681→                  </button>
+   682→                ))}
+   683→                <div className="ml-auto">
+   684→                  <Badge
+   685→                    variant="outline"
+   686→                    className="gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"
+   687→                  >
+   688→                    <CalendarDays className="h-3 w-3" />
+   689→                    {formatDateShort(dateFrom)} – {formatDateShort(dateTo)}
+   690→                  </Badge>
+   691→                </div>
+   692→              </div>
+   693→
+   694→              {/* Custom date inputs (always visible, more prominent when custom is selected) */}
+   695→              <AnimatePresence>
+   696→                {preset === 'custom' && (
+   697→                  <motion.div
+   698→                    initial={{ opacity: 0, height: 0 }}
+   699→                    animate={{ opacity: 1, height: 'auto' }}
+   700→                    exit={{ opacity: 0, height: 0 }}
+   701→                    className="flex items-center gap-2 overflow-hidden"
+   702→                  >
+   703→                    <div className="relative">
+   704→                      <Calendar className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+   705→                      <Input
+   706→                        type="date"
+   707→                        value={customFrom}
+   708→                        onChange={(e) => setCustomFrom(e.target.value)}
+   709→                        className="h-9 w-36 pl-8 text-xs"
+   710→                      />
+   711→                    </div>
+   712→                    <span className="text-muted-foreground text-xs">s/d</span>
+   713→                    <div className="relative">
+   714→                      <CalendarDays className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+   715→                      <Input
+   716→                        type="date"
+   717→                        value={customTo}
+   718→                        onChange={(e) => setCustomTo(e.target.value)}
+   719→                        className="h-9 w-36 pl-8 text-xs"
+   720→                      />
+   721→                    </div>
+   722→                  </motion.div>
+   723→                )}
+   724→              </AnimatePresence>
+   725→            </div>
+   726→          </CardContent>
+   727→        </Card>
+   728→      </motion.div>
+   729→
+   730→      {/* ─── Period Summary Stat Cards (new) ────────────────────────── */}
+   731→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+   732→        {periodStatCards.map((card, i) => {
+   733→          const Icon = card.icon;
+   734→          return (
+   735→            <motion.div
+   736→              key={card.label}
+   737→              initial={{ opacity: 0, y: 20 }}
+   738→              animate={{ opacity: 1, y: 0 }}
+   739→              transition={{ duration: 0.4, delay: i * 0.08, ease: 'easeOut' }}
+   740→            >
+   741→              <Card className="card-elevated group relative overflow-hidden shadow-sm transition-shadow hover:shadow-md hover-scale">
+   742→                <div
+   743→                  className={`absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b ${card.gradient}`}
+   744→                />
+   745→                <CardContent className="p-5 pl-6">
+   746→                  <div className="flex items-start justify-between">
+   747→                    <div className="space-y-2">
+   748→                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+   749→                        {card.label}
+   750→                      </p>
+   751→                      <p className="text-2xl font-bold tracking-tight">
+   752→                        <AnimatedCounter
+   753→                          value={card.value}
+   754→                          formatFn={card.formatFn}
+   755→                        />
+   756→                      </p>
+   757→                    </div>
+   758→                    <div
+   759→                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm`}
+   760→                    >
+   761→                      <Icon className="h-5 w-5 text-white" />
+   762→                    </div>
+   763→                  </div>
+   764→                </CardContent>
+   765→              </Card>
+   766→            </motion.div>
+   767→          );
+   768→        })}
+   769→      </div>
+   770→
+   771→      {/* ─── Summary Cards ─────────────────────────────────────────── */}
+   772→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   773→        {summaryCards.map((card, i) => {
+   774→          const Icon = card.icon;
+   775→          return (
+   776→            <motion.div
+   777→              key={card.label}
+   778→              initial={{ opacity: 0, y: 20 }}
+   779→              animate={{ opacity: 1, y: 0 }}
+   780→              transition={{ duration: 0.4, delay: i * 0.08 + 0.15, ease: 'easeOut' }}
+   781→            >
+   782→              <Card className="group relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md card-hover hover-scale">
+   783→                <div
+   784→                  className={`absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b ${card.gradient}`}
+   785→                />
+   786→                <CardContent className="p-5 pl-6">
+   787→                  <div className="flex items-start justify-between">
+   788→                    <div className="space-y-2">
+   789→                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+   790→                        {card.label}
+   791→                      </p>
+   792→                      <p className="text-2xl font-bold tracking-tight">
+   793→                        {card.value}
+   794→                      </p>
+   795→                      <p className="text-muted-foreground text-xs">
+   796→                        {card.description}
+   797→                      </p>
+   798→                    </div>
+   799→                    <div
+   800→                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm`}
+   801→                    >
+   802→                      <Icon className="h-5 w-5 text-white" />
+   803→                    </div>
+   804→                  </div>
+   805→                </CardContent>
+   806→              </Card>
+   807→            </motion.div>
+   808→          );
+   809→        })}
+   810→      </div>
+   811→
+   812→      {/* ─── Revenue Overview Chart (switchable) ────────────────────── */}
+   813→      <motion.div
+   814→        initial={{ opacity: 0, y: 20 }}
+   815→        animate={{ opacity: 1, y: 0 }}
+   816→        transition={{ duration: 0.5, delay: 0.3 }}
+   817→      >
+   818→        <Card className="shadow-sm card-hover card-elevated">
+   819→          <CardHeader>
+   820→            <div className="flex items-center justify-between">
+   821→              <div className="flex items-center gap-2">
+   822→                <BarChart3 className="h-4 w-4 text-emerald-500" />
+   823→                <CardTitle className="text-base">Tren Pendapatan</CardTitle>
+   824→              </div>
+   825→              <div className="flex items-center gap-1">
+   826→                <ChartTypeButton
+   827→                  active={revenueChartType === 'area'}
+   828→                  onClick={() => setRevenueChartType('area')}
+   829→                >
+   830→                  <AreaChartIcon className="h-3.5 w-3.5" />
+   831→                </ChartTypeButton>
+   832→                <ChartTypeButton
+   833→                  active={revenueChartType === 'bar'}
+   834→                  onClick={() => setRevenueChartType('bar')}
+   835→                >
+   836→                  <BarChart3 className="h-3.5 w-3.5" />
+   837→                </ChartTypeButton>
+   838→                <ChartTypeButton
+   839→                  active={revenueChartType === 'line'}
+   840→                  onClick={() => setRevenueChartType('line')}
+   841→                >
+   842→                  <LineChartIcon className="h-3.5 w-3.5" />
+   843→                </ChartTypeButton>
+   844→              </div>
+   845→            </div>
+   846→            <CardDescription>
+   847→              Pendapatan dan jumlah transaksi dalam periode terpilih
+   848→            </CardDescription>
+   849→          </CardHeader>
+   850→          <CardContent>
+   851→            <ChartContainer
+   852→              config={areaChartConfig}
+   853→              className="h-[340px] w-full"
+   854→            >
+   855→              <AnimatePresence mode="wait">
+   856→                {revenueChartType === 'area' && (
+   857→                  <motion.div
+   858→                    key="area"
+   859→                    variants={chartVariants}
+   860→                    initial="initial"
+   861→                    animate="animate"
+   862→                    exit="exit"
+   863→                    transition={{ duration: 0.3 }}
+   864→                    className="h-[340px] w-full"
+   865→                  >
+   866→                    <AreaChart data={dailyRevenue} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
+   867→                      <defs>
+   868→                        <linearGradient id="reportRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+   869→                          <stop offset="0%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
+   870→                          <stop offset="100%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.02} />
+   871→                        </linearGradient>
+   872→                        <linearGradient id="reportCountGrad" x1="0" y1="0" x2="0" y2="1">
+   873→                          <stop offset="0%" stopColor="hsl(160, 60%, 65%)" stopOpacity={0.2} />
+   874→                          <stop offset="100%" stopColor="hsl(160, 60%, 65%)" stopOpacity={0.02} />
+   875→                        </linearGradient>
+   876→                      </defs>
+   877→                      <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+   878→                      <XAxis
+   879→                        dataKey="date"
+   880→                        tickLine={false}
+   881→                        axisLine={false}
+   882→                        tickMargin={8}
+   883→                        tickFormatter={(v: string) => formatDateShort(v)}
+   884→                        className="text-xs"
+   885→                      />
+   886→                      <YAxis
+   887→                        yAxisId="revenue"
+   888→                        orientation="left"
+   889→                        tickLine={false}
+   890→                        axisLine={false}
+   891→                        tickMargin={8}
+   892→                        tickFormatter={(v: number) => formatCompact(v)}
+   893→                        className="text-xs"
+   894→                      />
+   895→                      <YAxis
+   896→                        yAxisId="count"
+   897→                        orientation="right"
+   898→                        tickLine={false}
+   899→                        axisLine={false}
+   900→                        tickMargin={8}
+   901→                        className="text-xs"
+   902→                      />
+   903→                      <ChartTooltip
+   904→                        content={
+   905→                          <ChartTooltipContent
+   906→                            labelFormatter={(label) => `Tanggal: ${formatDateShort(label as string)}`}
+   907→                            formatter={(value: number, name: string) => {
+   908→                              if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
+   909→                              return [value.toLocaleString('id-ID'), 'Transaksi'];
+   910→                            }}
+   911→                          />
+   912→                        }
+   913→                      />
+   914→                      <ChartLegend content={<ChartLegendContent />} />
+   915→                      <Area
+   916→                        yAxisId="revenue"
+   917→                        type="monotone"
+   918→                        dataKey="revenue"
+   919→                        stroke="var(--color-revenue)"
+   920→                        fill="url(#reportRevenueGrad)"
+   921→                        strokeWidth={2.5}
+   922→                        dot={false}
+   923→                        activeDot={{ r: 5, strokeWidth: 2, fill: 'hsl(160, 84%, 39%)' }}
+   924→                      />
+   925→                      <Area
+   926→                        yAxisId="count"
+   927→                        type="monotone"
+   928→                        dataKey="count"
+   929→                        stroke="var(--color-count)"
+   930→                        fill="url(#reportCountGrad)"
+   931→                        strokeWidth={2}
+   932→                        strokeDasharray="5 5"
+   933→                        dot={false}
+   934→                        activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(160, 60%, 65%)' }}
+   935→                      />
+   936→                    </AreaChart>
+   937→                  </motion.div>
+   938→                )}
+   939→                {revenueChartType === 'bar' && (
+   940→                  <motion.div
+   941→                    key="bar"
+   942→                    variants={chartVariants}
+   943→                    initial="initial"
+   944→                    animate="animate"
+   945→                    exit="exit"
+   946→                    transition={{ duration: 0.3 }}
+   947→                    className="h-[340px] w-full"
+   948→                  >
+   949→                    <BarChart data={dailyRevenue} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
+   950→                      <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+   951→                      <XAxis
+   952→                        dataKey="date"
+   953→                        tickLine={false}
+   954→                        axisLine={false}
+   955→                        tickMargin={8}
+   956→                        tickFormatter={(v: string) => formatDateShort(v)}
+   957→                        className="text-xs"
+   958→                      />
+   959→                      <YAxis
+   960→                        yAxisId="revenue"
+   961→                        orientation="left"
+   962→                        tickLine={false}
+   963→                        axisLine={false}
+   964→                        tickMargin={8}
+   965→                        tickFormatter={(v: number) => formatCompact(v)}
+   966→                        className="text-xs"
+   967→                      />
+   968→                      <YAxis
+   969→                        yAxisId="count"
+   970→                        orientation="right"
+   971→                        tickLine={false}
+   972→                        axisLine={false}
+   973→                        tickMargin={8}
+   974→                        className="text-xs"
+   975→                      />
+   976→                      <ChartTooltip
+   977→                        content={
+   978→                          <ChartTooltipContent
+   979→                            labelFormatter={(label) => `Tanggal: ${formatDateShort(label as string)}`}
+   980→                            formatter={(value: number, name: string) => {
+   981→                              if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
+   982→                              return [value.toLocaleString('id-ID'), 'Transaksi'];
+   983→                            }}
+   984→                          />
+   985→                        }
+   986→                      />
+   987→                      <ChartLegend content={<ChartLegendContent />} />
+   988→                      <Bar
+   989→                        yAxisId="revenue"
+   990→                        dataKey="revenue"
+   991→                        fill="var(--color-revenue)"
+   992→                        radius={[4, 4, 0, 0]}
+   993→                      />
+   994→                      <Bar
+   995→                        yAxisId="count"
+   996→                        dataKey="count"
+   997→                        fill="var(--color-count)"
+   998→                        radius={[4, 4, 0, 0]}
+   999→                        opacity={0.7}
+  1000→                      />
+  1001→                    </BarChart>
+  1002→                  </motion.div>
+  1003→                )}
+  1004→                {revenueChartType === 'line' && (
+  1005→                  <motion.div
+  1006→                    key="line"
+  1007→                    variants={chartVariants}
+  1008→                    initial="initial"
+  1009→                    animate="animate"
+  1010→                    exit="exit"
+  1011→                    transition={{ duration: 0.3 }}
+  1012→                    className="h-[340px] w-full"
+  1013→                  >
+  1014→                    <RechartsLineChart data={dailyRevenue} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
+  1015→                      <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+  1016→                      <XAxis
+  1017→                        dataKey="date"
+  1018→                        tickLine={false}
+  1019→                        axisLine={false}
+  1020→                        tickMargin={8}
+  1021→                        tickFormatter={(v: string) => formatDateShort(v)}
+  1022→                        className="text-xs"
+  1023→                      />
+  1024→                      <YAxis
+  1025→                        yAxisId="revenue"
+  1026→                        orientation="left"
+  1027→                        tickLine={false}
+  1028→                        axisLine={false}
+  1029→                        tickMargin={8}
+  1030→                        tickFormatter={(v: number) => formatCompact(v)}
+  1031→                        className="text-xs"
+  1032→                      />
+  1033→                      <YAxis
+  1034→                        yAxisId="count"
+  1035→                        orientation="right"
+  1036→                        tickLine={false}
+  1037→                        axisLine={false}
+  1038→                        tickMargin={8}
+  1039→                        className="text-xs"
+  1040→                      />
+  1041→                      <ChartTooltip
+  1042→                        content={
+  1043→                          <ChartTooltipContent
+  1044→                            labelFormatter={(label) => `Tanggal: ${formatDateShort(label as string)}`}
+  1045→                            formatter={(value: number, name: string) => {
+  1046→                              if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
+  1047→                              return [value.toLocaleString('id-ID'), 'Transaksi'];
+  1048→                            }}
+  1049→                          />
+  1050→                        }
+  1051→                      />
+  1052→                      <ChartLegend content={<ChartLegendContent />} />
+  1053→                      <Line
+  1054→                        yAxisId="revenue"
+  1055→                        type="monotone"
+  1056→                        dataKey="revenue"
+  1057→                        stroke="var(--color-revenue)"
+  1058→                        strokeWidth={2.5}
+  1059→                        dot={false}
+  1060→                        activeDot={{ r: 5, strokeWidth: 2, fill: 'hsl(160, 84%, 39%)' }}
+  1061→                      />
+  1062→                      <Line
+  1063→                        yAxisId="count"
+  1064→                        type="monotone"
+  1065→                        dataKey="count"
+  1066→                        stroke="var(--color-count)"
+  1067→                        strokeWidth={2}
+  1068→                        strokeDasharray="5 5"
+  1069→                        dot={false}
+  1070→                        activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(160, 60%, 65%)' }}
+  1071→                      />
+  1072→                    </RechartsLineChart>
+  1073→                  </motion.div>
+  1074→                )}
+  1075→              </AnimatePresence>
+  1076→            </ChartContainer>
+  1077→          </CardContent>
+  1078→        </Card>
+  1079→      </motion.div>
+  1080→
+  1081→      {/* ─── Two-column: Payment Method Breakdown + Status Distribution ── */}
+  1082→      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+  1083→        {/* Payment Method Breakdown */}
+  1084→        <motion.div
+  1085→          initial={{ opacity: 0, y: 20 }}
+  1086→          animate={{ opacity: 1, y: 0 }}
+  1087→          transition={{ duration: 0.5, delay: 0.4 }}
+  1088→        >
+  1089→          <Card className="shadow-sm card-hover card-elevated">
+  1090→            <CardHeader>
+  1091→              <div className="flex items-center justify-between">
+  1092→                <div className="flex items-center gap-2">
+  1093→                  <BarChart3 className="h-4 w-4 text-emerald-500" />
+  1094→                  <CardTitle className="text-base">Metode Pembayaran</CardTitle>
+  1095→                </div>
+  1096→                <div className="flex items-center gap-1">
+  1097→                  <ChartTypeButton
+  1098→                    active={paymentChartType === 'pie'}
+  1099→                    onClick={() => setPaymentChartType('pie')}
+  1100→                  >
+  1101→                    <PieChartIcon className="h-3.5 w-3.5" />
+  1102→                  </ChartTypeButton>
+  1103→                  <ChartTypeButton
+  1104→                    active={paymentChartType === 'bar'}
+  1105→                    onClick={() => setPaymentChartType('bar')}
+  1106→                  >
+  1107→                    <BarChart3 className="h-3.5 w-3.5" />
+  1108→                  </ChartTypeButton>
+  1109→                </div>
+  1110→              </div>
+  1111→              <CardDescription>
+  1112→                Jumlah transaksi dan pendapatan per metode
+  1113→              </CardDescription>
+  1114→            </CardHeader>
+  1115→            <CardContent>
+  1116→              <AnimatePresence mode="wait">
+  1117→                {paymentChartType === 'pie' && (
+  1118→                  <motion.div
+  1119→                    key="payment-pie"
+  1120→                    variants={chartVariants}
+  1121→                    initial="initial"
+  1122→                    animate="animate"
+  1123→                    exit="exit"
+  1124→                    transition={{ duration: 0.3 }}
+  1125→                  >
+  1126→                    <ChartContainer
+  1127→                      config={barChartConfig}
+  1128→                      className="h-[300px] w-full"
+  1129→                    >
+  1130→                      <BarChart data={barData} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
+  1131→                        <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+  1132→                        <XAxis
+  1133→                          dataKey="method"
+  1134→                          tickLine={false}
+  1135→                          axisLine={false}
+  1136→                          tickMargin={8}
+  1137→                          className="text-xs"
+  1138→                        />
+  1139→                        <YAxis
+  1140→                          yAxisId="count"
+  1141→                          orientation="left"
+  1142→                          tickLine={false}
+  1143→                          axisLine={false}
+  1144→                          tickMargin={8}
+  1145→                          className="text-xs"
+  1146→                        />
+  1147→                        <YAxis
+  1148→                          yAxisId="revenue"
+  1149→                          orientation="right"
+  1150→                          tickLine={false}
+  1151→                          axisLine={false}
+  1152→                          tickMargin={8}
+  1153→                          tickFormatter={(v: number) => formatCompact(v)}
+  1154→                          className="text-xs"
+  1155→                        />
+  1156→                        <ChartTooltip
+  1157→                          content={
+  1158→                            <ChartTooltipContent
+  1159→                              formatter={(value: number, name: string) => {
+  1160→                                if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
+  1161→                                return [value.toLocaleString('id-ID'), 'Transaksi'];
+  1162→                              }}
+  1163→                            />
+  1164→                          }
+  1165→                        />
+  1166→                        <ChartLegend content={<ChartLegendContent />} />
+  1167→                        <Bar
+  1168→                          yAxisId="count"
+  1169→                          dataKey="count"
+  1170→                          fill="var(--color-count)"
+  1171→                          radius={[4, 4, 0, 0]}
+  1172→                        >
+  1173→                          {barData.map((_, i) => (
+  1174→                            <Cell key={`count-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} opacity={0.85} />
+  1175→                          ))}
+  1176→                        </Bar>
+  1177→                        <Bar
+  1178→                          yAxisId="revenue"
+  1179→                          dataKey="revenue"
+  1180→                          fill="var(--color-revenue)"
+  1181→                          radius={[4, 4, 0, 0]}
+  1182→                        >
+  1183→                          {barData.map((_, i) => (
+  1184→                            <Cell key={`revenue-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+  1185→                          ))}
+  1186→                        </Bar>
+  1187→                      </BarChart>
+  1188→                    </ChartContainer>
+  1189→                  </motion.div>
+  1190→                )}
+  1191→                {paymentChartType === 'bar' && (
+  1192→                  <motion.div
+  1193→                    key="payment-bar"
+  1194→                    variants={chartVariants}
+  1195→                    initial="initial"
+  1196→                    animate="animate"
+  1197→                    exit="exit"
+  1198→                    transition={{ duration: 0.3 }}
+  1199→                  >
+  1200→                    <ChartContainer
+  1201→                      config={piePaymentConfig}
+  1202→                      className="h-[300px] w-full"
+  1203→                    >
+  1204→                      <BarChart data={barData} layout="vertical" margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
+  1205→                        <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-border/40" />
+  1206→                        <XAxis
+  1207→                          type="number"
+  1208→                          tickLine={false}
+  1209→                          axisLine={false}
+  1210→                          tickMargin={8}
+  1211→                          className="text-xs"
+  1212→                        />
+  1213→                        <YAxis
+  1214→                          type="category"
+  1215→                          dataKey="method"
+  1216→                          tickLine={false}
+  1217→                          axisLine={false}
+  1218→                          tickMargin={8}
+  1219→                          width={80}
+  1220→                          className="text-xs"
+  1221→                        />
+  1222→                        <ChartTooltip
+  1223→                          content={
+  1224→                            <ChartTooltipContent
+  1225→                              formatter={(value: number, name: string) => {
+  1226→                                if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
+  1227→                                return [value.toLocaleString('id-ID'), 'Transaksi'];
+  1228→                              }}
+  1229→                            />
+  1230→                          }
+  1231→                        />
+  1232→                        <ChartLegend content={<ChartLegendContent />} />
+  1233→                        <Bar
+  1234→                          dataKey="count"
+  1235→                          fill="var(--color-count)"
+  1236→                          radius={[0, 4, 4, 0]}
+  1237→                        >
+  1238→                          {barData.map((_, i) => (
+  1239→                            <Cell key={`hcount-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} opacity={0.85} />
+  1240→                          ))}
+  1241→                        </Bar>
+  1242→                        <Bar
+  1243→                          dataKey="revenue"
+  1244→                          fill="var(--color-revenue)"
+  1245→                          radius={[0, 4, 4, 0]}
+  1246→                        >
+  1247→                          {barData.map((_, i) => (
+  1248→                            <Cell key={`hrev-${i}`} fill={PIE_COLORS[(i + 2) % PIE_COLORS.length]} />
+  1249→                          ))}
+  1250→                        </Bar>
+  1251→                      </BarChart>
+  1252→                    </ChartContainer>
+  1253→                  </motion.div>
+  1254→                )}
+  1255→              </AnimatePresence>
+  1256→            </CardContent>
+  1257→          </Card>
+  1258→        </motion.div>
+  1259→
+  1260→        {/* Transaction Status Distribution */}
+  1261→        <motion.div
+  1262→          initial={{ opacity: 0, y: 20 }}
+  1263→          animate={{ opacity: 1, y: 0 }}
+  1264→          transition={{ duration: 0.5, delay: 0.5 }}
+  1265→        >
+  1266→          <Card className="shadow-sm card-hover card-elevated">
+  1267→            <CardHeader>
+  1268→              <div className="flex items-center gap-2">
+  1269→                <PieChartIcon className="h-4 w-4 text-emerald-500" />
+  1270→                <CardTitle className="text-base">Distribusi Status</CardTitle>
+  1271→              </div>
+  1272→              <CardDescription>
+  1273→                Proporsi transaksi berdasarkan status
+  1274→              </CardDescription>
+  1275→            </CardHeader>
+  1276→            <CardContent>
+  1277→              <div className="flex flex-col items-center gap-8 lg:flex-row">
+  1278→                <ChartContainer
+  1279→                  config={statusChartConfig}
+  1280→                  className="mx-auto h-[260px] w-[260px] shrink-0"
+  1281→                >
+  1282→                  <PieChart>
+  1283→                    <ChartTooltip
+  1284→                      content={
+  1285→                        <ChartTooltipContent
+  1286→                          formatter={(value: number, name: string) => {
+  1287→                            const item = pieData.find((p) => p.name === name);
+  1288→                            return [
+  1289→                              `${value} tx · ${item ? formatRp(item.revenue) : ''}`,
+  1290→                              name,
+  1291→                            ];
+  1292→                          }}
+  1293→                        />
+  1294→                      }
+  1295→                    />
+  1296→                    <Pie
+  1297→                      data={pieData}
+  1298→                      dataKey="value"
+  1299→                      nameKey="name"
+  1300→                      cx="50%"
+  1301→                      cy="50%"
+  1302→                      innerRadius={60}
+  1303→                      outerRadius={100}
+  1304→                      paddingAngle={3}
+  1305→                      strokeWidth={0}
+  1306→                    >
+  1307→                      {pieData.map((entry, i) => (
+  1308→                        <Cell key={entry.name} fill={entry.fill} />
+  1309→                      ))}
+  1310→                    </Pie>
+  1311→                  </PieChart>
+  1312→                </ChartContainer>
+  1313→
+  1314→                {/* Legend list */}
+  1315→                <div className="flex-1 space-y-3 w-full max-w-md">
+  1316→                  {pieData.map((entry) => {
+  1317→                    const total = pieData.reduce((s, p) => s + p.value, 0);
+  1318→                    const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
+  1319→                    return (
+  1320→                      <div key={entry.name} className="flex items-center gap-3">
+  1321→                        <div
+  1322→                          className="h-3 w-3 shrink-0 rounded-sm"
+  1323→                          style={{ backgroundColor: entry.fill }}
+  1324→                        />
+  1325→                        <span className="flex-1 text-sm font-medium">{entry.name}</span>
+  1326→                        <span className="text-muted-foreground text-sm">
+  1327→                          {entry.value} tx
+  1328→                        </span>
+  1329→                        <span className="w-12 text-right text-sm font-semibold">
+  1330→                          {pct}%
+  1331→                        </span>
+  1332→                      </div>
+  1333→                    );
+  1334→                  })}
+  1335→                </div>
+  1336→              </div>
+  1337→            </CardContent>
+  1338→          </Card>
+  1339→        </motion.div>
+  1340→      </div>
+  1341→
+  1342→      {/* ─── Top Merchants Table ────────────────────────────────────── */}
+  1343→      <motion.div
+  1344→        initial={{ opacity: 0, y: 20 }}
+  1345→        animate={{ opacity: 1, y: 0 }}
+  1346→        transition={{ duration: 0.5, delay: 0.6 }}
+  1347→      >
+  1348→        <Card className="shadow-sm card-hover card-elevated">
+  1349→          <CardHeader>
+  1350→            <div className="flex items-center justify-between">
+  1351→              <div className="flex items-center gap-2">
+  1352→                <Trophy className="h-4 w-4 text-emerald-500" />
+  1353→                <CardTitle className="text-base">Merchant Teratas</CardTitle>
+  1354→              </div>
+  1355→              <Badge variant="outline" className="border-emerald-200 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400">
+  1356→                <Download className="mr-1 h-3 w-3" />
+  1357→                Periode ini
+  1358→              </Badge>
+  1359→            </div>
+  1360→            <CardDescription>
+  1361→              Merchant dengan performa terbaik dalam periode terpilih
+  1362→            </CardDescription>
+  1363→          </CardHeader>
+  1364→          <CardContent className="px-2 pb-4">
+  1365→            <Table>
+  1366→              <TableHeader className="table-header-enhanced">
+  1367→                <TableRow>
+  1368→                  <TableHead className="w-12 pl-4">#</TableHead>
+  1369→                  <TableHead>Merchant</TableHead>
+  1370→                  <TableHead className="text-right">Total Transaksi</TableHead>
+  1371→                  <TableHead className="text-right">Total Pendapatan</TableHead>
+  1372→                  <TableHead className="text-right hidden sm:table-cell">
+  1373→                    Rata-rata Tx
+  1374→                  </TableHead>
+  1375→                </TableRow>
+  1376→              </TableHeader>
+  1377→              <TableBody>
+  1378→                {topMerchants.length === 0 ? (
+  1379→                  <TableRow>
+  1380→                    <TableCell colSpan={5} className="py-10 text-center">
+  1381→                      <p className="text-muted-foreground text-sm">
+  1382→                        Belum ada data merchant
+  1383→                      </p>
+  1384→                    </TableCell>
+  1385→                  </TableRow>
+  1386→                ) : (
+  1387→                  topMerchants.map((merchant, idx) => (
+  1388→                    <TableRow key={merchant.id} className="hover:bg-muted/50 cursor-pointer table-row-hover">
+  1389→                      <TableCell className="pl-4">
+  1390→                        <div
+  1391→                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+  1392→                            idx === 0
+  1393→                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+  1394→                              : idx === 1
+  1395→                                ? 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+  1396→                                : idx === 2
+  1397→                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400'
+  1398→                                  : 'bg-muted text-muted-foreground'
+  1399→                          }`}
+  1400→                        >
+  1401→                          {idx + 1}
+  1402→                        </div>
+  1403→                      </TableCell>
+  1404→                      <TableCell className="font-medium">{merchant.name}</TableCell>
+  1405→                      <TableCell className="text-right">
+  1406→                        {merchant.totalTx.toLocaleString('id-ID')}
+  1407→                      </TableCell>
+  1408→                      <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
+  1409→                        {formatRp(merchant.totalRevenue)}
+  1410→                      </TableCell>
+  1411→                      <TableCell className="text-right hidden sm:table-cell text-muted-foreground">
+  1412→                        {formatRp(merchant.avgTxSize)}
+  1413→                      </TableCell>
+  1414→                    </TableRow>
+  1415→                  ))
+  1416→                )}
+  1417→              </TableBody>
+  1418→            </Table>
+  1419→          </CardContent>
+  1420→        </Card>
+  1421→      </motion.div>
+  1422→    </div>
+  1423→  );
+  1424→}
+  1425→

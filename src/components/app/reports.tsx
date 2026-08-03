@@ -613,7 +613,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6 bg-mesh">
+    <div className="space-y-6 bg-mesh animate-fade-in-up">
       <PageHeader
         title="Laporan"
         description="Analisis performa transaksi dan pendapatan"
@@ -904,9 +904,11 @@ export default function Reports() {
                         content={
                           <ChartTooltipContent
                             labelFormatter={(label) => `Tanggal: ${formatDateShort(label as string)}`}
-                            formatter={(value: number, name: string) => {
-                              if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
-                              return [value.toLocaleString('id-ID'), 'Transaksi'];
+                            formatter={(value: unknown, name: unknown) => {
+                              const v = Number(value);
+                              const n = String(name);
+                              if (n === 'revenue') return [formatRp(v), 'Pendapatan'];
+                              return [v.toLocaleString('id-ID'), 'Transaksi'];
                             }}
                           />
                         }
@@ -977,9 +979,11 @@ export default function Reports() {
                         content={
                           <ChartTooltipContent
                             labelFormatter={(label) => `Tanggal: ${formatDateShort(label as string)}`}
-                            formatter={(value: number, name: string) => {
-                              if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
-                              return [value.toLocaleString('id-ID'), 'Transaksi'];
+                            formatter={(value: unknown, name: unknown) => {
+                              const v = Number(value);
+                              const n = String(name);
+                              if (n === 'revenue') return [formatRp(v), 'Pendapatan'];
+                              return [v.toLocaleString('id-ID'), 'Transaksi'];
                             }}
                           />
                         }
@@ -1042,9 +1046,11 @@ export default function Reports() {
                         content={
                           <ChartTooltipContent
                             labelFormatter={(label) => `Tanggal: ${formatDateShort(label as string)}`}
-                            formatter={(value: number, name: string) => {
-                              if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
-                              return [value.toLocaleString('id-ID'), 'Transaksi'];
+                            formatter={(value: unknown, name: unknown) => {
+                              const v = Number(value);
+                              const n = String(name);
+                              if (n === 'revenue') return [formatRp(v), 'Pendapatan'];
+                              return [v.toLocaleString('id-ID'), 'Transaksi'];
                             }}
                           />
                         }
@@ -1156,9 +1162,10 @@ export default function Reports() {
                         <ChartTooltip
                           content={
                             <ChartTooltipContent
-                              formatter={(value: number, name: string) => {
-                                if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
-                                return [value.toLocaleString('id-ID'), 'Transaksi'];
+                              formatter={(value: unknown, name: unknown) => {
+                                const v = Number(value);
+                                if (name === 'revenue') return [formatRp(v), 'Pendapatan'];
+                                return [v.toLocaleString('id-ID'), 'Transaksi'];
                               }}
                             />
                           }
@@ -1198,7 +1205,7 @@ export default function Reports() {
                     transition={{ duration: 0.3 }}
                   >
                     <ChartContainer
-                      config={piePaymentConfig}
+                      config={barChartConfig}
                       className="h-[300px] w-full"
                     >
                       <BarChart data={barData} layout="vertical" margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
@@ -1222,9 +1229,10 @@ export default function Reports() {
                         <ChartTooltip
                           content={
                             <ChartTooltipContent
-                              formatter={(value: number, name: string) => {
-                                if (name === 'revenue') return [formatRp(value), 'Pendapatan'];
-                                return [value.toLocaleString('id-ID'), 'Transaksi'];
+                              formatter={(value: unknown, name: unknown) => {
+                                const v = Number(value);
+                                if (name === 'revenue') return [formatRp(v), 'Pendapatan'];
+                                return [v.toLocaleString('id-ID'), 'Transaksi'];
                               }}
                             />
                           }
@@ -1283,11 +1291,13 @@ export default function Reports() {
                     <ChartTooltip
                       content={
                         <ChartTooltipContent
-                          formatter={(value: number, name: string) => {
-                            const item = pieData.find((p) => p.name === name);
+                          formatter={(value: unknown, name: unknown) => {
+                            const v = Number(value);
+                            const n = String(name);
+                            const item = pieData.find((p) => p.name === n);
                             return [
-                              `${value} tx · ${item ? formatRp(item.revenue) : ''}`,
-                              name,
+                              `${v} tx · ${item ? formatRp(item.revenue) : ''}`,
+                              n,
                             ];
                           }}
                         />

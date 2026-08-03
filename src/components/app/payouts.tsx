@@ -716,7 +716,7 @@ export default function Payouts() {
   }
 
   return (
-    <div className="space-y-6 bg-mesh">
+    <div className="space-y-6 bg-mesh animate-fade-in-up">
       {/* ── Page Header ── */}
       <PageHeader
         title="Payout"

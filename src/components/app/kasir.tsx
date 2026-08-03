@@ -23,6 +23,8 @@ import {
   ArrowLeft,
   Loader2,
   RefreshCw,
+  Delete,
+  Percent,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,6 +138,8 @@ export function Kasir() {
   const [notes, setNotes] = useState('');
   const [selectedMerchant, setSelectedMerchant] = useState('');
   const [cartExpanded, setCartExpanded] = useState(false);
+  const [numpadOpen, setNumpadOpen] = useState(false);
+  const [discount, setDiscount] = useState(0);
   const [paymentStep, setPaymentStep] = useState<'select' | 'qris' | 'processing' | 'success'>('select');
   const [qrisExpiry, setQrisExpiry] = useState(300); // 5 minutes
   const [qrisInvoice, setQrisInvoice] = useState('');
@@ -154,6 +158,7 @@ export function Kasir() {
     items: CartItem[];
     subtotal: number;
     tax: number;
+    discount: number;
   } | null>(null);
 
   // Fetch merchants for dropdown
@@ -186,8 +191,10 @@ export function Kasir() {
     return cart.reduce((sum, item) => sum + item.qty, 0);
   }, [cart]);
 
-  const tax = Math.round(cartTotal * 0.11);
-  const totalWithTax = cartTotal + tax;
+  const discountAmount = Math.round(cartTotal * (discount / 100));
+  const afterDiscount = cartTotal - discountAmount;
+  const tax = Math.round(afterDiscount * 0.11);
+  const totalWithTax = afterDiscount + tax;
 
   // Add to cart
   const addToCart = useCallback(
@@ -272,10 +279,11 @@ export function Kasir() {
         createdAt: data.createdAt,
         paidAt: data.paidAt,
         customerName: data.customerName,
-        merchantName: merchant?.name ?? 'Unknown',
+        merchantName: merchants.find(m => m.id === selectedMerchant)?.name ?? 'Pos Ril Kasir',
         items: [...cart],
         subtotal: cartTotal,
         tax,
+        discount: discountAmount,
       });
     },
     onError: (err: Error) => {
@@ -380,6 +388,8 @@ export function Kasir() {
     setPaymentStep('select');
     setQrisExpiry(300);
     setQrisInvoice('');
+    setDiscount(0);
+    setNumpadOpen(false);
   };
 
   // Close pay dialog resets payment state
@@ -397,7 +407,7 @@ export function Kasir() {
   };
 
   return (
-    <div className="bg-mesh rounded-2xl p-4 md:p-6">
+    <div className="bg-mesh animate-fade-in-up rounded-2xl p-4 md:p-6">
       <PageHeader
         title="Kasir"
         description="Terminal pembayaran point-of-sale"
@@ -416,7 +426,7 @@ export function Kasir() {
                 placeholder="Cari produk..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 shadow-inner-soft"
               />
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
@@ -492,8 +502,8 @@ export function Kasir() {
           </div>
         </div>
 
-        {/* ── Right Panel: Cart (Desktop) ── */}
-        <div className="hidden w-full lg:block lg:w-[380px]">
+        {/* ── Right Panel: Cart + Numpad (Desktop) ── */}
+        <div className="hidden w-full lg:flex lg:flex-col lg:w-[380px] gap-3">
           <div className="card-elevated sticky top-24 flex h-[calc(100vh-8rem)] flex-col rounded-xl">
             <CartPanel
               cart={cart}
@@ -501,12 +511,44 @@ export function Kasir() {
               cartTotal={cartTotal}
               tax={tax}
               totalWithTax={totalWithTax}
+              discount={discount}
+              discountAmount={discountAmount}
               onUpdateQty={updateQty}
               onRemove={removeFromCart}
               onClear={clearCart}
               onPay={handleOpenPay}
+              onDiscountChange={setDiscount}
             />
           </div>
+
+          {/* Numpad Toggle */}
+          <button
+            onClick={() => setNumpadOpen(!numpadOpen)}
+            className={cn(
+              'btn-press flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all',
+              numpadOpen
+                ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-300'
+                : 'border-border bg-card hover:border-emerald-500/30 hover:bg-muted/50'
+            )}
+          >
+            <Calculator className="h-4 w-4" />
+            {numpadOpen ? 'Tutup Numpad' : 'Buka Numpad'}
+          </button>
+
+          {/* Numpad Panel */}
+          <AnimatePresence>
+            {numpadOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <NumpadPanel />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -563,11 +605,14 @@ export function Kasir() {
                         cartTotal={cartTotal}
                         tax={tax}
                         totalWithTax={totalWithTax}
+                        discount={discount}
+                        discountAmount={discountAmount}
                         onUpdateQty={updateQty}
                         onRemove={removeFromCart}
                         onClear={clearCart}
                         onPay={handleOpenPay}
                         onCollapse={() => setCartExpanded(false)}
+                        onDiscountChange={setDiscount}
                       />
                     </div>
                   </motion.div>
@@ -580,7 +625,7 @@ export function Kasir() {
 
       {/* ── Payment Dialog ── */}
       <Dialog open={payDialogOpen} onOpenChange={handleClosePayDialog}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-lg">
           <AnimatePresence mode="wait">
             {paymentStep === 'qris' ? (
               <motion.div
@@ -657,7 +702,7 @@ export function Kasir() {
                 )}
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="status-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
+                    <span className="status-dot animate-pulse-subtle absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
                   </span>
                   <span className="text-sm text-muted-foreground">Menunggu pembayaran...</span>
                 </div>
@@ -747,6 +792,15 @@ export function Kasir() {
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>{formatRp(lastTx.subtotal)}</span>
                     </div>
+                    {lastTx.discount > 0 && (
+                      <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                        <span className="flex items-center gap-1">
+                          <Percent className="h-3 w-3" />
+                          Diskon
+                        </span>
+                        <span>-{formatRp(lastTx.discount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Pajak (PPN 11%)</span>
                       <span>{formatRp(lastTx.tax)}</span>
@@ -833,7 +887,7 @@ export function Kasir() {
                     {formatRp(totalWithTax)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {cartCount} item · Subtotal {formatRp(cartTotal)} + PPN {formatRp(tax)}
+                    {cartCount} item · Subtotal {formatRp(cartTotal)}{discountAmount > 0 ? ` · Diskon ${discount}% (-${formatRp(discountAmount)})` : ''} + PPN {formatRp(tax)}
                   </p>
                 </div>
 
@@ -981,22 +1035,28 @@ function CartPanel({
   cartTotal,
   tax,
   totalWithTax,
+  discount,
+  discountAmount,
   onUpdateQty,
   onRemove,
   onClear,
   onPay,
   onCollapse,
+  onDiscountChange,
 }: {
   cart: CartItem[];
   cartCount: number;
   cartTotal: number;
   tax: number;
   totalWithTax: number;
+  discount: number;
+  discountAmount: number;
   onUpdateQty: (productId: string, delta: number) => void;
   onRemove: (productId: string) => void;
   onClear: () => void;
   onPay: () => void;
   onCollapse?: () => void;
+  onDiscountChange?: (val: number) => void;
 }) {
   return (
     <>
@@ -1105,11 +1165,41 @@ function CartPanel({
       {/* Cart Summary & Pay */}
       {cart.length > 0 && (
         <div className="border-t border-border p-4">
+          {/* Discount Field */}
+          {onDiscountChange && (
+            <div className="mb-3 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Percent className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={discount || ''}
+                  onChange={(e) => {
+                    const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                    onDiscountChange(val)
+                  }}
+                  placeholder="0"
+                  className="h-8 pl-8 pr-2 text-sm tabular-nums shadow-inner-soft"
+                />
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">Diskon %</span>
+            </div>
+          )}
           <div className="mb-3 space-y-1.5 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatRp(cartTotal)}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                <span className="flex items-center gap-1">
+                  <Percent className="h-3 w-3" />
+                  Diskon ({discount}%)   
+                </span>
+                <span>-{formatRp(discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pajak (11% PPN)</span>
               <span>{formatRp(tax)}</span>
@@ -1134,3 +1224,83 @@ function CartPanel({
     </>
   );
 }
+// ── Numpad Panel ──────────────────────────────────────────────────────────
+
+const NUMPAD_KEYS = [
+  ['7', '8', '9'],
+  ['4', '5', '6'],
+  ['1', '2', '3'],
+  ['00', '0', 'C'],
+] as const;
+
+function NumpadPanel() {
+  const dispatchInputEvent = useCallback(() => {
+    const active = document.activeElement as HTMLInputElement | null;
+    if (active) {
+      active.dispatchEvent(new Event('input', { bubbles: true }));
+      active.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }, []);
+
+  const handleKey = useCallback(
+    (key: string) => {
+      const active = document.activeElement as HTMLInputElement | null;
+      if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
+      active.focus();
+
+      if (key === 'C') {
+        // Select all then delete
+        active.select();
+        document.execCommand('delete', false);
+        dispatchInputEvent();
+        return;
+      }
+
+      if (key === 'backspace') {
+        document.execCommand('delete', false);
+        dispatchInputEvent();
+        return;
+      }
+
+      // Insert digit
+      document.execCommand('insertText', false, key);
+      dispatchInputEvent();
+    },
+    [dispatchInputEvent],
+  );
+
+  return (
+    <div className="card-elevated rounded-xl p-3">
+      <div className="mb-2 flex items-center gap-2 px-1">
+        <Calculator className="h-3.5 w-3.5 text-emerald-500" />
+        <span className="text-xs font-semibold text-muted-foreground">Numpad</span>
+        <span className="ml-auto text-[10px] text-muted-foreground/60">
+          Ketik ke input aktif
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {NUMPAD_KEYS.flat().map((key) => (
+          <button
+            key={key}
+            onClick={() => handleKey(key)}
+            className={cn(
+              'btn-press flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all',
+              key === 'C'
+                ? 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:bg-rose-500/15 dark:text-rose-400'
+                : 'bg-muted text-foreground hover:bg-muted/80'
+            )}
+          >
+            {key === 'C' ? 'C' : key}
+          </button>
+        ))}
+        <button
+          onClick={() => handleKey('backspace')}
+          className="btn-press flex h-10 items-center justify-center rounded-lg bg-muted text-foreground transition-all hover:bg-muted/80"
+        >
+          <Delete className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+

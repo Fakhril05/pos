@@ -828,3 +828,100 @@ Stage Summary:
 - **CSS Utilities**: 12+ new classes for card effects, badges, animations, glassmorphism, hover states
 - **Component Enhancements**: neon-glow on QuickStats, hover-scale on Reports chart cards
 - All text in Bahasa Indonesia
+
+---
+Task ID: 7
+Agent: Feature & Styling Agent
+Task: New CSS utilities, Live Activity Ticker, Kasir enhancements, Global Search, Styling improvements
+
+Work Log:
+- **10 New CSS Utility Classes** added to globals.css (lines 1316-1432):
+  - `animate-marquee` — Horizontal scrolling marquee with configurable `--marquee-duration`, pauses on hover
+  - `text-balance` — CSS `text-wrap: balance` for better heading typography
+  - `scrollbar-thin` — Thin custom scrollbar (5px) with emerald-tinted thumb, dark mode support, webkit + Firefox
+  - `backdrop-blur-card` — Glassmorphism card with 20px backdrop blur, 65% opacity background, light/dark variants
+  - `shadow-inner-soft` — Subtle inset box-shadow (0 1px 3px), stronger in dark mode
+  - `animate-fade-in-up` — Fade-in + slide-up 16px animation (0.5s ease-out)
+  - `animate-pulse-subtle` — Subtle opacity pulse (1→0.55→1) over 2s for live indicators
+  - `hover-brightness` — Brightness 1.1 filter on hover with 0.2s transition
+  - `text-outline` — Text with 1px currentColor stroke and transparent fill (-webkit-text-stroke)
+  - `border-gradient-animated` — Animated conic gradient border using `@property --gradient-angle`, rotates over 3s
+
+- **Live Activity Ticker** — Replaced placeholder dashboard-min.tsx with full component:
+  - Fetches 10 most recent successful transactions via `/api/transactions?status=success&limit=10`
+  - Emerald gradient bar with LIVE pulse indicator dot and white text
+  - Format: "🏆 {Merchant} - Rp {Amount} via {Channel} - {timeAgo}"
+  - Infinite marquee animation using duplicated content for seamless loop
+  - AnimatePresence fade-in on load, skeleton placeholder while loading
+  - Placed above PageHeader on Dashboard page
+
+- **Kasir (POS) Enhancements:**
+  - **Discount Feature**: Added `discount` state (0-100%), discount calculation applied to subtotal before tax
+  - Discount input field in CartPanel with Percent icon, shown in cart summary as amber-colored line
+  - Discount also shown in payment dialog receipt summary after success
+  - Tax (PPN 11%) now calculated on post-discount amount
+  - **Numpad Panel**: Collapsible on-screen numeric keypad (Calculator icon toggle)
+  - Buttons: 0-9, 00, C (clear all), Backspace (delete char)
+  - Types into the currently focused input using `document.execCommand('insertText')`
+  - Styled with emerald accent for toggle, rose accent for clear button
+  - Numpad positioned below the desktop cart panel with AnimatePresence collapse animation
+
+- **Global Transaction Search in Header:**
+  - Replaced read-only search input with interactive input field
+  - Debounced fetch (350ms) to `/api/transactions?search=QUERY&limit=5` on 3+ characters
+  - Dropdown with glassmorphism (`backdrop-blur-card`) shows: invoice number, status badge, customer/merchant name, amount, time ago
+  - Loading state with emerald spinner, empty state with search icon
+  - "Lihat semua transaksi" link at bottom navigates to Transactions page
+  - Clicking a result sets `pendingTxId` in Zustand store, navigates to Transactions page, and opens detail dialog
+  - Close button (X) to clear search, outside-click to close dropdown
+
+- **Cross-Component Communication:**
+  - Added `pendingTxId: string | null` and `setPendingTxId` to Zustand store
+  - `setActivePage` now also clears `pendingTxId` to prevent stale state
+  - Transactions component watches `pendingTxId` via `useEffect`, fetches transaction detail, and opens dialog
+
+- **Styling Improvements Applied Across the App:**
+  - `scrollbar-thin` on: all DialogContent with overflow-y-auto (transactions, customers, payment-links, kasir), notification dropdown, search dropdown, CommandList in command palette
+  - `animate-fade-in-up` on: all 9 page content containers (dashboard-min, kasir, transactions, payment-links, customers, merchants, payouts, reports, settings)
+  - `backdrop-blur-card` on: CommandDialog, header search results dropdown
+  - `shadow-inner-soft` on: header search input, command palette search input, kasir product search, kasir discount input
+  - `animate-pulse-subtle` on: dashboard-min ticker LIVE indicator, kasir QRIS waiting status dot, dashboard.tsx activity feed status dot, header notification unread dot
+
+- **Files Modified:** globals.css (+118 lines), app-store.ts (+3 fields), header.tsx (rewritten with search), dashboard-min.tsx (rewritten with ticker), kasir.tsx (+numpad, +discount, +imports), command-palette.tsx (+backdrop-blur-card, +shadow-inner-soft, +scrollbar-thin), transactions.tsx (+pendingTxId handling, +scrollbar-thin, +animate-fade-in-up), customers.tsx (+scrollbar-thin, +animate-fade-in-up), payment-links.tsx (+scrollbar-thin, +animate-fade-in-up), merchants.tsx (+animate-fade-in-up), payouts.tsx (+animate-fade-in-up), reports.tsx (+animate-fade-in-up), settings.tsx (+animate-fade-in-up), dashboard.tsx (+animate-pulse-subtle)
+- **ESLint:** Zero errors after all changes
+
+Stage Summary:
+- **10 new CSS utilities** in globals.css (marquee, text-balance, scrollbar-thin, backdrop-blur-card, shadow-inner-soft, animate-fade-in-up, animate-pulse-subtle, hover-brightness, text-outline, border-gradient-animated)
+- **Live Activity Ticker** on Dashboard — emerald gradient marquee with real-time transaction data
+- **Kasir POS** enhanced with discount feature (percentage-based, pre-tax) and collapsible numpad panel
+- **Global Transaction Search** in header with debounced API fetch, animated dropdown, click-to-detail-dialog navigation
+- **Zustand store** extended with `pendingTxId` for cross-component transaction detail navigation
+- **Styling improvements** applied across 13 files — scrollbars, fade-in animations, glassmorphism, inner shadows, pulse indicators
+- **Zero lint errors**, zero breaking changes to existing functionality
+- **Total modified files:** 14 (globals.css, app-store.ts, header.tsx, dashboard-min.tsx, kasir.tsx, command-palette.tsx, transactions.tsx, customers.tsx, payment-links.tsx, merchants.tsx, payouts.tsx, reports.tsx, settings.tsx, dashboard.tsx)
+
+---
+Task ID: 6
+Agent: Main
+Task: Fix all TypeScript errors, QA testing, verify enhancements
+
+Work Log:
+- Ran `npx tsc --noEmit` and found 14 TypeScript errors across 6 source files (excluding examples/skills)
+- **dashboard.tsx (3 errors):** Added `color` to `value` key in pieChartConfig; Changed all `ChartTooltipContent` formatter signatures from `(value: number, name: string)` to `(value: unknown, name: unknown)` with proper `Number()`/`String()` conversions
+- **empty-state.tsx (4 errors):** Added `as const` to `ease: 'easeOut'` to satisfy framer-motion Easing type
+- **kasir.tsx (1 error):** Changed `merchant?.name` to `merchants.find(m => m.id === selectedMerchant)?.name` (variable was `merchants` not `merchant`)
+- **merchants.tsx (1 error):** Changed formatter `(value: number)` to `(value: unknown)` with `Number()` conversion
+- **reports.tsx (5 errors):** Fixed all 5 formatter signatures to `(value: unknown, name: unknown)`; Replaced undefined `piePaymentConfig` with existing `barChartConfig`
+- **seed/route.ts (1 error):** Changed `const transactions = []` to `const transactions: any[] = []` to fix `never[]` type inference
+- **transactions.tsx (5 errors):** Added missing `const [refunding, setRefunding] = useState(false)` state variable
+- Verified zero errors with `npx tsc --noEmit` and `bun run lint`
+- QA tested all 9 pages via agent-browser: Dashboard, Transaksi, Payment Links, Pelanggan, Kasir, Merchant, Payout, Laporan, Pengaturan
+- Verified Live Activity Ticker renders with real transaction data
+- Verified Kasir numpad panel (12 keys), discount field, and product cart
+- Verified all pages load with zero runtime errors
+
+Stage Summary:
+- **14 TypeScript errors fixed** across 7 files (dashboard, empty-state, kasir, merchants, reports, seed, transactions)
+- **Root causes:** missing `color` property, framer-motion type narrowing, wrong variable name, recharts Formatter<ValueType, NameType> generic mismatch, undefined variable reference, untyped array literal, missing state
+- **QA:** All 9 pages pass — zero runtime errors, zero lint errors, zero tsc errors
+- **Enhancements verified:** Live ticker working, numpad (12 keys) functional, discount field visible in cart

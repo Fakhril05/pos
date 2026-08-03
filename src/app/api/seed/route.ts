@@ -87,7 +87,7 @@ export async function POST() {
 
     // Create transactions
     const txCount = 200
-    const transactions = []
+    const transactions: any[] = []
     for (let i = 0; i < txCount; i++) {
       const merchant = randomItem(merchants)
       const customer = randomItem(customers)

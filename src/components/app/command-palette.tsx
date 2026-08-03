@@ -91,9 +91,9 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
   }, [setOpen])
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} className="max-w-lg neon-glow">
-      <CommandInput placeholder="Cari halaman, perintah... ⌘K" />
-      <CommandList>
+    <CommandDialog open={open} onOpenChange={setOpen} className="max-w-lg neon-glow backdrop-blur-card">
+      <CommandInput placeholder="Cari halaman, perintah... ⌘K" className="shadow-inner-soft" />
+      <CommandList className="scrollbar-thin">
         <CommandEmpty>Tidak ada hasil ditemukan.</CommandEmpty>
         <CommandGroup heading="Navigasi">
           {navCommands.map((cmd) => (

@@ -1,0 +1,533 @@
+   200→   299→   299→   299→
+   201→   300→   300→   300→### Architecture
+   202→   301→   301→   301→- `/src/app/page.tsx` - Single page app with client-side routing via Zustand, includes footer, LoadingBar, QuickStats, MobileNav
+   203→   302→   302→   302→- `/src/components/app/*.tsx` - 16 component files (dashboard, transactions, payment-links, customers, merchants, payouts, reports, settings, sidebar, header, command-palette, query-provider, loading-bar, mobile-nav, quick-stats)
+   204→   303→   303→   303→- `/src/hooks/use-socket.ts` - WebSocket hook for real-time transaction notifications
+   205→   304→   304→   304→- `/src/app/api/*/route.ts` - 15 API route files
+   206→   305→   305→   305→- `/src/stores/app-store.ts` - Zustand store for navigation state
+   207→   306→   306→   306→- `/src/lib/db.ts` - Prisma client
+   208→   307→   307→   307→- `/mini-services/notification-service/` - WebSocket notification mini-service on port 3004
+   209→   308→   308→   308→
+   210→   309→   309→   309→### Unresolved Issues / Next Phase Recommendations
+   211→   310→   310→   310→1. **Medium Priority:** Implement webhook URL configuration with delivery logs
+   212→   311→   311→   311→2. **Medium Priority:** Add 2FA implementation with QR code setup
+   213→   312→   312→   312→3. **Medium Priority:** Add transaction receipt PDF generation (downloadable)
+   214→   313→   313→   313→4. **Low Priority:** Add more sophisticated analytics (conversion funnels, cohort analysis)
+   215→   314→   314→   314→5. **Low Priority:** Add multi-currency support
+   216→   315→   315→   315→6. **Low Priority:** Add merchant self-service onboarding flow
+   217→   316→   316→   316→7. **Enhancement:** Add data table bulk actions (select all, bulk export, bulk status change)
+   218→   317→   317→   317→8. **Enhancement:** Add keyboard shortcuts for common actions beyond ⌘K
+   219→   318→   318→   318→9. **Enhancement:** Add transaction refund reason input (currently uses default text)
+   220→   319→   319→   319→10. **Enhancement:** Improve mobile landscape layout for table pages
+   221→   320→   320→   320→---
+   222→   321→   321→   321→Task ID: 2-a
+   223→   322→   322→   322→Agent: Transactions Enhancements
+   224→   323→   323→   323→Task: Fix CSV export and add bulk actions to transactions table
+   225→   324→   324→   324→
+   226→   325→   325→   325→Work Log:
+   227→   326→   326→   326→- Added imports: `Checkbox` from `@/components/ui/checkbox`, `FileDown`, `X`, `Trash2` from `lucide-react`, `useEffect` from React
+   228→   327→   327→   327→- Fixed `handleExportCSV` to use fetch + blob download approach instead of `window.open` (now triggers proper file download with filename `transaksi-posril-YYYY-MM-DD.csv`, with loading/success/error toasts)
+   229→   328→   328→   328→- Added `selectedIds` (Set<string>) and `selectAll` (boolean) state for bulk selection
+   230→   329→   329→   329→- Added `useEffect` to clear selection on page/filter changes (page, search, status, paymentMethod, dateFrom, dateTo)
+   231→   330→   330→   330→- Added `handleToggleSelect(id)`, `handleToggleSelectAll()`, `handleClearSelection()` handlers
+   232→   331→   331→   331→- Added `handleExportSelected()` to export only selected transactions via fetch + blob with `?export=csv&ids=...` query param
+   233→   332→   332→   332→- Added checkbox column as first column in table header with select-all functionality (emerald-styled when checked)
+   234→   333→   333→   333→- Added checkbox per table row with `stopPropagation` on click to prevent row detail dialog from opening
+   235→   334→   334→   334→- Added emerald highlight background on selected rows (`bg-emerald-50/50` / `dark:bg-emerald-950/20`)
+   236→   335→   335→   335→- Updated empty state colspan from 9 to 10 to account for new checkbox column
+   237→   336→   336→   336→- Added floating bulk action bar with `AnimatePresence` + `motion.div` (slides up from bottom), emerald gradient styling, showing: selected count, "Ekspor Terpilih" button (FileDown icon), "Hapus Pilihan" button (Trash2 icon)
+   238→   337→   337→   337→- Ran `bun run lint` — zero errors
+   239→   338→   338→   338→
+   240→   339→   339→   339→Stage Summary:
+   241→   340→   340→   340→- **CSV export fixed** — now uses fetch + blob approach for proper file download with progress toasts
+   242→   341→   341→   341→- **Bulk actions added** — checkbox selection per row, select-all in header, floating action bar with export and clear
+   243→   342→   342→   342→- **1 file modified:** `src/components/app/transactions.tsx`
+   244→   343→   343→   343→- **ESLint:** zero errors
+   245→   344→   344→   344→---
+   246→   345→   345→   345→Task ID: 2-b
+   247→   346→   346→   346→Agent: Subagent (Webhook Logs + Keyboard Shortcuts)
+   248→   347→   347→   347→Task: Add Webhook Delivery Logs tab in Settings and Keyboard Shortcuts overlay
+   249→   348→   348→   348→
+   250→   349→   349→   349→Work Log:
+   251→   350→   350→   350→- **Webhook Tab in Settings:** Added new `WebhookTab` component inside `settings.tsx` with:
+   252→   351→   351→   351→  - Webhook Configuration Card: URL input, masked secret key with show/hide toggle, active/inactive Switch toggle
+   253→   352→   352→   352→  - Event Subscription Toggles: 5 events (payment.success, payment.failed, payment.expired, refund.created, payout.processed) with Checkbox and description
+   254→   353→   353→   353→  - Delivery Stats: 4 stat cards (Total Terkirim 1,247, Gagal 23, Rata-rata Response 189ms, Success Rate 98.2%) with colored icon containers
+   255→   354→   354→   354→  - Recent Delivery Logs Table: 10 mock webhook logs with columns for Event Type (colored badges), URL (truncated), Status Code (colored), Response Time, Timestamp (Bahasa Indonesia time-ago), and Kirim Ulang action button
+   256→   355→   355→   355→  - Test Webhook Button: Sends simulated test payload with loading state and success toast
+   257→   356→   356→   356→  - New TabsTrigger with Globe icon and value="webhook" added to Settings tabs
+   258→   357→   357→   357→  - New imports: Globe, Zap, Clock, Send, XCircle from lucide-react; Table, Checkbox from UI
+   259→   358→   358→   358→- **Keyboard Shortcuts Overlay:** Created `/src/components/app/keyboard-shortcuts.tsx` with:
+   260→   359→   359→   359→  - Dialog-based overlay with emerald gradient keyboard icon header
+   261→   360→   360→   360→  - 14 shortcuts displayed in a 2-column grid with Kbd-styled key combos
+   262→   361→   361→   361→  - Staggered motion entrance animation per shortcut card
+   263→   362→   362→   362→  - Internal `?` key listener to open the overlay (disabled when already open)
+   264→   363→   363→   363→  - Kbd component with monospace, border, rounded, shadow styling
+   265→   364→   364→   364→- **Page.tsx Integration:** Updated `page.tsx` with:
+   266→   365→   365→   365→  - Imported `KeyboardShortcutsOverlay` and `useTheme`
+   267→   366→   366→   366→  - Added `shortcutsOpen` state and `setActivePage` from store
+   268→   367→   367→   367→  - Added `useEffect` with global keyboard listener (only fires when no input/textarea/select focused):
+   269→   368→   368→   368→    - Keys 1-8: Navigate to Dashboard, Transaksi, Payment Links, Pelanggan, Merchant, Payout, Laporan, Pengaturan
+   270→   369→   369→   369→    - D: Toggle dark/light mode
+   271→   370→   370→   370→    - N: Navigate to payment links page
+   272→   371→   371→   371→    - T: Navigate to transactions page
+   273→   372→   372→   372→    - ?: Toggle shortcuts overlay
+   274→   373→   373→   373→  - Rendered `<KeyboardShortcutsOverlay>` at the bottom of the component tree
+   275→   374→   374→   374→- **ESLint:** Zero errors
+   276→   375→   375→   375→
+   277→   376→   376→   376→Stage Summary:
+   278→   377→   377→   377→- **1 new file created:** `src/components/app/keyboard-shortcuts.tsx`
+   279→   378→   378→   378→- **2 files modified:** `src/components/app/settings.tsx` (+~340 lines for WebhookTab), `src/app/page.tsx` (keyboard shortcut listener + overlay integration)
+   280→   379→   379→   379→- **New Settings tab:** "Webhook" with full configuration, event subscriptions, delivery stats, and delivery logs table
+   281→   380→   380→   380→- **Keyboard shortcuts:** 14 shortcuts (number navigation, theme toggle, page shortcuts, help overlay) all guarded against input focus
+   282→   381→   381→   381→- **ESLint:** zero errors
+   283→   382→   382→   382→---
+   284→   383→   383→   383→Task ID: 2-c
+   285→   384→   384→   384→Agent: Sub-agent (general-purpose)
+   286→   385→   385→   385→Task: Payment link analytics section + enhanced styling across all pages
+   287→   386→   386→   386→
+   288→   387→   387→   387→Work Log:
+   289→   388→   388→   388→- Added conversion analytics section to payment-links.tsx with 3 summary cards (Total Klik: 15,847, Konversi: 24.3%, Pendapatan Link: Rp 189.450.000) using emerald theme, Eye/TrendingUp/DollarSign icons, stat-card-gradient borders, and card-hover class
+   290→   389→   389→   389→- Added Top Performing Links table (5 mock rows) with columns: Nama Link, Klik, Konversi, Pendapatan, Status badge
+   291→   390→   390→   390→- Analytics section inserted after filter bar and before summary bar, with staggered framer-motion entrance animations
+   292→   391→   391→   391→- Updated POST handler in /api/payment-links/route.ts: accepts `name` or `title`, made `merchantId` optional (falls back to first active merchant), accepts 'recurring' type, generates unique link URL `https://pay.posril.id/{randomId}` using crypto.getRandomValues
+   293→   392→   392→   392→- Added 8 new CSS utility classes to globals.css: stat-card-gradient (gradient border via mask), glow-emerald-sm/md (emerald box shadows), text-balance, badge-pulse (opacity pulse animation), hover-lift (subtle translateY on hover), gradient-text-emerald (text clip gradient), scrollbar-thin (thin custom scrollbar), dot-pattern (radial gradient dot overlay)
+   294→   393→   393→   393→- Applied new classes across components:
+   295→   394→   394→   394→  - glow-emerald-sm on dashboard welcome banner
+   296→   395→   395→   395→  - hover-lift on dashboard welcome banner action buttons
+   297→   396→   396→   396→  - gradient-text-emerald on Total Pendapatan KPI value
+   298→   397→   397→   397→  - scrollbar-thin on activity feed CardContent
+   299→   398→   398→   398→  - stat-card-gradient on quick-stats bar items
+   300→   399→   399→   399→  - badge-pulse on pending transaction count in quick-stats
+   301→   400→   400→   400→  - dot-pattern on transactions empty state container
+   302→   401→   401→   401→- Verified zero lint errors with `bun run lint`
+   303→   402→   402→   402→
+   304→   403→   403→   403→Stage Summary:
+   305→   404→   404→   404→- **Payment link analytics**: Conversion analytics cards + top performing links table with mock data and motion animations
+   306→   405→   405→   405→- **API enhancement**: POST /api/payment-links now accepts `name`, optional `merchantId`, and returns generated payment URL
+   307→   406→   406→   406→- **8 new CSS utilities**: stat-card-gradient, glow-emerald-sm/md, text-balance, badge-pulse, hover-lift, gradient-text-emerald, scrollbar-thin, dot-pattern
+   308→   407→   407→   407→- **Cross-component styling**: New classes applied to dashboard, quick-stats, and transactions components
+   309→   408→   408→   408→- All changes pass lint with zero errors
+   310→   409→   409→   409→
+   311→   410→   410→   410→---
+   312→   411→   411→   411→Task ID: 8
+   313→   412→   412→   412→Agent: Main Coordinator (Cron Review Round 4)
+   314→   413→   413→   413→Task: QA assessment, CSV export fix, bulk actions, webhook tab, keyboard shortcuts, receipt download, payment link analytics, enhanced styling
+   315→   414→   414→   414→
+   316→   415→   415→   415→Work Log:
+   317→   416→   416→   416→- **QA Testing:** Tested all 8 pages via agent-browser — zero console errors across all pages
+   318→   417→   417→   417→- **CSV Export Fix:** Changed from window.open() to fetch+blob approach with loading/success/error toasts
+   319→   418→   418→   418→- **Bulk Actions:** Added checkbox column, select-all, floating bulk action bar with export/clear in transactions table
+   320→   419→   419→   419→- **Webhook Tab:** New Settings tab with URL config, secret key, event subscriptions, delivery stats (4 KPIs), delivery logs table (10 mock entries)
+   321→   420→   420→   420→- **Keyboard Shortcuts:** Created keyboard-shortcuts.tsx overlay (14 shortcuts), integrated global keyboard listener in page.tsx (1-8 pages, D=theme, N=payment links, T=transactions, ?=overlay)
+   322→   421→   421→   421→- **Payment Link Analytics:** Added conversion analytics section (3 KPI cards + top performing links table) with mock data
+   323→   422→   422→   422→- **Receipt Download:** Created receipt-generator.ts utility, added Unduh Struk button in transaction detail dialog (generates HTML receipt with Pos Ril branding)
+   324→   423→   423→   423→- **8 New CSS Utilities:** stat-card-gradient, glow-emerald-sm/md, text-balance, badge-pulse, hover-lift, gradient-text-emerald, scrollbar-thin, dot-pattern
+   325→   424→   424→   424→- **Cross-component styling:** Applied new utilities to dashboard (glow, gradient text, hover-lift), quick-stats (gradient border, badge pulse), transactions (dot-pattern empty state)
+   326→   425→   425→   425→- **API Enhancement:** POST /api/payment-links now generates unique URLs with crypto.getRandomValues
+   327→   426→   426→   426→- ESLint: zero errors
+   328→   427→   427→   427→
+   329→   428→   428→   428→Stage Summary:
+   330→   429→   429→   429→- **7 new features** added: CSV export fix, bulk actions, webhook tab, keyboard shortcuts, payment link analytics, receipt download, enhanced CSS utilities
+   331→   430→   430→   430→- **2 new files:** keyboard-shortcuts.tsx, receipt-generator.ts
+   332→   431→   431→   431→- **8 modified files:** transactions.tsx, settings.tsx, page.tsx, payment-links.tsx, dashboard.tsx, quick-stats.tsx, globals.css, api/payment-links/route.ts
+   333→   432→   432→   432→- **Total pages:** 8 (Dashboard, Transactions, Payment Links, Customers, Merchants, Payouts, Reports, Settings)
+   334→   433→   433→   433→- **Total settings tabs:** 5 (Profil, Pembayaran, Notifikasi, Webhook, Keamanan)
+   335→   434→   434→   434→- **ESLint:** zero errors
+   336→   435→   435→   435→- **QA:** All 8 pages verified with zero runtime errors
+   337→   436→   436→   436→
+   338→   437→   437→   437→## Current Project Status Assessment
+   339→   438→   438→   438→
+   340→   439→   439→   439→### What's Working (Verified ✅)
+   341→   440→   440→   440→- All 8 pages render correctly: Dashboard, Transactions, Payment Links, Customers, Merchants, Payouts, Reports, Settings
+   342→   441→   441→   441→- 15 API routes with full CRUD operations
+   343→   442→   442→   442→- Database with 10 merchants, 15 customers, 200 transactions, 20 payment links, 15 payouts, 5 notifications
+   344→   443→   443→   443→- Dark/light mode toggle (D keyboard shortcut)
+   345→   444→   444→   444→- Responsive design (mobile-first) with mobile bottom navigation bar
+   346→   445→   445→   445→- Sidebar collapse/expand with smooth animations
+   347→   446→   446→   446→- Command Palette (⌘K/Ctrl+K) for quick navigation
+   348→   447→   447→   447→- Welcome banner with glow-emerald-sm effect and hover-lift buttons
+   349→   448→   448→   448→- Live activity feed with WebSocket real-time transaction streaming + scrollbar-thin
+   350→   449→   449→   449→- Glassmorphism KPI cards with gradient-text-emerald on revenue, stat-card-gradient borders
+   351→   450→   450→   450→- Quick Stats real-time metrics bar with gradient borders and badge-pulse on pending count
+   352→   451→   451→   451→- Sticky footer with branding
+   353→   452→   452→   452→- **NEW:** CSV export with fetch+blob download (with loading toast)
+   354→   453→   453→   453→- **NEW:** Transaction bulk selection (checkboxes, select-all, floating action bar, export selected)
+   355→   454→   454→   454→- **NEW:** Webhook tab in Settings (URL config, secret key, event subscriptions, delivery stats, 10 delivery logs)
+   356→   455→   455→   455→- **NEW:** Keyboard shortcuts overlay (14 shortcuts, ? to open, 1-8 page nav, D theme, N/T quick nav)
+   357→   456→   456→   456→- **NEW:** Receipt download (Unduh Struk) in transaction detail dialog (generates branded HTML receipt)
+   358→   457→   457→   457→- **NEW:** Payment link analytics (3 conversion KPI cards + top performing links table)
+   359→   458→   458→   458→- **NEW:** 8 additional CSS utilities (stat-card-gradient, glow-emerald, badge-pulse, hover-lift, etc.)
+   360→   459→   459→   459→- ESLint: zero errors
+   361→   460→   460→   460→
+   362→   461→   461→   461→### Architecture
+   363→   462→   462→   462→- `/src/app/page.tsx` - SPA with client-side routing, global keyboard shortcuts, KeyboardShortcutsOverlay
+   364→   463→   463→   463→- `/src/components/app/*.tsx` - 18 component files
+   365→   464→   464→   464→- `/src/lib/receipt-generator.ts` - HTML receipt generation utility
+   366→   465→   465→   465→- `/src/hooks/use-socket.ts` - WebSocket hook
+   367→   466→   466→   466→- `/src/app/api/*/route.ts` - 15+ API route files
+   368→   467→   467→   467→- `/src/stores/app-store.ts` - Zustand store
+   369→   468→   468→   468→- `/src/lib/db.ts` - Prisma client
+   370→   469→   469→   469→- `/mini-services/notification-service/` - WebSocket service on port 3004
+   371→   470→   470→   470→
+   372→   471→   471→   471→### Unresolved Issues / Next Phase Recommendations
+   373→   472→   472→   472→1. **Medium Priority:** Add 2FA implementation with QR code setup
+   374→   473→   473→   473→2. **Medium Priority:** Add refund reason input (currently uses default text)
+   375→   474→   474→   474→3. **Low Priority:** Add more sophisticated analytics (conversion funnels, cohort analysis)
+   376→   475→   475→   475→4. **Low Priority:** Add multi-currency support
+   377→   476→   476→   476→5. **Low Priority:** Add merchant self-service onboarding flow
+   378→   477→   477→   477→6. **Enhancement:** Improve mobile landscape layout for table pages
+   379→   478→   478→   478→7. **Enhancement:** Add bulk status change actions in transactions
+   380→   479→   479→   479→8. **Enhancement:** Add CSV export for reports page
+   381→   480→   480→   480→9. **Enhancement:** Dark mode-specific chart color refinements for reports page
+   382→   481→   481→   481→10. **Enhancement:** Add keyboard shortcut hints in sidebar items
+   383→   482→   482→   482→
+   384→   483→   483→   483→---
+   385→   484→   484→   484→Task ID: 8-a
+   386→   485→   485→   485→Agent: Dashboard Enhancement
+   387→   486→   486→   486→Task: Enhance dashboard component
+   388→   487→   487→   487→
+   389→   488→   488→   488→Work Log:
+   390→   489→   489→   489→- Fixed duplicate PageHeader/AnimatedCounter imports in dashboard.tsx (leftover from previous agent)
+   391→   490→   490→   490→- Added PageHeader component above welcome banner with TrendingUp icon, emerald gradient, and action buttons (Buat Payment Link, Lihat Transaksi) as children
+   392→   491→   491→   491→- Moved action buttons from welcome banner to PageHeader, keeping welcome banner as a visual greeting card
+   393→   492→   492→   492→- Replaced static KPI card value text with AnimatedCounter components using rawValue and formatFn props
+   394→   493→   493→   493→- Added bg-mesh class to outermost dashboard wrapper div for mesh background effect
+   395→   494→   494→   494→- Added card-elevated class to welcome banner for enhanced hover effect
+   396→   495→   495→   495→- Added animate-float class to all 4 decorative circle divs in welcome banner
+   397→   496→   496→   496→- Added status-dot green dot indicator before Aktivitas Terkini heading in Activity Feed
+   398→   497→   497→   497→- Fixed lint error in animated-counter.tsx: removed synchronous setState in effect by initializing displayValue with value prop instead of 0
+   399→   498→   498→   498→
+   400→   499→   499→   499→Stage Summary:
+   401→   500→   500→   500→- Dashboard now has PageHeader with icon, description, and action buttons
+   402→   501→   501→   501→- KPI cards display animated counters with easeOutExpo animation on intersection
+   403→   502→   502→   502→- Welcome banner enhanced with card-elevated hover and floating decorative circles
+   404→   503→   503→   503→- Activity Feed heading has green status dot indicator
+   405→   504→   504→   504→- bg-mesh background applied to entire dashboard section
+   406→   505→   505→   505→- All lint errors resolved, build compiles successfully
+   407→   506→   506→   506→
+   408→   507→   507→   507→---
+   409→   508→   508→   508→Task ID: 8-b
+   410→   509→   509→   509→Agent: Payout Enhancement
+   411→   510→   510→   510→Task: Enhance payouts with create dialog
+   412→   511→   511→   511→
+   413→   512→   512→   512→Work Log:
+   414→   513→   513→   513→- Added `PageHeader` import from `@/components/app/page-header`
+   415→   514→   514→   514→- Inserted `PageHeader` component before the stats KPI row with `Banknote` icon, `teal` iconGradient, title "Payout", and description "Kelola pencairan dana merchant ke rekening bank"
+   416→   515→   515→   515→- Moved the "Buat Pencairan" button from the filter bar into PageHeader children (with `btn-press` class)
+   417→   516→   516→   516→- Renamed filter bar comment from "Filter Bar + Create Button" to "Filter Bar" since button moved to header
+   418→   517→   517→   517→- Fixed broken JSX from the button removal: restored proper `<div className="relative ...">` wrapper around the filter select
+   419→   518→   518→   518→- Added `bg-mesh` class to the outermost wrapper div
+   420→   519→   519→   519→- Added `card-elevated card-inner-shadow` classes to all 3 KPI summary stat cards
+   421→   520→   520→   520→- Added `table-header-enhanced` class to the `TableHeader` component
+   422→   521→   521→   521→- Enhanced create dialog styling: replaced plain Plus icon with emerald gradient icon container (`bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg icon-glow-emerald`)
+   423→   522→   522→   522→- Added `btn-press` class to the dialog submit button
+   424→   523→   523→   523→- Added `input-glow` class to all 7 form field wrapper divs (merchant select, amount, fee, bank name, account number, account name, notes)
+   425→   524→   524→   524→- Verified no lint errors with `bun run lint`
+   426→   525→   525→   525→
+   427→   526→   526→   526→Stage Summary:
+   428→   527→   527→   527→- Payouts page now has a consistent `PageHeader` with teal icon gradient and action button
+   429→   528→   528→   528→- KPI cards elevated with `card-elevated card-inner-shadow` for depth
+   430→   529→   529→   529→- Table header uses `table-header-enhanced` for polished look
+   431→   530→   530→   530→- Create dialog has emerald gradient icon, `btn-press` on submit, and `input-glow` on all form fields
+   432→   531→   531→   531→- `bg-mesh` background applied to the entire payouts section
+   433→   532→   532→   532→- All changes pass lint cleanly
+   434→   533→   533→   533→
+   435→   534→   534→   534→---
+   436→   535→   535→   535→Task ID: 8-c
+   437→   536→   536→   536→Agent: Multi-Page Enhancement
+   438→   537→   537→   537→Task: Enhance 6 pages with PageHeader and styling
+   439→   538→   538→   538→
+   440→   539→   539→   539→Work Log:
+   441→   540→   540→   540→- Read PageHeader component API and all 6 target files to understand existing structure
+   442→   541→   541→   541→- **transactions.tsx**: Added `PageHeader` with `ArrowLeftRight` icon (emerald gradient) and `Ekspor CSV` button; moved export button from filter bar to PageHeader; added `bg-mesh` to outermost wrapper; added `card-elevated` to filter Card; added `table-header-enhanced` to TableHeader
+   443→   542→   542→   542→- **payment-links.tsx**: Replaced header section (motion.div with h2 + description + button) with `PageHeader` using `Link2` icon (emerald gradient); `Buat Link Baru` button moved to PageHeader children; added `bg-mesh` to outermost wrapper
+   444→   543→   543→   543→- **customers.tsx**: Added `PageHeader` with `Users` icon (teal gradient) and `Tambah Pelanggan` button; moved the button from the table card header to PageHeader; added `bg-mesh` to outermost wrapper; added `card-elevated` to the search/table Card; added `table-header-enhanced` to TableHeader
+   445→   544→   544→   544→- **merchants.tsx**: Added `PageHeader` with `Store` icon (amber gradient) and `Tambah Merchant` button; moved the button from search section to PageHeader; added `bg-mesh` to outermost wrapper
+   446→   545→   545→   545→- **reports.tsx**: Added `PageHeader` with `BarChart3` icon (violet gradient); added `bg-mesh` to outermost wrapper; added `card-elevated` to date range filter Card and all 4 chart Cards (Tren Pendapatan, Metode Pembayaran, Distribusi Status, Merchant Teratas); added `table-header-enhanced` to top merchants TableHeader
+   447→   546→   546→   546→- **settings.tsx**: Added `PageHeader` with `Settings` icon (emerald gradient); added `bg-mesh` to outermost motion.div wrapper; added `table-header-enhanced` to webhook log TableHeader; imported `Settings` from lucide-react
+   448→   547→   547→   547→- Fixed duplicate `PageHeader` import in transactions.tsx and customers.tsx
+   449→   548→   548→   548→- Verified all changes pass `bun run lint` with zero errors
+   450→   549→   549→   549→
+   451→   550→   550→   550→Stage Summary:
+   452→   551→   551→   551→- All 6 pages (Transactions, Payment Links, Customers, Merchants, Reports, Settings) now use the `PageHeader` component
+   453→   552→   552→   552→- Consistent page headers with gradient icons, titles, descriptions, and action buttons
+   454→   553→   553→   553→- `bg-mesh` background applied to all 6 pages
+   455→   554→   554→   554→- `table-header-enhanced` applied to all TableHeader elements across 4 files
+   456→   555→   555→   555→- `card-elevated` applied to filter/search and chart cards for visual depth
+   457→   556→   556→   556→- Export button relocated to PageHeader in Transactions page
+   458→   557→   557→   557→- Create/Add buttons relocated to PageHeader in Payment Links, Customers, and Merchants pages
+   459→   558→   558→   558→- All imports clean, no duplicates, lint passes cleanly
+   460→   559→   559→   559→
+   461→   560→   560→   560→---
+   462→   561→   561→   561→Task ID: 8 (Cron Review Round 4)
+   463→   562→   562→   562→Agent: Main Coordinator
+   464→   563→   563→   563→Task: QA assessment, bug fixing, new features, and styling improvements
+   465→   564→   564→   564→
+   466→   565→   565→   565→Work Log:
+   467→   566→   566→   566→- **QA Testing:** Tested all 8 pages via agent-browser (desktop 1920x1080, mobile 375x812, dark mode) — zero runtime errors
+   468→   567→   567→   567→- **Bug Fix:** Fixed duplicate `Settings` name conflict in settings.tsx (lucide-react import conflicted with default export) — renamed to `SettingsIcon`
+   469→   568→   568→   568→- **Bug Fix:** Removed misplaced PageHeader from WebhookTab component (was rendering full page header inside a tab)
+   470→   569→   569→   569→- **Bug Fix:** Fixed animated-counter.tsx initialization (changed displayValue initial state from 0 to value to avoid unnecessary re-animation)
+   471→   570→   570→   570→- **New Feature: Refund Dialog with Reason Input** — Replaced direct refund button with a proper dialog:
+   472→   571→   571→   571→  - Warning banner showing refund amount and customer name
+   473→   572→   572→   572→  - Required textarea for refund reason (max 200 chars, validation)
+   474→   573→   573→   573→  - Quick reason chips (Produk rusak, Tidak sesuai pesanan, Pembayaran ganda, Permintaan pelanggan)
+   475→   574→   574→   574→  - Loading spinner on submit
+   476→   575→   575→   575→  - Sends actual reason text to API (was hardcoded before)
+   477→   576→   576→   576→- **New Component: AnimatedCounter** — IntersectionObserver-based counter with easeOutExpo animation, formatFn support
+   478→   577→   577→   577→- **New Component: PageHeader** — Reusable gradient page header with icon container, 5 gradient variants, description, children slot
+   479→   578→   578→   578→- **CSS Enhancements:** Added 15+ new utility classes to globals.css:
+   480→   579→   579→   579→  - `card-elevated` (border + shadow + hover lift), `card-glass` (glassmorphism), `card-inner-shadow`
+   481→   580→   580→   580→  - `icon-glow-emerald/amber/rose/blue/violet` (colored icon glow shadows)
+   482→   581→   581→   581→  - `bg-mesh` (radial gradient mesh background), `dot-pattern`
+   483→   582→   582→   582→  - `table-header-enhanced` (uppercase, letter-spacing, colored border)
+   484→   583→   583→   583→  - `stagger-children` (cascading fade-in for child elements)
+   485→   584→   584→   584→  - `status-dot` (ring pulse animation), `animate-fade-in`, `animate-scale-in`
+   486→   585→   585→   585→  - `input-glow`, `pill-hover`, `border-gradient-emerald`, `scroll-smooth-container`
+   487→   586→   586→   586→- **Dashboard Enhancements:**
+   488→   587→   587→   587→  - PageHeader with emerald gradient icon
+   489→   588→   588→   588→  - AnimatedCounter on all 4 KPI cards (revenue, transactions, success rate, merchants)
+   490→   589→   589→   589→  - bg-mesh background, animated floating decorative circles, status dot on activity feed
+   491→   590→   590→   590→- **All 8 Pages Enhanced:** PageHeader applied to all pages, bg-mesh backgrounds, card-elevated on filter/chart cards, table-header-enhanced on tables
+   492→   591→   591→   591→- **Payouts Page Enhanced:** PageHeader with teal gradient, card-elevated on KPI cards, input-glow on create dialog fields
+   493→   592→   592→   592→
+   494→   593→   593→   593→Stage Summary:
+   495→   594→   594→   594→- **2 new components:** animated-counter.tsx, page-header.tsx
+   496→   595→   595→   595→- **1 major feature:** Refund dialog with reason input (replaces direct refund button)
+   497→   596→   596→   596→- **15+ new CSS utility classes** in globals.css
+   498→   597→   597→   597→- **8 pages** enhanced with consistent PageHeader, bg-mesh, card-elevated, table-header-enhanced
+   499→   598→   598→   598→- **3 bugs fixed:** Settings name conflict, misplaced PageHeader in WebhookTab, AnimatedCounter initialization
+   500→   599→   599→   599→- **Total new files:** 2 (animated-counter.tsx, page-header.tsx)
+   501→   600→   600→   600→- **Total modified files:** 10 (globals.css, dashboard.tsx, transactions.tsx, payment-links.tsx, customers.tsx, merchants.tsx, payouts.tsx, reports.tsx, settings.tsx, animated-counter.tsx)
+   502→   601→   601→   601→- **ESLint:** zero errors
+   503→   602→   602→   602→- **QA:** All 8 pages verified (desktop, mobile, dark mode) — zero runtime errors
+   504→   603→   603→   603→
+   505→   604→   604→   604→## Current Project Status Assessment
+   506→   605→   605→   605→
+   507→   606→   606→   606→### What's Working (Verified ✅)
+   508→   607→   607→   607→- All 8 pages render correctly: Dashboard, Transactions, Payment Links, Customers, Merchants, Payouts, Reports, Settings
+   509→   608→   608→   608→- 15+ API routes with full CRUD operations
+   510→   609→   609→   609→- Database with 10 merchants, 15 customers, 200 transactions, 20 payment links, 15 payouts, 5 notifications
+   511→   610→   610→   610→- Dark/light mode toggle
+   512→   611→   611→   611→- Responsive design (mobile-first) with mobile bottom navigation bar
+   513→   612→   612→   612→- Sidebar collapse/expand with smooth animations
+   514→   613→   613→   613→- Command Palette (⌘K/Ctrl+K)
+   515→   614→   614→   614→- Welcome banner with quick action buttons
+   516→   615→   615→   615→- Live activity feed with WebSocket real-time transaction streaming
+   517→   616→   616→   616→- Glassmorphism KPI cards with AnimatedCounter
+   518→   617→   617→   617→- **NEW:** PageHeader component on all 8 pages with gradient icon containers
+   519→   618→   618→   618→- **NEW:** bg-mesh gradient background on all pages
+   520→   619→   619→   619→- **NEW:** card-elevated styling on filter/search/chart cards
+   521→   620→   620→   620→- **NEW:** table-header-enhanced on all data tables
+   522→   621→   621→   621→- **NEW:** Refund dialog with reason input, quick reason chips, validation
+   523→   622→   622→   622→- **NEW:** 15+ new CSS utility classes (glass, glow, mesh, stagger, etc.)
+   524→   623→   623→   623→- Sticky footer with branding
+   525→   624→   624→   624→- User profile section in sidebar
+   526→   625→   625→   625→- Quick Stats real-time metrics bar
+   527→   626→   626→   626→- Customer and Merchant creation dialogs
+   528→   627→   627→   627→- CSV export with bulk selection
+   529→   628→   628→   628→- Keyboard shortcuts overlay
+   530→   629→   629→   629→- Webhook configuration tab in Settings
+   531→   630→   630→   630→- Loading progress bar
+   532→   631→   631→   631→- Live notification center
+   533→   632→   632→   632→- WebSocket mini-service on port 3004
+   534→   633→   633→   633→
+   535→   634→   634→   634→### Architecture
+   536→   635→   635→   635→- `/src/app/page.tsx` - Single page app with client-side routing via Zustand
+   537→   636→   636→   636→- `/src/components/app/*.tsx` - 18 component files
+   538→   637→   637→   637→- `/src/hooks/use-socket.ts` - WebSocket hook
+   539→   638→   638→   638→- `/src/app/api/*/route.ts` - 15+ API route files
+   540→   639→   639→   639→- `/src/stores/app-store.ts` - Zustand store
+   541→   640→   640→   640→- `/src/lib/db.ts` - Prisma client
+   542→   641→   641→   641→- `/mini-services/notification-service/` - WebSocket on port 3004
+   543→   642→   642→   642→
+   544→   643→   643→   643→### Unresolved Issues / Next Phase Recommendations
+   545→   644→   644→   644→1. **Medium Priority:** Implement 2FA with QR code setup
+   546→   645→   645→   645→2. **Medium Priority:** Add transaction receipt PDF generation (currently HTML-only)
+   547→   646→   646→   646→3. **Medium Priority:** Add conversion funnel analytics
+   548→   647→   647→   647→4. **Low Priority:** Add multi-currency support
+   549→   648→   648→   648→5. **Low Priority:** Add merchant self-service onboarding flow
+   550→   649→   649→   649→6. **Enhancement:** Improve mobile landscape layout for table pages
+   551→   650→   650→   650→7. **Enhancement:** Add more keyboard shortcuts for in-page actions
+   552→   651→   651→   651→8. **Enhancement:** Add data export to PDF/Excel for reports
+   553→   652→   652→   652→
+   554→   653→   653→   653→---
+   555→   654→   654→   654→Task ID: 9
+   556→   655→   655→   655→Agent: Main Coordinator (Cron Review Round 5)
+   557→   656→   656→   656→Task: QA assessment, new features (Kasir POS, Customer/Merchant detail drawers, Reports enhancements), styling improvements, bug fixes
+   558→   657→   657→   657→
+   559→   658→   658→   658→Work Log:
+   560→   659→   659→   659→- **QA Testing:** Tested all pages via agent-browser (desktop 1920x1080, mobile 375x812) — initially found Kasir page crashing with client-side error
+   561→   660→   660→   660→- **Bug Fix 1:** Kasir component used named export (`export function Kasir`) but `next/dynamic` expected default export — fixed with `.then(m => ({ default: m.Kasir }))` in page.tsx
+   562→   661→   661→   661→- **Bug Fix 2:** `Page` type in app-store.ts was declared with `type` (not exported) — changed to `export type Page` to fix TS2459 errors in command-palette.tsx and mobile-nav.tsx
+   563→   662→   662→   662→- **Bug Fix 3:** `reports.tsx` had `handleExportSummary` useCallback referencing `reportData` before it was declared — moved `reportData` useMemo block before the export handlers
+   564→   663→   663→   663→- **New Feature: Kasir (POS Cashier) Page** — Complete POS terminal with:
+   565→   664→   664→   664→  - 15 Indonesian food products in 4 categories (Makanan, Minuman, Snack, Lainnya)
+   566→   665→   665→   665→  - Product catalog grid with search and category filter tabs
+   567→   666→   666→   666→  - Shopping cart with quantity controls, subtotal, PPN 11% tax calculation
+   568→   667→   667→   667→  - Payment dialog with 7 payment methods (QRIS, GoPay, OVO, Dana, ShopeePay, Bank Transfer, Kartu Kredit)
+   569→   668→   668→   668→  - Merchant selector dropdown, optional customer info fields
+   570→   669→   669→   669→  - Animated success state with receipt summary and print functionality
+   571→   670→   670→   670→  - Mobile-responsive with bottom sheet cart
+   572→   671→   671→   671→  - Keyboard shortcut 'K' to navigate to Kasir
+   573→   672→   672→   672→- **New Feature: Customer Detail Drawer** — Sheet component (side="right") with:
+   574→   673→   673→   673→  - Gradient avatar with initials, name, email, status badge
+   575→   674→   674→   674→  - 3 stat cards (Total Belanja, Total Transaksi, Rata-rata Belanja) with AnimatedCounter
+   576→   675→   675→   675→  - Contact info section (Email, Phone, Address, Member since)
+   577→   676→   676→   676→  - Mini bar chart showing 6-month transaction activity
+   578→   677→   677→   677→  - Transaction history mini-table with colored status/method badges
+   579→   678→   678→   678→  - Action buttons (Kirim Notifikasi, Buat Transaksi)
+   580→   679→   679→   679→  - Customer name in table is now clickable to open drawer
+   581→   680→   680→   680→- **New Feature: Merchant Detail Drawer** — Sheet component (side="right") with:
+   582→   681→   681→   681→  - Gradient avatar, name, email, status badge, masked API key with show/hide toggle + copy
+   583→   682→   682→   682→  - 4 stat cards (Total Penjualan, Total Transaksi, Tingkat Keberhasilan, Rata-rata Transaksi)
+   584→   683→   683→   683→  - Contact info section
+   585→   684→   684→   684→  - Revenue area chart (6 months, emerald gradient fill)
+   586→   685→   685→   685→  - Payment links list with status and sold/max qty
+   587→   686→   686→   686→  - Recent transactions mini-table (last 5)
+   588→   687→   687→   687→  - Action buttons (Lihat Semua Transaksi, Buat Payout)
+   589→   688→   688→   688→  - Merchant name in cards is now clickable to open drawer
+   590→   689→   689→   689→- **New Feature: Reports Enhancements:**
+   591→   690→   690→   690→  - CSV export dropdown (Ekspor CSV Transaksi + Ekspor CSV Ringkasan) with blob download
+   592→   691→   691→   691→  - Enhanced date range with 7 preset buttons (Hari Ini, 7 Hari, 30 Hari, 90 Hari, 12 Bulan, Semua, Kustom)
+   593→   692→   692→   692→  - Chart type switching for revenue chart (Area/Bar/Line toggle)
+   594→   693→   693→   693→  - Chart type switching for payment method chart (Pie/Bar horizontal toggle)
+   595→   694→   694→   694→  - 3 period summary stat cards with AnimatedCounter
+   596→   695→   695→   695→- **New API Route:** `/api/quick-pay/route.ts` — POST handler for instant POS payments with fee calculation per payment method
+   597→   696→   696→   696→- **Enhanced API:** `/api/customers/[id]/route.ts` — Returns customer detail with stats, monthly activity, last 10 transactions
+   598→   697→   697→   697→- **Enhanced API:** `/api/merchants/[id]/route.ts` — Returns merchant detail with stats, revenue chart data, payment links, last 10 transactions
+   599→   698→   698→   698→- **Styling Enhancements (16 new CSS utilities):**
+   600→   699→   699→   699→  - `glass-card` — Glassmorphism with backdrop blur
+   601→   700→   700→   700→  - `shimmer` — Shimmer loading animation
+   602→   701→   701→   701→  - `pulse-ring` — Pulsing ring for status indicators
+   603→   702→   702→   702→  - `text-gradient-emerald/warm/cool` — Gradient text effects
+   604→   703→   703→   703→  - `hover-scale` — Scale up/down on hover/active
+   605→   704→   704→   704→  - `animate-count-up/slide-in-right/float-slow` — Animation utilities
+   606→   705→   705→   705→  - `gradient-border` — CSS mask gradient border
+   607→   706→   706→   706→  - `hover-glow-border` — Emerald glow on hover
+   608→   707→   707→   707→  - `pattern-grid` — Subtle emerald grid background
+   609→   708→   708→   708→  - `focus-ring-emerald` — Accessibility focus ring
+   610→   709→   709→   709→  - `table-stripe` — Alternating row backgrounds
+   611→   710→   710→   710→  - `text-shadow-subtle` — Subtle text shadow for headings
+   612→   711→   711→   711→  - `tabular-nums` — Aligned numeric font variant
+   613→   712→   712→   712→- **Cross-component styling applied to:** dashboard.tsx (7 additions), quick-stats.tsx (3), header.tsx (2), page-header.tsx (2), settings.tsx (3 types), transactions.tsx (3), payouts.tsx (3)
+   614→   713→   713→   713→- **Navigation updates:** Kasir added to sidebar (before Merchants), mobile nav (replaced Reports in primary), keyboard shortcuts (K key)
+   615→   714→   714→   714→- **ESLint:** zero errors after all fixes
+   616→   715→   715→   715→
+   617→   716→   716→   716→Stage Summary:
+   618→   717→   717→   717→- **1 new page:** Kasir (POS Cashier) — 9th page in the app
+   619→   718→   718→   718→- **2 detail drawers:** Customer and Merchant with full stats, charts, and transaction history
+   620→   719→   719→   719→- **3 bug fixes:** Kasir dynamic import, Page type export, Reports variable ordering
+   621→   720→   720→   720→- **Reports enhancements:** CSV export, date presets, chart type switching, period summary cards
+   622→   721→   721→   721→- **16 new CSS utilities** applied across 7 component files
+   623→   722→   722→   722→- **1 new API route:** /api/quick-pay
+   624→   723→   723→   723→- **2 enhanced API routes:** customers/[id], merchants/[id]
+   625→   724→   724→   724→- **Total pages:** 9 (Dashboard, Transactions, Payment Links, Customers, Merchants, **Kasir**, Payouts, Reports, Settings)
+   626→   725→   725→   725→- **ESLint:** zero errors
+   627→   726→   726→   726→- **QA:** All 9 pages verified (desktop, mobile) — zero runtime errors
+   628→   727→   727→   727→
+   629→   728→   728→   728→## Current Project Status Assessment
+   630→   729→   729→   729→
+   631→   730→   730→   730→### What's Working (Verified ✅)
+   632→   731→   731→   731→- All 9 pages render correctly: Dashboard, Transactions, Payment Links, Customers, Merchants, **Kasir**, Payouts, Reports, Settings
+   633→   732→   732→   732→- 16+ API routes with full CRUD + detail endpoints + quick-pay
+   634→   733→   733→   733→- Database with 10 merchants, 15 customers, 200 transactions, 20 payment links, 15 payouts, 5 notifications
+   635→   734→   734→   734→- Dark/light mode toggle (D keyboard shortcut)
+   636→   735→   735→   735→- Responsive design (mobile-first) with mobile bottom navigation bar
+   637→   736→   736→   736→- Sidebar collapse/expand with smooth animations
+   638→   737→   737→   737→- Command Palette (⌘K/Ctrl+K)
+   639→   738→   738→   738→- Welcome banner with quick action buttons
+   640→   739→   739→   739→- Live activity feed with WebSocket real-time transaction streaming
+   641→   740→   740→   740→- Glassmorphism KPI cards with AnimatedCounter
+   642→   741→   741→   741→- PageHeader component on all 9 pages with gradient icon containers
+   643→   742→   742→   742→- bg-mesh and pattern-grid gradient backgrounds
+   644→   743→   743→   743→- card-elevated and hover-glow-border on cards
+   645→   744→   744→   744→- table-header-enhanced and table-stripe on data tables
+   646→   745→   745→   745→- Refund dialog with reason input
+   647→   746→   746→   746→- **NEW:** Kasir POS page with 15 products, cart, payment dialog, success animation
+   648→   747→   747→   747→- **NEW:** Customer detail drawer (stats, chart, transaction history, action buttons)
+   649→   748→   748→   748→- **NEW:** Merchant detail drawer (stats, revenue chart, payment links, API key, transactions)
+   650→   749→   749→   749→- **NEW:** Reports CSV export (transactions + summary)
+   651→   750→   750→   750→- **NEW:** Reports date range presets (7 options)
+   652→   751→   751→   751→- **NEW:** Reports chart type switching (Area/Bar/Line for revenue, Pie/Bar for payment methods)
+   653→   752→   752→   752→- **NEW:** Reports period summary stat cards with AnimatedCounter
+   654→   753→   753→   753→- **NEW:** 16 additional CSS utility classes
+   655→   754→   754→   754→- **NEW:** K keyboard shortcut for Kasir navigation
+   656→   755→   755→   755→- Sticky footer with branding
+   657→   756→   756→   756→- Keyboard shortcuts overlay (15 shortcuts)
+   658→   757→   757→   757→- Webhook configuration tab in Settings
+   659→   758→   758→   758→- Loading progress bar
+   660→   759→   759→   759→- Live notification center
+   661→   760→   760→   760→- WebSocket mini-service on port 3004
+   662→   761→   761→   761→
+   663→   762→   762→   762→### Architecture
+   664→   763→   763→   763→- `/src/app/page.tsx` - SPA with client-side routing, 9 page components
+   665→   764→   764→   764→- `/src/components/app/*.tsx` - 20 component files
+   666→   765→   765→   765→- `/src/lib/receipt-generator.ts` - HTML receipt generation utility
+   667→   766→   766→   766→- `/src/hooks/use-socket.ts` - WebSocket hook
+   668→   767→   767→   767→- `/src/app/api/*/route.ts` - 16+ API route files
+   669→   768→   768→   768→- `/src/stores/app-store.ts` - Zustand store with exported Page type
+   670→   769→   769→   769→- `/src/lib/db.ts` - Prisma client
+   671→   770→   770→   770→- `/mini-services/notification-service/` - WebSocket on port 3004
+   672→   771→   771→   771→
+   673→   772→   772→   772→### Unresolved Issues / Next Phase Recommendations
+   674→   773→   773→   773→1. **Medium Priority:** Implement 2FA with QR code setup
+   675→   774→   774→   774→2. **Medium Priority:** Add transaction receipt PDF generation (currently HTML-only)
+   676→   775→   775→   775→3. **Medium Priority:** Add conversion funnel analytics
+   677→   776→   776→   776→4. **Low Priority:** Add multi-currency support
+   678→   777→   777→   777→5. **Low Priority:** Add merchant self-service onboarding flow
+   679→   778→   778→   778→6. **Enhancement:** Improve mobile landscape layout for table pages
+   680→   779→   779→   779→7. **Enhancement:** Add data export to PDF for reports
+   681→   780→   780→   780→8. **Enhancement:** Add print stylesheet for better receipt printing
+   682→   781→   781→   781→9. **Enhancement:** Add sound effects on POS payment success
+   683→   782→   782→   782→10. **Enhancement:** Offline mode for Kasir (PWA support)
+   684→   783→   783→   783→
+   685→   784→   784→   784→---
+   686→   785→   785→   785→Task ID: 5
+   687→   786→   786→   786→Agent: Main
+   688→   787→   787→   787→Task: Add Payout detail drawer to the payouts page
+   689→   788→   788→   788→
+   690→   789→   789→   789→Work Log:
+   691→   790→   790→   790→- Enhanced GET /api/payouts/[id] route to include merchant name/email and computed status timeline
+   692→   791→   791→   791→- Status timeline logic: pending payouts get 1 step, processing/completed get 2-3 steps, failed get 2 steps with mocked processing timestamp
+   693→   792→   792→   792→- Added PayoutDetailDrawer component using shadcn/ui Sheet (side='right')
+   694→   793→   793→   793→- Drawer sections: Amount (gradient emerald), Bank Info (card-elevated with masked account), Merchant Info, Status Timeline (vertical with pulse-ring), Notes (conditional)
+   695→   794→   794→   794→- Made payout amount and net amount clickable in table with emerald text + hover:underline
+   696→   795→   795→   795→- Added selectedPayoutId state, useQuery for detail fetching, and action buttons (Proses/Selesaikan + Tutup)
+   697→   796→   796→   796→- Used framer-motion stagger entrance animations for drawer sections
+   698→   797→   797→   797→- All text in Bahasa Indonesia, emerald/green theme consistent
+   699→   798→   798→   798→- Zero ESLint errors, successful compilation
+   700→   799→   799→   799→
+   701→   800→   800→   800→Stage Summary:
+   702→   801→   801→   801→- **Enhanced API**: /api/payouts/[id] GET now returns merchant info + status timeline array
+   703→   802→   802→   802→- **New Component**: PayoutDetailDrawer with Sheet, staggered animations, professional timeline
+   704→   803→   803→   803→- **Modified Component**: payouts.tsx - clickable amounts, state management, drawer integration
+   705→   804→   804→   804→- **Preserved**: All existing functionality (create dialog, table, pagination, filters, process mutation)
+   706→   805→   805→   805→
+   707→   806→   806→   806→---
+   708→   807→   807→   807→Task ID: 5
+   709→   808→   808→   808→Agent: Main
+   710→   809→   809→   809→Task: Settings API Integration, Empty States Component, Global CSS Enhancements
+   711→   810→   810→   810→
+   712→   811→   811→   811→Work Log:
+   713→   812→   812→   812→- Created API route /src/app/api/settings/profil/route.ts (GET + POST, in-memory profile store)
+   714→   813→   813→   813→- Refactored ProfilTab in settings.tsx: replaced manual useState saving with useMutation from TanStack Query
+   715→   814→   814→   814→- Added optimistic update pattern, loading state from saveMutation.isPending, error handling via onError toast
+   716→   815→   815→   815→- Added Data Export dropdown (DropdownMenu) to Settings PageHeader with "Ekspor PDF" (window.print) and "Ekspor CSV" (fetch transactions, convert to CSV, blob download)
+   717→   816→   816→   816→- Created reusable EmptyState component (/src/components/app/empty-state.tsx) with AnimatePresence stagger, dot-pattern background, icon mapping, optional action button with Plus icon for 'Tambah'
+   718→   817→   817→   817→- Integrated EmptyState into 4 table pages: transactions.tsx, customers.tsx, payment-links.tsx, merchants.tsx
+   719→   818→   818→   818→- Added 12+ new CSS utility classes to globals.css: card-gradient-border-emerald/teal, card-shine, card-spotlight, border-pulse-emerald, glass-deep, input-focus-emerald, stats-gradient-top, badge-gradient-emerald/teal/amber/rose, hover-lift-surface, hover-glow-emerald
+   720→   819→   819→   819→- Applied neon-glow to QuickStats container, hover-scale to Reports chart cards
+   721→   820→   820→   820→- Verified existing CSS classes already correctly applied: hover-glow-border, table-stripe, inset-shadow, glass-card, neon-glow, text-gradient-emerald across Header, MobileNav, Footer, PageHeader, Transactions, Payouts, Settings, CommandPalette
+   722→   821→   821→   821→- Zero lint errors confirmed
+   723→   822→   822→   822→
+   724→   823→   823→   823→Stage Summary:
+   725→   824→   824→   824→- **Settings Profil API**: New POST /api/settings/profil endpoint with in-memory storage and validation
+   726→   825→   825→   825→- **ProfilTab**: Upgraded from fake setTimeout save to real useMutation with optimistic update, loading spinner, error toasts
+   727→   826→   826→   826→- **Settings Export**: DropdownMenu with Ekspor PDF (browser print) and Ekspor CSV (fetch + blob download)
+   728→   827→   827→   827→- **EmptyState Component**: Reusable with framer-motion stagger animation, dot-pattern background, icon mapping, conditional 'Tambah' button with Plus icon
+   729→   828→   828→   828→- **CSS Utilities**: 12+ new classes for card effects, badges, animations, glassmorphism, hover states
+   730→   829→   829→   829→- **Component Enhancements**: neon-glow on QuickStats, hover-scale on Reports chart cards
+   731→   830→   830→   830→- All text in Bahasa Indonesia
+   732→   831→   831→   831→

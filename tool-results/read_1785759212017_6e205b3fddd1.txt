@@ -1,0 +1,1177 @@
+    80→   139→}
+    81→   140→::-webkit-scrollbar-thumb:hover {
+    82→   141→  background: oklch(0.5 0.03 155);
+    83→   142→}
+    84→   143→
+    85→   144→/* ── Gradient Utilities ──────────────────────────────────────────────────── */
+    86→   145→.gradient-emerald {
+    87→   146→  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+    88→   147→}
+    89→   148→.gradient-dark {
+    90→   149→  background: linear-gradient(180deg, #064e3b 0%, #0f172a 100%);
+    91→   150→}
+    92→   151→.gradient-card {
+    93→   152→  background: linear-gradient(135deg, oklch(0.97 0.02 155) 0%, oklch(1 0 0) 100%);
+    94→   153→}
+    95→   154→.gradient-welcome {
+    96→   155→  background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0891b2 100%);
+    97→   156→}
+    98→   157→.gradient-gold {
+    99→   158→  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+   100→   159→}
+   101→   160→.gradient-rose {
+   102→   161→  background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+   103→   162→}
+   104→   163→.gradient-blue {
+   105→   164→  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+   106→   165→}
+   107→   166→.gradient-violet {
+   108→   167→  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+   109→   168→}
+   110→   169→
+   111→   170→/* ── Glassmorphism Utilities ─────────────────────────────────────────────── */
+   112→   171→.glass {
+   113→   172→  background: oklch(1 0 0 / 60%);
+   114→   173→  backdrop-filter: blur(16px) saturate(180%);
+   115→   174→  -webkit-backdrop-filter: blur(16px) saturate(180%);
+   116→   175→}
+   117→   176→.dark .glass {
+   118→   177→  background: oklch(0.18 0.012 155 / 70%);
+   119→   178→}
+   120→   179→.glass-subtle {
+   121→   180→  background: oklch(1 0 0 / 40%);
+   122→   181→  backdrop-filter: blur(8px);
+   123→   182→  -webkit-backdrop-filter: blur(8px);
+   124→   183→}
+   125→   184→.dark .glass-subtle {
+   126→   185→  background: oklch(0.18 0.012 155 / 50%);
+   127→   186→}
+   128→   187→
+   129→   188→/* ── Shimmer / Skeleton Animation ────────────────────────────────────────── */
+   130→   189→@keyframes shimmer {
+   131→   190→  0% { background-position: -200% 0; }
+   132→   191→  100% { background-position: 200% 0; }
+   133→   192→}
+   134→   193→.shimmer {
+   135→   194→  background: linear-gradient(
+   136→   195→    90deg,
+   137→   196→    oklch(0.95 0.005 155) 25%,
+   138→   197→    oklch(0.97 0.01 155) 50%,
+   139→   198→    oklch(0.95 0.005 155) 75%
+   140→   199→  );
+   141→   200→  background-size: 200% 100%;
+   142→   201→  animation: shimmer 2s ease-in-out infinite;
+   143→   202→}
+   144→   203→.dark .shimmer {
+   145→   204→  background: linear-gradient(
+   146→   205→    90deg,
+   147→   206→    oklch(0.20 0.005 155) 25%,
+   148→   207→    oklch(0.24 0.01 155) 50%,
+   149→   208→    oklch(0.20 0.005 155) 75%
+   150→   209→  );
+   151→   210→  background-size: 200% 100%;
+   152→   211→}
+   153→   212→
+   154→   213→/* ── Floating Animation ──────────────────────────────────────────────────── */
+   155→   214→@keyframes float {
+   156→   215→  0%, 100% { transform: translateY(0px); }
+   157→   216→  50% { transform: translateY(-6px); }
+   158→   217→}
+   159→   218→.animate-float {
+   160→   219→  animation: float 3s ease-in-out infinite;
+   161→   220→}
+   162→   221→
+   163→   222→/* ── Pulse Glow ──────────────────────────────────────────────────────────── */
+   164→   223→@keyframes pulse-glow {
+   165→   224→  0%, 100% { box-shadow: 0 0 0 0 oklch(0.508 0.17 155 / 30%); }
+   166→   225→  50% { box-shadow: 0 0 20px 4px oklch(0.508 0.17 155 / 15%); }
+   167→   226→}
+   168→   227→.pulse-glow {
+   169→   228→  animation: pulse-glow 2s ease-in-out infinite;
+   170→   229→}
+   171→   230→
+   172→   231→/* ── NProgress Loading Bar ───────────────────────────────────────────────── */
+   173→   232→.nprogress-bar {
+   174→   233→  position: fixed;
+   175→   234→  top: 0;
+   176→   235→  left: 0;
+   177→   236→  height: 3px;
+   178→   237→  background: linear-gradient(90deg, #059669, #10b981, #34d399);
+   179→   238→  z-index: 9999;
+   180→   239→  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+   181→   240→  border-radius: 0 2px 2px 0;
+   182→   241→}
+   183→   242→.nprogress-bar::after {
+   184→   243→  content: '';
+   185→   244→  position: absolute;
+   186→   245→  top: 0;
+   187→   246→  right: 0;
+   188→   247→  width: 100px;
+   189→   248→  height: 100%;
+   190→   249→  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+   191→   250→  animation: nprogress-shimmer 1.2s ease-in-out infinite;
+   192→   251→}
+   193→   252→@keyframes nprogress-shimmer {
+   194→   253→  0% { transform: translateX(-100%); }
+   195→   254→  100% { transform: translateX(100%); }
+   196→   255→}
+   197→   256→
+   198→   257→/* ── Card Hover Effects ──────────────────────────────────────────────────── */
+   199→   258→.card-hover {
+   200→   259→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   201→   260→}
+   202→   261→.card-hover:hover {
+   203→   262→  transform: translateY(-2px);
+   204→   263→  box-shadow:
+   205→   264→    0 4px 6px -1px oklch(0 0 0 / 5%),
+   206→   265→    0 10px 15px -3px oklch(0 0 0 / 5%),
+   207→   266→    0 0 0 1px oklch(0.508 0.17 155 / 8%);
+   208→   267→}
+   209→   268→.dark .card-hover:hover {
+   210→   269→  box-shadow:
+   211→   270→    0 4px 6px -1px oklch(0 0 0 / 20%),
+   212→   271→    0 10px 15px -3px oklch(0 0 0 / 15%),
+   213→   272→    0 0 0 1px oklch(0.608 0.17 155 / 15%);
+   214→   273→}
+   215→   274→
+   216→   275→/* ── Table Row Hover ─────────────────────────────────────────────────────── */
+   217→   276→.table-row-hover {
+   218→   277→  transition: all 0.15s ease;
+   219→   278→}
+   220→   279→.table-row-hover:hover {
+   221→   280→  background: oklch(0.96 0.015 155);
+   222→   281→}
+   223→   282→.dark .table-row-hover:hover {
+   224→   283→  background: oklch(0.22 0.015 155);
+   225→   284→}
+   226→   285→
+   227→   286→/* ── Button Press Effect ─────────────────────────────────────────────────── */
+   228→   287→.btn-press {
+   229→   288→  transition: all 0.15s ease;
+   230→   289→}
+   231→   290→.btn-press:active {
+   232→   291→  transform: scale(0.97);
+   233→   292→}
+   234→   293→
+   235→   294→/* ── Focus Ring Enhancement ──────────────────────────────────────────────── */
+   236→   295→.focus-ring {
+   237→   296→  outline: none;
+   238→   297→}
+   239→   298→.focus-ring:focus-visible {
+   240→   299→  outline: 2px solid oklch(0.508 0.17 155);
+   241→   300→  outline-offset: 2px;
+   242→   301→  border-radius: calc(var(--radius) - 2px);
+   243→   302→}
+   244→   303→
+   245→   304→/* ── Badge Glow Variants ─────────────────────────────────────────────────── */
+   246→   305→.badge-success {
+   247→   306→  background: oklch(0.92 0.04 155);
+   248→   307→  color: oklch(0.35 0.12 155);
+   249→   308→}
+   250→   309→.dark .badge-success {
+   251→   310→  background: oklch(0.30 0.06 155);
+   252→   311→  color: oklch(0.85 0.10 155);
+   253→   312→}
+   254→   313→.badge-warning {
+   255→   314→  background: oklch(0.95 0.04 85);
+   256→   315→  color: oklch(0.40 0.12 60);
+   257→   316→}
+   258→   317→.dark .badge-warning {
+   259→   318→  background: oklch(0.30 0.06 85);
+   260→   319→  color: oklch(0.85 0.10 85);
+   261→   320→}
+   262→   321→.badge-danger {
+   263→   322→  background: oklch(0.94 0.03 25);
+   264→   323→  color: oklch(0.45 0.15 25);
+   265→   324→}
+   266→   325→.dark .badge-danger {
+   267→   326→  background: oklch(0.30 0.05 25);
+   268→   327→  color: oklch(0.85 0.10 25);
+   269→   328→}
+   270→   329→
+   271→   330→/* ── Text Gradient ───────────────────────────────────────────────────────── */
+   272→   331→.text-gradient {
+   273→   332→  background: linear-gradient(135deg, #059669, #0d9488, #0891b2);
+   274→   333→  -webkit-background-clip: text;
+   275→   334→  -webkit-text-fill-color: transparent;
+   276→   335→  background-clip: text;
+   277→   336→}
+   278→   337→
+   279→   338→/* ── Status Dot Pulse ────────────────────────────────────────────────────── */
+   280→   339→@keyframes status-pulse {
+   281→   340→  0%, 100% { opacity: 1; }
+   282→   341→  50% { opacity: 0.5; }
+   283→   342→}
+   284→   343→.status-dot-pulse {
+   285→   344→  animation: status-pulse 2s ease-in-out infinite;
+   286→   345→}
+   287→   346→
+   288→   347→/* ── Slide-in Animations ─────────────────────────────────────────────────── */
+   289→   348→@keyframes slide-in-right {
+   290→   349→  from { transform: translateX(20px); opacity: 0; }
+   291→   350→  to { transform: translateX(0); opacity: 1; }
+   292→   351→}
+   293→   352→@keyframes slide-in-up {
+   294→   353→  from { transform: translateY(10px); opacity: 0; }
+   295→   354→  to { transform: translateY(0); opacity: 1; }
+   296→   355→}
+   297→   356→.animate-slide-in-right {
+   298→   357→  animation: slide-in-right 0.3s ease-out;
+   299→   358→}
+   300→   359→.animate-slide-in-up {
+   301→   360→  animation: slide-in-up 0.3s ease-out;
+   302→   361→}
+   303→   362→
+   304→   363→/* ── Mobile Bottom Nav ───────────────────────────────────────────────────── */
+   305→   364→.mobile-nav {
+   306→   365→  padding-bottom: env(safe-area-inset-bottom, 0px);
+   307→   366→}
+   308→   367→.mobile-nav-item {
+   309→   368→  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+   310→   369→}
+   311→   370→.mobile-nav-item.active {
+   312→   371→  color: oklch(0.508 0.17 155);
+   313→   372→}
+   314→   373→.dark .mobile-nav-item.active {
+   315→   374→  color: oklch(0.608 0.17 155);
+   316→   375→}
+   317→   376→
+   318→   377→/* ── Notification Badge Bounce ───────────────────────────────────────────── */
+   319→   378→@keyframes badge-bounce {
+   320→   379→  0%, 100% { transform: scale(1); }
+   321→   380→  50% { transform: scale(1.2); }
+   322→   381→}
+   323→   382→.badge-bounce {
+   324→   383→  animation: badge-bounce 0.5s ease-in-out;
+   325→   384→}
+   326→   385→
+   327→   386→/* ── Subtle Background Pattern ───────────────────────────────────────────── */
+   328→   387→.bg-pattern {
+   329→   388→  background-image: radial-gradient(oklch(0.508 0.17 155 / 3%) 1px, transparent 1px);
+   330→   389→  background-size: 24px 24px;
+   331→   390→}
+   332→   391→.dark .bg-pattern {
+   333→   392→  background-image: radial-gradient(oklch(0.608 0.17 155 / 5%) 1px, transparent 1px);
+   334→   393→}
+   335→   394→
+   336→   395→/* ── KPI Card Accent Bar ─────────────────────────────────────────────────── */
+   337→   396→.kpi-accent-bar {
+   338→   397→  position: relative;
+   339→   398→  overflow: hidden;
+   340→   399→}
+   341→   400→.kpi-accent-bar::before {
+   342→   401→  content: '';
+   343→   402→  position: absolute;
+   344→   403→  top: 0;
+   345→   404→  left: 0;
+   346→   405→  right: 0;
+   347→   406→  height: 3px;
+   348→   407→  border-radius: 3px 3px 0 0;
+   349→   408→}
+   350→   409→.kpi-accent-emerald::before {
+   351→   410→  background: linear-gradient(90deg, #059669, #34d399);
+   352→   411→}
+   353→   412→.kpi-accent-teal::before {
+   354→   413→  background: linear-gradient(90deg, #0d9488, #5eead4);
+   355→   414→}
+   356→   415→.kpi-accent-amber::before {
+   357→   416→  background: linear-gradient(90deg, #d97706, #fbbf24);
+   358→   417→}
+   359→   418→.kpi-accent-rose::before {
+   360→   419→  background: linear-gradient(90deg, #e11d48, #fb7185);
+   361→   420→}
+   362→   421→
+   363→   422→/* ── Separator Enhancement ───────────────────────────────────────────────── */
+   364→   423→.separator-gradient {
+   365→   424→  height: 1px;
+   366→   425→  background: linear-gradient(90deg, transparent, oklch(0.508 0.17 155 / 20%), transparent);
+   367→   426→  border: none;
+   368→   427→}
+   369→   428→
+   370→   429→/* ── Quick Stats Bar ────────────────────────────────────────────────────── */
+   371→   430→.quick-stats-bar {
+   372→   431→  background: linear-gradient(90deg,
+   373→   432→    oklch(0.508 0.17 155 / 4%) 0%,
+   374→   433→    oklch(0.508 0.17 155 / 1%) 50%,
+   375→   434→    oklch(0.508 0.17 155 / 4%) 100%
+   376→   435→  );
+   377→   436→  border-bottom: 1px solid oklch(0.508 0.17 155 / 10%);
+   378→   437→}
+   379→   438→.dark .quick-stats-bar {
+   380→   439→  background: linear-gradient(90deg,
+   381→   440→    oklch(0.608 0.17 155 / 6%) 0%,
+   382→   441→    oklch(0.608 0.17 155 / 2%) 50%,
+   383→   442→    oklch(0.608 0.17 155 / 6%) 100%
+   384→   443→  );
+   385→   444→  border-bottom-color: oklch(0.608 0.17 155 / 12%);
+   386→   445→}
+   387→   446→.quick-stat-item {
+   388→   447→  position: relative;
+   389→   448→  transition: all 0.2s ease;
+   390→   449→}
+   391→   450→.quick-stat-item:hover {
+   392→   451→  transform: translateY(-1px);
+   393→   452→}
+   394→   453→.quick-stat-divider {
+   395→   454→  width: 1px;
+   396→   455→  height: 24px;
+   397→   456→  background: linear-gradient(180deg, transparent, oklch(0.508 0.17 155 / 20%), transparent);
+   398→   457→}
+   399→   458→.dark .quick-stat-divider {
+   400→   459→  background: linear-gradient(180deg, transparent, oklch(0.608 0.17 155 / 25%), transparent);
+   401→   460→}
+   402→   461→
+   403→   462→/* ── Animated Counter ───────────────────────────────────────────────────── */
+   404→   463→@keyframes count-up {
+   405→   464→  from { opacity: 0; transform: translateY(4px); }
+   406→   465→  to { opacity: 1; transform: translateY(0); }
+   407→   466→}
+   408→   467→.animate-count-up {
+   409→   468→  animation: count-up 0.4s ease-out forwards;
+   410→   469→}
+   411→   470→
+   412→   471→/* ── Subtle Border Glow ─────────────────────────────────────────────────── */
+   413→   472→.border-glow {
+   414→   473→  position: relative;
+   415→   474→}
+   416→   475→.border-glow::after {
+   417→   476→  content: '';
+   418→   477→  position: absolute;
+   419→   478→  inset: -1px;
+   420→   479→  border-radius: inherit;
+   421→   480→  background: linear-gradient(135deg, oklch(0.508 0.17 155 / 20%), transparent, oklch(0.508 0.17 155 / 10%));
+   422→   481→  z-index: -1;
+   423→   482→  opacity: 0;
+   424→   483→  transition: opacity 0.3s ease;
+   425→   484→}
+   426→   485→.border-glow:hover::after {
+   427→   486→  opacity: 1;
+   428→   487→}
+   429→   488→.dark .border-glow::after {
+   430→   489→  background: linear-gradient(135deg, oklch(0.608 0.17 155 / 25%), transparent, oklch(0.608 0.17 155 / 12%));
+   431→   490→}
+   432→   491→
+   433→   492→/* ── Ripple Effect ──────────────────────────────────────────────────────── */
+   434→   493→.ripple {
+   435→   494→  position: relative;
+   436→   495→  overflow: hidden;
+   437→   496→}
+   438→   497→.ripple::after {
+   439→   498→  content: '';
+   440→   499→  position: absolute;
+   441→   500→  inset: 0;
+   442→   501→  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), oklch(0.508 0.17 155 / 12%), transparent 60%);
+   443→   502→  opacity: 0;
+   444→   503→  transition: opacity 0.3s ease;
+   445→   504→  pointer-events: none;
+   446→   505→}
+   447→   506→.ripple:hover::after {
+   448→   507→  opacity: 1;
+   449→   508→}
+   450→   509→
+   451→   510→/* ── Skeleton Shimmer Card ──────────────────────────────────────────────── */
+   452→   511→@keyframes skeleton-shimmer {
+   453→   512→  0% { background-position: -200% 0; }
+   454→   513→  100% { background-position: 200% 0; }
+   455→   514→}
+   456→   515→.skeleton-card {
+   457→   516→  background: linear-gradient(90deg,
+   458→   517→    oklch(0.95 0.005 155) 0%,
+   459→   518→    oklch(0.97 0.01 155) 20%,
+   460→   519→    oklch(0.97 0.01 155) 40%,
+   461→   520→    oklch(0.95 0.005 155) 60%
+   462→   521→  );
+   463→   522→  background-size: 200% 100%;
+   464→   523→  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+   465→   524→  border-radius: var(--radius-lg);
+   466→   525→}
+   467→   526→.dark .skeleton-card {
+   468→   527→  background: linear-gradient(90deg,
+   469→   528→    oklch(0.20 0.005 155) 0%,
+   470→   529→    oklch(0.24 0.01 155) 20%,
+   471→   530→    oklch(0.24 0.01 155) 40%,
+   472→   531→    oklch(0.20 0.005 155) 60%
+   473→   532→  );
+   474→   533→  background-size: 200% 100%;
+   475→   534→}
+   476→   535→
+   477→   536→/* ── Tag/Chip Component ─────────────────────────────────────────────────── */
+   478→   537→.chip {
+   479→   538→  display: inline-flex;
+   480→   539→  align-items: center;
+   481→   540→  gap: 4px;
+   482→   541→  padding: 2px 10px;
+   483→   542→  border-radius: 9999px;
+   484→   543→  font-size: 11px;
+   485→   544→  font-weight: 500;
+   486→   545→  transition: all 0.15s ease;
+   487→   546→}
+   488→   547→.chip-emerald {
+   489→   548→  background: oklch(0.508 0.17 155 / 10%);
+   490→   549→  color: oklch(0.35 0.12 155);
+   491→   550→  border: 1px solid oklch(0.508 0.17 155 / 15%);
+   492→   551→}
+   493→   552→.dark .chip-emerald {
+   494→   553→  background: oklch(0.608 0.17 155 / 15%);
+   495→   554→  color: oklch(0.85 0.10 155);
+   496→   555→  border-color: oklch(0.608 0.17 155 / 20%);
+   497→   556→}
+   498→   557→
+   499→   558→/* ── Tooltip Enhancement ────────────────────────────────────────────────── */
+   500→   559→.tooltip-pretty {
+   501→   560→  position: relative;
+   502→   561→}
+   503→   562→.tooltip-pretty::before {
+   504→   563→  content: attr(data-tooltip);
+   505→   564→  position: absolute;
+   506→   565→  bottom: calc(100% + 8px);
+   507→   566→  left: 50%;
+   508→   567→  transform: translateX(-50%) translateY(4px);
+   509→   568→  background: oklch(0.15 0.01 155);
+   510→   569→  color: oklch(0.95 0.01 155);
+   511→   570→  padding: 4px 10px;
+   512→   571→  border-radius: 6px;
+   513→   572→  font-size: 12px;
+   514→   573→  white-space: nowrap;
+   515→   574→  opacity: 0;
+   516→   575→  pointer-events: none;
+   517→   576→  transition: all 0.2s ease;
+   518→   577→  z-index: 100;
+   519→   578→}
+   520→   579→.tooltip-pretty:hover::before {
+   521→   580→  opacity: 1;
+   522→   581→  transform: translateX(-50%) translateY(0);
+   523→   582→}
+   524→   583→
+   525→   584→/* ── Smooth Number Transition ───────────────────────────────────────────── */
+   526→   585→.number-transition {
+   527→   586→  display: inline-block;
+   528→   587→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   529→   588→}
+   530→   589→
+   531→   590→/* ── Dark Mode Chart Grid ──────────────────────────────────────────────── */
+   532→   591→.dark .recharts-cartesian-grid-horizontal line,
+   533→   592→.dark .recharts-cartesian-grid-vertical line {
+   534→   593→  stroke: oklch(1 0 0 / 6%);
+   535→   594→}
+   536→   595→.dark .recharts-text {
+   537→   596→  fill: oklch(0.65 0.015 155);
+   538→   597→}
+   539→   598→
+   540→   599→/* ── Error State Enhancement ────────────────────────────────────────────── */
+   541→   600→.error-state {
+   542→   601→  background: linear-gradient(135deg,
+   543→   602→    oklch(0.577 0.245 27.325 / 3%),
+   544→   603→    oklch(0 0 0 / 0%)
+   545→   604→  );
+   546→   605→  border-radius: var(--radius-xl);
+   547→   606→}
+   548→   607→.dark .error-state {
+   549→   608→  background: linear-gradient(135deg,
+   550→   609→    oklch(0.704 0.191 22.216 / 5%),
+   551→   610→    oklch(0 0 0 / 0%)
+   552→   611→  );
+   553→   612→}
+   554→   613→
+   555→   614→/* ── Empty State Enhancement ────────────────────────────────────────────── */
+   556→   615→.empty-state {
+   557→   616→  background: linear-gradient(135deg,
+   558→   617→    oklch(0.508 0.17 155 / 2%),
+   559→   618→    oklch(0 0 0 / 0%)
+   560→   619→  );
+   561→   620→  border-radius: var(--radius-xl);
+   562→   621→}
+   563→   622→.dark .empty-state {
+   564→   623→  background: linear-gradient(135deg,
+   565→   624→    oklch(0.608 0.17 155 / 3%),
+   566→   625→    oklch(0 0 0 / 0%)
+   567→   626→  );
+   568→   627→}
+   569→   628→
+   570→   629→/* ── Accent Underline ───────────────────────────────────────────────────── */
+   571→   630→.accent-underline {
+   572→   631→  position: relative;
+   573→   632→  display: inline;
+   574→   633→}
+   575→   634→.accent-underline::after {
+   576→   635→  content: '';
+   577→   636→  position: absolute;
+   578→   637→  left: 0;
+   579→   638→  bottom: -2px;
+   580→   639→  width: 100%;
+   581→   640→  height: 2px;
+   582→   641→  background: linear-gradient(90deg, oklch(0.508 0.17 155), oklch(0.608 0.17 155 / 0%));
+   583→   642→  border-radius: 1px;
+   584→   643→}
+   585→   644→
+   586→   645→/* ── Page Section Divider ──────────────────────────────────────────────── */
+   587→   646→.section-divider {
+   588→   647→  position: relative;
+   589→   648→  padding-top: 24px;
+   590→   649→}
+   591→   650→.section-divider::before {
+   592→   651→  content: '';
+   593→   652→  position: absolute;
+   594→   653→  top: 0;
+   595→   654→  left: 0;
+   596→   655→  right: 0;
+   597→   656→  height: 1px;
+   598→   657→  background: linear-gradient(90deg,
+   599→   658→    oklch(0.508 0.17 155 / 15%),
+   600→   659→    oklch(0.508 0.17 155 / 5%),
+   601→   660→    oklch(0.508 0.17 155 / 15%)
+   602→   661→  );
+   603→   662→}
+   604→   663→
+   605→   664→/* ── Stat Card Gradient Border ─────────────────────────────────────── */
+   606→   665→.stat-card-gradient {
+   607→   666→  position: relative;
+   608→   667→  overflow: hidden;
+   609→   668→}
+   610→   669→.stat-card-gradient::before {
+   611→   670→  content: '';
+   612→   671→  position: absolute;
+   613→   672→  inset: 0;
+   614→   673→  border-radius: inherit;
+   615→   674→  padding: 1px;
+   616→   675→  background: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.6 0.12 180), oklch(0.7 0.15 160));
+   617→   676→  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   618→   677→  mask-composite: exclude;
+   619→   678→  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   620→   679→  -webkit-mask-composite: xor;
+   621→   680→  pointer-events: none;
+   622→   681→}
+   623→   682→
+   624→   683→/* ── Emerald Glow Shadows ─────────────────────────────────────────── */
+   625→   684→.glow-emerald-sm { box-shadow: 0 0 15px -3px oklch(0.7 0.15 160 / 0.15); }
+   626→   685→.glow-emerald-md { box-shadow: 0 0 25px -5px oklch(0.7 0.15 160 / 0.25); }
+   627→   686→
+   628→   687→/* ── Text Balance ─────────────────────────────────────────────────── */
+   629→   688→.text-balance { text-wrap: balance; }
+   630→   689→
+   631→   690→/* ── Badge Pulse Animation ───────────────────────────────────────── */
+   632→   691→.badge-pulse { animation: badge-pulse 2s ease-in-out infinite; }
+   633→   692→@keyframes badge-pulse {
+   634→   693→  0%, 100% { opacity: 1; }
+   635→   694→  50% { opacity: 0.7; }
+   636→   695→}
+   637→   696→
+   638→   697→/* ── Hover Lift (subtle) ──────────────────────────────────────────── */
+   639→   698→.hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+   640→   699→.hover-lift:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+   641→   700→
+   642→   701→/* ── Gradient Text Emerald ───────────────────────────────────────── */
+   643→   702→.gradient-text-emerald {
+   644→   703→  background: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.6 0.12 180));
+   645→   704→  -webkit-background-clip: text;
+   646→   705→  -webkit-text-fill-color: transparent;
+   647→   706→  background-clip: text;
+   648→   707→}
+   649→   708→
+   650→   709→/* ── Thin Scrollbar ───────────────────────────────────────────────── */
+   651→   710→.scrollbar-thin {
+   652→   711→  scrollbar-width: thin;
+   653→   712→  scrollbar-color: oklch(0.7 0.05 160 / 0.3) transparent;
+   654→   713→}
+   655→   714→.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+   656→   715→.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+   657→   716→.scrollbar-thin::-webkit-scrollbar-thumb { background: oklch(0.7 0.05 160 / 0.3); border-radius: 2px; }
+   658→   717→
+   659→   718→/* ── Dot Pattern ─────────────────────────────────────────────────── */
+   660→   719→.dot-pattern {
+   661→   720→  background-image: radial-gradient(oklch(0.7 0.05 160 / 0.15) 1px, transparent 1px);
+   662→   721→  background-size: 16px 16px;
+   663→   722→}
+   664→   723→.dark .dot-pattern {
+   665→   724→  background-image: radial-gradient(oklch(0.7 0.05 160 / 0.08) 1px, transparent 1px);
+   666→   725→}
+   667→   726→
+   668→   727→/* ── Enhanced Card Variants ────────────────────────────────────────── */
+   669→   728→.card-elevated {
+   670→   729→  border: 1px solid oklch(0.92 0.005 155);
+   671→   730→  box-shadow: 0 1px 3px oklch(0 0 0 / 4%), 0 4px 12px oklch(0 0 0 / 3%);
+   672→   731→  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+   673→   732→}
+   674→   733→.card-elevated:hover {
+   675→   734→  border-color: oklch(0.508 0.17 155 / 20%);
+   676→   735→  box-shadow: 0 2px 8px oklch(0 0 0 / 6%), 0 8px 24px oklch(0 0 0 / 5%), 0 0 0 1px oklch(0.508 0.17 155 / 8%);
+   677→   736→  transform: translateY(-2px);
+   678→   737→}
+   679→   738→.dark .card-elevated {
+   680→   739→  border-color: oklch(1 0 0 / 6%);
+   681→   740→  box-shadow: 0 1px 3px oklch(0 0 0 / 20%), 0 4px 12px oklch(0 0 0 / 15%);
+   682→   741→}
+   683→   742→.dark .card-elevated:hover {
+   684→   743→  border-color: oklch(0.608 0.17 155 / 25%);
+   685→   744→  box-shadow: 0 2px 8px oklch(0 0 0 / 25%), 0 8px 24px oklch(0 0 0 / 20%), 0 0 0 1px oklch(0.608 0.17 155 / 15%);
+   686→   745→}
+   687→   746→
+   688→   747→/* ── Glass Card ───────────────────────────────────────────────────── */
+   689→   748→.card-glass {
+   690→   749→  background: oklch(1 0 0 / 65%);
+   691→   750→  backdrop-filter: blur(20px) saturate(180%);
+   692→   751→  -webkit-backdrop-filter: blur(20px) saturate(180%);
+   693→   752→  border: 1px solid oklch(1 0 0 / 40%);
+   694→   753→  transition: all 0.25s ease;
+   695→   754→}
+   696→   755→.card-glass:hover {
+   697→   756→  background: oklch(1 0 0 / 75%);
+   698→   757→  border-color: oklch(0.508 0.17 155 / 15%);
+   699→   758→  box-shadow: 0 8px 32px oklch(0 0 0 / 6%);
+   700→   759→}
+   701→   760→.dark .card-glass {
+   702→   761→  background: oklch(0.18 0.012 155 / 60%);
+   703→   762→  border-color: oklch(1 0 0 / 6%);
+   704→   763→}
+   705→   764→.dark .card-glass:hover {
+   706→   765→  background: oklch(0.18 0.012 155 / 70%);
+   707→   766→  border-color: oklch(0.608 0.17 155 / 20%);
+   708→   767→  box-shadow: 0 8px 32px oklch(0 0 0 / 20%);
+   709→   768→}
+   710→   769→
+   711→   770→/* ── Glow Icon Container ───────────────────────────────────────────── */
+   712→   771→.icon-glow-emerald {
+   713→   772→  box-shadow: 0 0 12px oklch(0.7 0.15 160 / 0.2), 0 0 4px oklch(0.7 0.15 160 / 0.15);
+   714→   773→}
+   715→   774→.icon-glow-amber {
+   716→   775→  box-shadow: 0 0 12px oklch(0.8 0.15 85 / 0.2), 0 0 4px oklch(0.8 0.15 85 / 0.15);
+   717→   776→}
+   718→   777→.icon-glow-rose {
+   719→   778→  box-shadow: 0 0 12px oklch(0.7 0.2 25 / 0.2), 0 0 4px oklch(0.7 0.2 25 / 0.15);
+   720→   779→}
+   721→   780→.icon-glow-blue {
+   722→   781→  box-shadow: 0 0 12px oklch(0.7 0.15 250 / 0.2), 0 0 4px oklch(0.7 0.15 250 / 0.15);
+   723→   782→}
+   724→   783→.icon-glow-violet {
+   725→   784→  box-shadow: 0 0 12px oklch(0.6 0.2 300 / 0.2), 0 0 4px oklch(0.6 0.2 300 / 0.15);
+   726→   785→}
+   727→   786→
+   728→   787→/* ── Gradient Border Utility ───────────────────────────────────────── */
+   729→   788→.border-gradient-emerald {
+   730→   789→  border-image: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.6 0.12 180)) 1;
+   731→   790→}
+   732→   791→
+   733→   792→/* ── Smooth Scroll Container ───────────────────────────────────────── */
+   734→   793→.scroll-smooth-container {
+   735→   794→  scroll-behavior: smooth;
+   736→   795→  -webkit-overflow-scrolling: touch;
+   737→   796→}
+   738→   797→
+   739→   798→/* ── Animated Dashed Border ───────────────────────────────────────── */
+   740→   799→@keyframes dash-march {
+   741→   800→  to { stroke-dashoffset: -20; }
+   742→   801→}
+   743→   802→.border-dashed-animated {
+   744→   803→  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23059669' stroke-width='2' stroke-dasharray='10%2c 8' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e");
+   745→   804→  background-size: 100% 100%;
+   746→   805→  border: none;
+   747→   806→  padding: 2px;
+   748→   807→}
+   749→   808→.dark .border-dashed-animated {
+   750→   809→  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%2310b981' stroke-width='2' stroke-dasharray='10%2c 8' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e");
+   751→   810→}
+   752→   811→
+   753→   812→/* ── Stagger Children Animation ────────────────────────────────────── */
+   754→   813→.stagger-children > * {
+   755→   814→  opacity: 0;
+   756→   815→  animation: stagger-fade-in 0.4s ease-out forwards;
+   757→   816→}
+   758→   817→.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+   759→   818→.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+   760→   819→.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+   761→   820→.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+   762→   821→.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+   763→   822→.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+   764→   823→.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+   765→   824→.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+   766→   825→@keyframes stagger-fade-in {
+   767→   826→  from { opacity: 0; transform: translateY(6px); }
+   768→   827→  to { opacity: 1; transform: translateY(0); }
+   769→   828→}
+   770→   829→
+   771→   830→/* ── Enhanced Focus Input ──────────────────────────────────────────── */
+   772→   831→.input-glow:focus-within {
+   773→   832→  box-shadow: 0 0 0 3px oklch(0.508 0.17 155 / 12%);
+   774→   833→  border-color: oklch(0.508 0.17 155 / 40%);
+   775→   834→}
+   776→   835→
+   777→   836→/* ── Pill Button Hover ─────────────────────────────────────────────── */
+   778→   837→.pill-hover {
+   779→   838→  transition: all 0.2s ease;
+   780→   839→  border-radius: 9999px;
+   781→   840→}
+   782→   841→.pill-hover:hover {
+   783→   842→  background: oklch(0.508 0.17 155 / 8%);
+   784→   843→  border-color: oklch(0.508 0.17 155 / 25%);
+   785→   844→}
+   786→   845→.dark .pill-hover:hover {
+   787→   846→  background: oklch(0.608 0.17 155 / 12%);
+   788→   847→  border-color: oklch(0.608 0.17 155 / 20%);
+   789→   848→}
+   790→   849→
+   791→   850→/* ── Subtle Inner Shadow Card ──────────────────────────────────────── */
+   792→   851→.card-inner-shadow {
+   793→   852→  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 80%), 0 1px 3px oklch(0 0 0 / 5%);
+   794→   853→}
+   795→   854→.dark .card-inner-shadow {
+   796→   855→  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 5%), 0 1px 3px oklch(0 0 0 / 20%);
+   797→   856→}
+   798→   857→
+   799→   858→/* ── Status Indicator Dot ──────────────────────────────────────────── */
+   800→   859→.status-dot {
+   801→   860→  position: relative;
+   802→   861→}
+   803→   862→.status-dot::after {
+   804→   863→  content: '';
+   805→   864→  position: absolute;
+   806→   865→  inset: 0;
+   807→   866→  border-radius: inherit;
+   808→   867→  animation: status-dot-ring 2s ease-out infinite;
+   809→   868→}
+   810→   869→@keyframes status-dot-ring {
+   811→   870→  0% { box-shadow: 0 0 0 0 oklch(0.7 0.15 160 / 0.4); }
+   812→   871→  70% { box-shadow: 0 0 0 6px oklch(0.7 0.15 160 / 0); }
+   813→   872→  100% { box-shadow: 0 0 0 0 oklch(0.7 0.15 160 / 0); }
+   814→   873→}
+   815→   874→
+   816→   875→/* ── Fade In Animation ─────────────────────────────────────────────── */
+   817→   876→@keyframes fade-in {
+   818→   877→  from { opacity: 0; }
+   819→   878→  to { opacity: 1; }
+   820→   879→}
+   821→   880→.animate-fade-in {
+   822→   881→  animation: fade-in 0.5s ease-out forwards;
+   823→   882→}
+   824→   883→
+   825→   884→/* ── Scale In Animation ─────────────────────────────────────────────── */
+   826→   885→@keyframes scale-in {
+   827→   886→  from { opacity: 0; transform: scale(0.95); }
+   828→   887→  to { opacity: 1; transform: scale(1); }
+   829→   888→}
+   830→   889→.animate-scale-in {
+   831→   890→  animation: scale-in 0.3s ease-out forwards;
+   832→   891→}
+   833→   892→
+   834→   893→/* ── Gradient Background Mesh ──────────────────────────────────────── */
+   835→   894→.bg-mesh {
+   836→   895→  background:
+   837→   896→    radial-gradient(at 20% 20%, oklch(0.508 0.17 155 / 5%) 0px, transparent 50%),
+   838→   897→    radial-gradient(at 80% 80%, oklch(0.548 0.12 200 / 5%) 0px, transparent 50%),
+   839→   898→    radial-gradient(at 50% 0%, oklch(0.698 0.14 130 / 3%) 0px, transparent 50%);
+   840→   899→}
+   841→   900→.dark .bg-mesh {
+   842→   901→  background:
+   843→   902→    radial-gradient(at 20% 20%, oklch(0.608 0.17 155 / 6%) 0px, transparent 50%),
+   844→   903→    radial-gradient(at 80% 80%, oklch(0.548 0.12 200 / 6%) 0px, transparent 50%),
+   845→   904→    radial-gradient(at 50% 0%, oklch(0.698 0.14 130 / 4%) 0px, transparent 50%);
+   846→   905→}
+   847→   906→
+   848→   907→/* ── Table Enhanced Header ─────────────────────────────────────────── */
+   849→   908→.table-header-enhanced th {
+   850→   909→  background: oklch(0.96 0.008 155);
+   851→   910→  font-weight: 600;
+   852→   911→  font-size: 0.75rem;
+   853→   912→  text-transform: uppercase;
+   854→   913→  letter-spacing: 0.05em;
+   855→   914→  color: oklch(0.45 0.02 155);
+   856→   915→  border-bottom: 2px solid oklch(0.508 0.17 155 / 15%);
+   857→   916→}
+   858→   917→.dark .table-header-enhanced th {
+   859→   918→  background: oklch(0.16 0.008 155);
+   860→   919→  color: oklch(0.70 0.02 155);
+   861→   920→  border-bottom-color: oklch(0.608 0.17 155 / 15%);
+   862→   921→}
+   863→   922→
+   864→   923→/* ── Glassmorphism Variants ── */
+   865→   924→.glass-card {
+   866→   925→  background: rgba(255, 255, 255, 0.05);
+   867→   926→  backdrop-filter: blur(16px);
+   868→   927→  -webkit-backdrop-filter: blur(16px);
+   869→   928→  border: 1px solid rgba(255, 255, 255, 0.08);
+   870→   929→}
+   871→   930→.dark .glass-card {
+   872→   931→  background: rgba(255, 255, 255, 0.03);
+   873→   932→  border-color: rgba(255, 255, 255, 0.06);
+   874→   933→}
+   875→   934→
+   876→   935→/* ── Shimmer Loading Effect ── */
+   877→   936→@keyframes shimmer {
+   878→   937→  0% { background-position: -200% 0; }
+   879→   938→  100% { background-position: 200% 0; }
+   880→   939→}
+   881→   940→.shimmer {
+   882→   941→  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+   883→   942→  background-size: 200% 100%;
+   884→   943→  animation: shimmer 2s infinite;
+   885→   944→}
+   886→   945→
+   887→   946→/* ── Pulse Ring for status indicators ── */
+   888→   947→@keyframes pulse-ring {
+   889→   948→  0% { transform: scale(0.8); opacity: 1; }
+   890→   949→  100% { transform: scale(2); opacity: 0; }
+   891→   950→}
+   892→   951→.pulse-ring::before {
+   893→   952→  content: '';
+   894→   953→  position: absolute;
+   895→   954→  inset: 0;
+   896→   955→  border-radius: 50%;
+   897→   956→  border: 2px solid currentColor;
+   898→   957→  animation: pulse-ring 1.5s ease-out infinite;
+   899→   958→}
+   900→   959→
+   901→   960→/* ── Gradient Text ── */
+   902→   961→.text-gradient-emerald {
+   903→   962→  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4);
+   904→   963→  -webkit-background-clip: text;
+   905→   964→  -webkit-text-fill-color: transparent;
+   906→   965→  background-clip: text;
+   907→   966→}
+   908→   967→
+   909→   968→.text-gradient-warm {
+   910→   969→  background: linear-gradient(135deg, #f59e0b, #ef4444);
+   911→   970→  -webkit-background-clip: text;
+   912→   971→  -webkit-text-fill-color: transparent;
+   913→   972→  background-clip: text;
+   914→   973→}
+   915→   974→
+   916→   975→.text-gradient-cool {
+   917→   976→  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+   918→   977→  -webkit-background-clip: text;
+   919→   978→  -webkit-text-fill-color: transparent;
+   920→   979→  background-clip: text;
+   921→   980→}
+   922→   981→
+   923→   982→/* ── Hover Scale ── */
+   924→   983→.hover-scale {
+   925→   984→  transition: transform 0.2s ease, box-shadow 0.2s ease;
+   926→   985→}
+   927→   986→.hover-scale:hover {
+   928→   987→  transform: scale(1.02);
+   929→   988→}
+   930→   989→.hover-scale:active {
+   931→   990→  transform: scale(0.98);
+   932→   991→}
+   933→   992→
+   934→   993→/* ── Number Ticker ── */
+   935→   994→@keyframes count-up {
+   936→   995→  from { opacity: 0; transform: translateY(8px); }
+   937→   996→  to { opacity: 1; transform: translateY(0); }
+   938→   997→}
+   939→   998→.animate-count-up {
+   940→   999→  animation: count-up 0.6s ease-out forwards;
+   941→  1000→}
+   942→  1001→
+   943→  1002→/* ── Slide in from right ── */
+   944→  1003→@keyframes slide-in-right {
+   945→  1004→  from { opacity: 0; transform: translateX(20px); }
+   946→  1005→  to { opacity: 1; transform: translateX(0); }
+   947→  1006→}
+   948→  1007→.animate-slide-in-right {
+   949→  1008→  animation: slide-in-right 0.4s ease-out forwards;
+   950→  1009→}
+   951→  1010→
+   952→  1011→/* ── Float animation ── */
+   953→  1012→@keyframes float {
+   954→  1013→  0%, 100% { transform: translateY(0px); }
+   955→  1014→  50% { transform: translateY(-6px); }
+   956→  1015→}
+   957→  1016→.animate-float-slow {
+   958→  1017→  animation: float 4s ease-in-out infinite;
+   959→  1018→}
+   960→  1019→
+   961→  1020→/* ── Gradient border with pseudo element ── */
+   962→  1021→.gradient-border {
+   963→  1022→  position: relative;
+   964→  1023→}
+   965→  1024→.gradient-border::before {
+   966→  1025→  content: '';
+   967→  1026→  position: absolute;
+   968→  1027→  inset: 0;
+   969→  1028→  border-radius: inherit;
+   970→  1029→  padding: 1px;
+   971→  1030→  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4);
+   972→  1031→  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   973→  1032→  -webkit-mask-composite: xor;
+   974→  1033→  mask-composite: exclude;
+   975→  1034→  pointer-events: none;
+   976→  1035→}
+   977→  1036→
+   978→  1037→/* ── Hover Glow Border ── */
+   979→  1038→.hover-glow-border {
+   980→  1039→  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+   981→  1040→}
+   982→  1041→.hover-glow-border:hover {
+   983→  1042→  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), 0 0 40px rgba(16, 185, 129, 0.05);
+   984→  1043→  border-color: rgba(16, 185, 129, 0.3);
+   985→  1044→}
+   986→  1045→
+   987→  1046→/* ── Subtle Pattern Background ── */
+   988→  1047→.pattern-grid {
+   989→  1048→  background-image:
+   990→  1049→    linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+   991→  1050→    linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+   992→  1051→  background-size: 32px 32px;
+   993→  1052→}
+   994→  1053→
+   995→  1054→/* ── Focus visible ring for accessibility ── */
+   996→  1055→.focus-ring-emerald:focus-visible {
+   997→  1056→  outline: 2px solid #10b981;
+   998→  1057→  outline-offset: 2px;
+   999→  1058→}
+  1000→  1059→
+  1001→  1060→/* ── Table Row alternating ── */
+  1002→  1061→.table-stripe tr:nth-child(even) {
+  1003→  1062→  background-color: rgba(16, 185, 129, 0.02);
+  1004→  1063→}
+  1005→  1064→.dark .table-stripe tr:nth-child(even) {
+  1006→  1065→  background-color: rgba(16, 185, 129, 0.03);
+  1007→  1066→}
+  1008→  1067→
+  1009→  1068→/* ── Text shadow for headings ── */
+  1010→  1069→.text-shadow-subtle {
+  1011→  1070→  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  1012→  1071→}
+  1013→  1072→.dark .text-shadow-subtle {
+  1014→  1073→  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  1015→  1074→}
+  1016→  1075→
+  1017→  1076→/* ── Smooth number transition ── */
+  1018→  1077→.tabular-nums {
+  1019→  1078→  font-variant-numeric: tabular-nums;
+  1020→  1079→}
+  1021→  1080→
+  1022→  1081→/* ── Neon Glow for active elements ── */
+  1023→  1082→.neon-glow {
+  1024→  1083→  box-shadow: 0 0 5px rgba(16, 185, 129, 0.3),
+  1025→  1084→              0 0 20px rgba(16, 185, 129, 0.1);
+  1026→  1085→}
+  1027→  1086→
+  1028→  1087→/* ── Breathing animation ── */
+  1029→  1088→@keyframes breathe {
+  1030→  1089→  0%, 100% { opacity: 0.6; }
+  1031→  1090→  50% { opacity: 1; }
+  1032→  1091→}
+  1033→  1092→.animate-breathe {
+  1034→  1093→  animation: breathe 3s ease-in-out infinite;
+  1035→  1094→}
+  1036→  1095→
+  1037→  1096→/* ── Slide up reveal ── */
+  1038→  1097→@keyframes slide-up-reveal {
+  1039→  1098→  from { opacity: 0; transform: translateY(16px); }
+  1040→  1099→  to { opacity: 1; transform: translateY(0); }
+  1041→  1100→}
+  1042→  1101→.animate-slide-up-reveal {
+  1043→  1102→  animation: slide-up-reveal 0.5s ease-out forwards;
+  1044→  1103→}
+  1045→  1104→
+  1046→  1105→/* ── Ripple effect on click ── */
+  1047→  1106→.ripple {
+  1048→  1107→  position: relative;
+  1049→  1108→  overflow: hidden;
+  1050→  1109→}
+  1051→  1110→.ripple::after {
+  1052→  1111→  content: '';
+  1053→  1112→  position: absolute;
+  1054→  1113→  inset: 0;
+  1055→  1114→  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+  1056→  1115→  opacity: 0;
+  1057→  1116→  transition: opacity 0.3s;
+  1058→  1117→}
+  1059→  1118→.ripple:active::after {
+  1060→  1119→  opacity: 1;
+  1061→  1120→}
+  1062→  1121→
+  1063→  1122→/* ── Noise texture overlay ── */
+  1064→  1123→.noise-overlay::before {
+  1065→  1124→  content: '';
+  1066→  1125→  position: absolute;
+  1067→  1126→  inset: 0;
+  1068→  1127→  opacity: 0.015;
+  1069→  1128→  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  1070→  1129→  background-size: 128px 128px;
+  1071→  1130→  pointer-events: none;
+  1072→  1131→  z-index: 1;
+  1073→  1132→}
+  1074→  1133→
+  1075→  1134→/* ── Inset shadow ── */
+  1076→  1135→.inset-shadow {
+  1077→  1136→  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  1078→  1137→}
+  1079→  1138→.dark .inset-shadow {
+  1080→  1139→  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  1081→  1140→}
+  1082→  1141→
+  1083→  1142→/* ── Text gradient primary (uses CSS variable) ── */
+  1084→  1143→.text-gradient-primary {
+  1085→  1144→  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-foreground));
+  1086→  1145→  -webkit-background-clip: text;
+  1087→  1146→  -webkit-text-fill-color: transparent;
+  1088→  1147→  background-clip: text;
+  1089→  1148→}
+  1090→  1149→
+  1091→  1150→/* ── Subtle border animation ── */
+  1092→  1151→@keyframes border-rotate {
+  1093→  1152→  0% { --angle: 0deg; }
+  1094→  1153→  100% { --angle: 360deg; }
+  1095→  1154→}
+  1096→  1155→
+  1097→  1156→/* ── Smooth corner radius on all cards ── */
+  1098→  1157→.smooth-corners {
+  1099→  1158→  border-radius: 16px;
+  1100→  1159→}
+  1101→  1160→
+  1102→  1161→/* ── Active nav indicator glow ── */
+  1103→  1162→.nav-active-glow {
+  1104→  1163→  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2),
+  1105→  1164→              0 4px 12px rgba(16, 185, 129, 0.1);
+  1106→  1165→}
+  1107→  1166→
+  1108→  1167→/* ── Scroll shadow indicators ── */
+  1109→  1168→.scroll-shadow-top {
+  1110→  1169→  box-shadow: inset 0 12px 8px -8px rgba(0, 0, 0, 0.05);
+  1111→  1170→}
+  1112→  1171→.scroll-shadow-bottom {
+  1113→  1172→  box-shadow: inset 0 -12px 8px -8px rgba(0, 0, 0, 0.05);
+  1114→  1173→}
+  1115→  1174→.dark .scroll-shadow-top {
+  1116→  1175→  box-shadow: inset 0 12px 8px -8px rgba(0, 0, 0, 0.15);
+  1117→  1176→}
+  1118→  1177→.dark .scroll-shadow-bottom {
+  1119→  1178→  box-shadow: inset 0 -12px 8px -8px rgba(0, 0, 0, 0.15);
+  1120→  1179→}
+  1121→  1180→
+  1122→  1181→/* ── Elegant Card Gradient Variants ── */
+  1123→  1182→.card-gradient-border-emerald {
+  1124→  1183→  position: relative;
+  1125→  1184→  overflow: hidden;
+  1126→  1185→  border-radius: inherit;
+  1127→  1186→  padding: 2px;
+  1128→  1187→  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4);
+  1129→  1188→  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  1130→  1189→  -webkit-mask-composite: xor;
+  1131→  1190→  mask-composite: exclude;
+  1132→  1191→  pointer-events: none;
+  1133→  1192→}
+  1134→  1193→.card-gradient-border-teal {
+  1135→  1194→  position: relative;
+  1136→  1195→  overflow: hidden;
+  1137→  1196→  border-radius: inherit;
+  1138→  1197→  padding: 2px;
+  1139→  1198→  background: linear-gradient(135deg, #f59e0b, #0ea5e9, #3b82a2);
+  1140→  1199→  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  1141→  1200→  -webkit-mask-composite: xor;
+  1142→  1201→  mask-composite: exclude;
+  1143→  1202→  pointer-events: none;
+  1144→  1203→}
+  1145→  1204→
+  1146→  1205→/* ── Card Shine Effect ── */
+  1147→  1206→@keyframes card-shine {
+  1148→  1207→  0%, 100% { background-position: -200% 0; }
+  1149→  1208→  50% { background-position: 200% 0; }
+  1150→  1209→}
+  1151→  1210→.card-shine {
+  1152→  1211→  background: linear-gradient(
+  1153→  1212→    90deg,
+  1154→  1213→    transparent 0%,
+  1155→  1214→    rgba(16, 185, 129, 0.06) 50%,
+  1156→  1215→    transparent 100%
+  1157→  1216→  );
+  1158→  1217→  background-size: 200% 100%;
+  1159→  1218→  animation: card-shine 2s ease-in-out infinite;
+  1160→  1219→  pointer-events: none;
+  1161→  1220→}
+  1162→  1221→.apply-shine:hover {
+  1163→  1222→  opacity: 1;
+  1164→  1223→  filter: brightness(0.95);
+  1165→  1224→}
+  1166→  1225→
+  1167→  1226→/* ── Card Spotlight ── */
+  1168→  1227→.card-spotlight::after {
+  1169→  1228→  content: '';
+  1170→  1229→  position: absolute;
+  1171→  1230→  top: 0;
+  1172→  1231→  left: 0;
+  1173→  1232→  right: 0;
+  1174→  1233→  bottom: 0;
+  1175→  1234→  border-radius: inherit;
+  1176→  1235→  background: radial-gradient(circle at center, transparent 8px, rgba(16,185,129,0.15) 0%, transparent 8px);
+  1177→  1236→  box-shadow: 0 0 15px 5px rgba(16,185,129,0.08);
+  1178→  1237→  pointer-events: none;
+  1179→  1238→  z-index: 1;
+  1180→  1239→}
+  1181→  1240→
+  1182→  1241→/* ── Animated Border Pulse ── */
+  1183→  1242→@keyframes border-pulse-emerald {
+  1184→  1243→  0%, 100% { border-color: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2); }
+  1185→  1244→  50% { border-color: rgba(16, 185, 129, 0.5); box-shadow: 0 0 12px 2px rgba(16, 185, 129, 0.1); }
+  1186→  1245→}
+  1187→  1246→.border-pulse-emerald {
+  1188→  1247→  border: 2px solid #10b981;
+  1189→  1248→  border-radius: 12px;
+  1190→  1249→  animation: border-pulse-emerald 1.5s ease-in-out infinite;
+  1191→  1250→}
+  1192→  1251→
+  1193→  1252→/* ── Glassmorphism Depth ── */
+  1194→  1253→.glass-deep {
+  1195→  1254→  background: rgba(255,255,255,0.03);
+  1196→  1255→  backdrop-filter: blur(16px);
+  1197→  1256→  -webkit-backdrop-filter: blur(16px);
+  1198→  1257→  border: 1px solid rgba(255,255,255,0.08);
+  1199→  1258→}
+  1200→  1259→
+  1201→  1260→/* ── Number Input Focus Ring ── */
+  1202→  1261→.input-focus-emerald:focus-visible {
+  1203→  1262→  outline: 2px solid #10b981;
+  1204→  1263→  outline-offset: 2px;
+  1205→  1264→}
+  1206→  1265→
+  1207→  1266→/* ── Quick Stats Gradient Top Border ── */
+  1208→  1267→.stats-gradient-top {
+  1209→  1268→  height: 2px;
+  1210→  1269→  background: linear-gradient(to right, #10b981, #14b8a6, #06b6d4);
+  1211→  1270→}
+  1212→  1271→
+  1213→  1272→/* ── Enhanced Badge Styles ── */
+  1214→  1273→.badge-gradient-emerald {
+  1215→  1274→  background: linear-gradient(135deg, #059669, #06b6d4);
+  1216→  1275→  -webkit-background-clip: text;
+  1217→  1276→  -webkit-text-fill-color: transparent;
+  1218→  1277→  background-clip: text;
+  1219→  1278→}
+  1220→  1279→.badge-gradient-teal {
+  1221→  1280→  background: linear-gradient(135deg, #f59e0b, #0ea5e9);
+  1222→  1281→  -webkit-background-clip: text;
+  1223→  1282→  -webkit-text-fill-color: transparent;
+  1224→  1283→  background-clip: text;
+  1225→  1284→}
+  1226→  1285→.badge-gradient-amber {
+  1227→  1286→  background: linear-gradient(135deg, #f59e0b, #d97706);
+  1228→  1287→  -webkit-background-clip: text;
+  1229→  1288→  -webkit-text-fill-color: transparent;
+  1230→  1289→  background-clip: text;
+  1231→  1290→}
+  1232→  1291→.badge-gradient-rose {
+  1233→  1292→  background: linear-gradient(135deg, #ef4444, #dc2626);
+  1234→  1293→  -webkit-background-clip: text;
+  1235→  1294→  -webkit-text-fill-color: transparent;
+  1236→  1295→  background-clip: text;
+  1237→  1296→}
+  1238→  1297→
+  1239→  1298→/* ── Hover Lift Subtle ── */
+  1240→  1299→.hover-lift-surface {
+  1241→  1300→  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  1242→  1301→  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  1243→  1302→}
+  1244→  1303→.hover-lift-surface:active {
+  1245→  1304→  transform: scale(1.02) translateY(-2px);
+  1246→  1305→  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  1247→  1306→}
+  1248→  1307→
+  1249→  1308→/* ── Hover Glow Emerald ── */
+  1250→  1309→.hover-glow-emerald {
+  1251→  1310→  transition: box-shadow 0.3s ease;
+  1252→  1311→}
+  1253→  1312→.hover-glow-emerald:hover {
+  1254→  1313→  box-shadow: 0 0 20px rgba(16,185,129,0.15), 0 0 40px rgba(16,185,129,0.1);
+  1255→  1314→}
+  1256→  1315→

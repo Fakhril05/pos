@@ -1312,3 +1312,122 @@
 .hover-glow-emerald:hover {
   box-shadow: 0 0 20px rgba(16,185,129,0.15), 0 0 40px rgba(16,185,129,0.1);
 }
+
+/* ── Marquee Animation ──────────────────────────────────────────────── */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee var(--marquee-duration, 30s) linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ── Text Balance ───────────────────────────────────────────────────── */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ── Thin Scrollbar (WebKit) ─────────────────────────────────────────── */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.7 0.03 155) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: oklch(0.7 0.03 155 / 50%);
+  border-radius: 999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: oklch(0.6 0.04 155 / 70%);
+}
+
+/* ── Backdrop Blur Card (Glassmorphism) ──────────────────────────────── */
+.backdrop-blur-card {
+  background: oklch(1 0 0 / 65%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid oklch(1 0 0 / 15%);
+}
+.dark .backdrop-blur-card {
+  background: oklch(0.18 0.012 155 / 75%);
+  border-color: oklch(1 0 0 / 8%);
+}
+
+/* ── Soft Inner Shadow ──────────────────────────────────────────────── */
+.shadow-inner-soft {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.dark .shadow-inner-soft {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Fade In Up Animation ───────────────────────────────────────────── */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+/* ── Subtle Pulse (Live Indicators) ──────────────────────────────────── */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* ── Hover Brightness ───────────────────────────────────────────────── */
+.hover-brightness {
+  transition: filter 0.2s ease;
+}
+.hover-brightness:hover {
+  filter: brightness(1.1);
+}
+
+/* ── Text Outline / Stroke ───────────────────────────────────────────── */
+.text-outline {
+  -webkit-text-stroke: 1px currentColor;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Animated Gradient Border ────────────────────────────────────────── */
+@keyframes gradient-rotate {
+  0% { --gradient-angle: 0deg; }
+  100% { --gradient-angle: 360deg; }
+}
+@property --gradient-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.border-gradient-animated {
+  position: relative;
+  border: none;
+ background: linear-gradient(var(--card), var(--card)) padding-box,
+              conic-gradient(from var(--gradient-angle), #059669, #14b8a6, #0ea5e9, #059669) border-box;
+  border: 2px solid transparent;
+  animation: gradient-rotate 3s linear infinite;
+}
+

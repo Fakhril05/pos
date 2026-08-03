@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -68,6 +68,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { EmptyState } from '@/components/app/empty-state';
 import { toast } from 'sonner';
 import { generateReceiptHtml } from '@/lib/receipt-generator';
+import { useAppStore } from '@/stores/app-store';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -280,6 +281,7 @@ function TransactionDetailDialog({
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [refundReason, setRefundReason] = useState('');
   const [refundReasonError, setRefundReasonError] = useState('');
+  const [refunding, setRefunding] = useState(false);
 
   const timeline = useMemo(() => (tx ? buildTimeline(tx) : []), [tx]);
 
@@ -326,7 +328,7 @@ function TransactionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-thin">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
@@ -699,6 +701,7 @@ function getPaginationRange(current: number, total: number) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function Transactions() {
+  const { pendingTxId, setPendingTxId } = useAppStore();
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [status, setStatus] = useState<string>('all');
@@ -708,6 +711,21 @@ export default function Transactions() {
   const [page, setPage] = useState(1);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Open detail dialog when navigated from global search
+  useEffect(() => {
+    if (!pendingTxId) return;
+    fetch(`/api/transactions/${pendingTxId}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.data) {
+          setSelectedTx(json.data);
+          setDialogOpen(true);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPendingTxId(null));
+  }, [pendingTxId, setPendingTxId]);
 
   const limit = 10;
 
@@ -894,7 +912,7 @@ export default function Transactions() {
   }
 
   return (
-    <div className="space-y-5 bg-mesh">
+    <div className="space-y-5 bg-mesh animate-fade-in-up">
       <PageHeader
         title="Transaksi"
         description="Kelola dan pantau semua transaksi pembayaran"

@@ -739,7 +739,7 @@ export default function PaymentLinks() {
   }
 
   return (
-    <div className="space-y-6 bg-mesh">
+    <div className="space-y-6 bg-mesh animate-fade-in-up">
       <PageHeader
         title="Link Pembayaran"
         description="Kelola dan pantau semua link pembayaran Anda"
@@ -1046,7 +1046,7 @@ export default function PaymentLinks() {
 
       {/* ─── Create Dialog ─────────────────────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-emerald-500" />
@@ -1195,7 +1195,7 @@ export default function PaymentLinks() {
 
       {/* ─── Edit Dialog ───────────────────────────────────────────── */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-emerald-500" />
