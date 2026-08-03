@@ -1,0 +1,1040 @@
+    70→    currency: 'IDR',
+    71→    minimumFractionDigits: 0,
+    72→  }).format(amount);
+    73→
+    74→const formatDate = (dateStr: string) => {
+    75→  const d = new Date(dateStr);
+    76→  return d.toLocaleDateString('id-ID', {
+    77→    day: 'numeric',
+    78→    month: 'short',
+    79→    year: 'numeric',
+    80→    hour: '2-digit',
+    81→    minute: '2-digit',
+    82→  });
+    83→};
+    84→
+    85→const formatShortDate = (dateStr: string) => {
+    86→  const d = new Date(dateStr);
+    87→  return d.toLocaleDateString('id-ID', {
+    88→    day: 'numeric',
+    89→    month: 'short',
+    90→    year: 'numeric',
+    91→  });
+    92→};
+    93→
+    94→// ── Status Config ────────────────────────────────────────────────────────────
+    95→
+    96→const STATUS_MAP: Record<
+    97→  string,
+    98→  { label: string; color: string; bgClass: string; icon: React.ElementType }
+    99→> = {
+   100→  success: {
+   101→    label: 'Berhasil',
+   102→    color: 'text-emerald-700',
+   103→    bgClass:
+   104→      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+   105→    icon: CheckCircle2,
+   106→  },
+   107→  pending: {
+   108→    label: 'Menunggu',
+   109→    color: 'text-amber-700',
+   110→    bgClass:
+   111→      'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+   112→    icon: Clock,
+   113→  },
+   114→  failed: {
+   115→    label: 'Gagal',
+   116→    color: 'text-red-700',
+   117→    bgClass:
+   118→      'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+   119→    icon: XCircle,
+   120→  },
+   121→  expired: {
+   122→    label: 'Kedaluwarsa',
+   123→    color: 'text-gray-600',
+   124→    bgClass:
+   125→      'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+   126→    icon: AlertTriangle,
+   127→  },
+   128→  refunded: {
+   129→    label: 'Refund',
+   130→    color: 'text-blue-700',
+   131→    bgClass:
+   132→      'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800',
+   133→    icon: RotateCcw,
+   134→  },
+   135→};
+   136→
+   137→// ── Types ────────────────────────────────────────────────────────────────────
+   138→
+   139→interface Transaction {
+   140→  id: string;
+   141→  invoiceNo: string;
+   142→  amount: number;
+   143→  fee: number;
+   144→  netAmount: number;
+   145→  paymentMethod: string;
+   146→  paymentChannel: string;
+   147→  status: string;
+   148→  description: string | null;
+   149→  customerName: string | null;
+   150→  customerEmail: string | null;
+   151→  customerPhone: string | null;
+   152→  paidAt: string | null;
+   153→  expiredAt: string | null;
+   154→  createdAt: string;
+   155→  updatedAt: string;
+   156→  merchant: { id: string; name: string; logo: string | null };
+   157→  customer: { id: string; name: string; email: string } | null;
+   158→}
+   159→
+   160→interface TransactionsResponse {
+   161→  data: Transaction[];
+   162→  pagination: {
+   163→    page: number;
+   164→    limit: number;
+   165→    total: number;
+   166→    totalPages: number;
+   167→  };
+   168→}
+   169→
+   170→interface StatusCount {
+   171→  status: string;
+   172→  count: number;
+   173→}
+   174→
+   175→// ── Status Badge ──────────────────────────────────────────────────────────────
+   176→
+   177→function StatusBadge({ status }: { status: string }) {
+   178→  const s = STATUS_MAP[status] ?? STATUS_MAP.pending;
+   179→  const Icon = s.icon;
+   180→  return (
+   181→    <Badge variant="outline" className={`${s.bgClass} gap-1.5 font-medium`}>
+   182→      <Icon className="h-3 w-3" />
+   183→      {s.label}
+   184→    </Badge>
+   185→  );
+   186→}
+   187→
+   188→// ── Timeline Item ────────────────────────────────────────────────────────────
+   189→
+   190→interface TimelineEvent {
+   191→  label: string;
+   192→  date: string;
+   193→  icon: React.ElementType;
+   194→  color: string;
+   195→}
+   196→
+   197→function buildTimeline(tx: Transaction): TimelineEvent[] {
+   198→  const events: TimelineEvent[] = [
+   199→    {
+   200→      label: 'Transaksi dibuat',
+   201→      date: tx.createdAt,
+   202→      icon: Receipt,
+   203→      color: 'text-emerald-500',
+   204→    },
+   205→  ];
+   206→  if (tx.paidAt) {
+   207→    events.push({
+   208→      label: 'Pembayaran diterima',
+   209→      date: tx.paidAt,
+   210→      icon: CheckCircle2,
+   211→      color: 'text-emerald-500',
+   212→    });
+   213→  }
+   214→  if (tx.expiredAt && (tx.status === 'expired' || tx.status === 'failed')) {
+   215→    events.push({
+   216→      label: 'Transaksi kedaluwarsa',
+   217→      date: tx.expiredAt,
+   218→      icon: AlertTriangle,
+   219→      color: 'text-gray-500',
+   220→    });
+   221→  }
+   222→  if (tx.status === 'failed') {
+   223→    events.push({
+   224→      label: 'Transaksi gagal',
+   225→      date: tx.updatedAt,
+   226→      icon: XCircle,
+   227→      color: 'text-red-500',
+   228→    });
+   229→  }
+   230→  if (tx.status === 'refunded') {
+   231→    events.push({
+   232→      label: 'Refund diproses',
+   233→      date: tx.updatedAt,
+   234→      icon: RotateCcw,
+   235→      color: 'text-blue-500',
+   236→    });
+   237→  }
+   238→  return events;
+   239→}
+   240→
+   241→function TimelineItem({ event, isLast }: { event: TimelineEvent; isLast: boolean }) {
+   242→  const Icon = event.icon;
+   243→  return (
+   244→    <div className="flex gap-3">
+   245→      <div className="flex flex-col items-center">
+   246→        <div
+   247→          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted ${event.color}`}
+   248→        >
+   249→          <Icon className="h-4 w-4" />
+   250→        </div>
+   251→        {!isLast && <div className="w-px flex-1 bg-border" />}
+   252→      </div>
+   253→      <div className={`pb-6 ${isLast ? 'pb-0' : ''}`}>
+   254→        <p className="text-sm font-medium">{event.label}</p>
+   255→        <p className="text-muted-foreground text-xs">{formatDate(event.date)}</p>
+   256→      </div>
+   257→    </div>
+   258→  );
+   259→}
+   260→
+   261→// ── Transaction Detail Dialog ────────────────────────────────────────────────
+   262→
+   263→function TransactionDetailDialog({
+   264→  tx,
+   265→  open,
+   266→  onOpenChange,
+   267→}: {
+   268→  tx: Transaction | null;
+   269→  open: boolean;
+   270→  onOpenChange: (v: boolean) => void;
+   271→}) {
+   272→  const queryClient = useQueryClient();
+   273→  const [refunding, setRefunding] = useState(false);
+   274→
+   275→  const timeline = useMemo(() => (tx ? buildTimeline(tx) : []), [tx]);
+   276→
+   277→  const handleRefund = async () => {
+   278→    if (!tx) return;
+   279→    setRefunding(true);
+   280→    try {
+   281→      const res = await fetch(`/api/transactions/${tx.id}`, {
+   282→        method: 'POST',
+   283→        headers: { 'Content-Type': 'application/json' },
+   284→        body: JSON.stringify({ amount: tx.amount, reason: 'Permintaan refund dari dashboard' }),
+   285→      });
+   286→      if (!res.ok) {
+   287→        const err = await res.json().catch(() => ({ error: 'Gagal memproses refund' }));
+   288→        throw new Error(err.error || 'Gagal memproses refund');
+   289→      }
+   290→      toast.success('Refund berhasil diajukan');
+   291→      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+   292→      onOpenChange(false);
+   293→    } catch (e) {
+   294→      toast.error(e instanceof Error ? e.message : 'Gagal memproses refund');
+   295→    } finally {
+   296→      setRefunding(false);
+   297→    }
+   298→  };
+   299→
+   300→  const handleCopyInvoice = () => {
+   301→    if (tx) {
+   302→      navigator.clipboard.writeText(tx.invoiceNo);
+   303→      toast.success('Nomor invoice disalin');
+   304→    }
+   305→  };
+   306→
+   307→  if (!tx) return null;
+   308→
+   309→  const statusInfo = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+   310→  const StatusIcon = statusInfo.icon;
+   311→
+   312→  return (
+   313→    <Dialog open={open} onOpenChange={onOpenChange}>
+   314→      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+   315→        <DialogHeader>
+   316→          <div className="flex items-center gap-3">
+   317→            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
+   318→              <Receipt className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+   319→            </div>
+   320→            <div>
+   321→              <DialogTitle className="text-base">Detail Transaksi</DialogTitle>
+   322→              <DialogDescription>
+   323→                <span className="flex items-center gap-1.5 font-mono text-xs">
+   324→                  {tx.invoiceNo}
+   325→                  <button
+   326→                    onClick={handleCopyInvoice}
+   327→                    className="inline-flex hover:text-foreground transition-colors"
+   328→                  >
+   329→                    <Copy className="h-3 w-3" />
+   330→                  </button>
+   331→                </span>
+   332→              </DialogDescription>
+   333→            </div>
+   334→          </div>
+   335→        </DialogHeader>
+   336→
+   337→        <div className="space-y-5">
+   338→          {/* Status Banner */}
+   339→          <div
+   340→            className={`flex items-center gap-3 rounded-lg border p-4 ${statusInfo.bgClass}`}
+   341→          >
+   342→            <StatusIcon className="h-5 w-5" />
+   343→            <div>
+   344→              <p className="text-sm font-semibold">Status: {statusInfo.label}</p>
+   345→              <p className="text-xs opacity-80">
+   346→                {tx.status === 'success'
+   347→                  ? 'Pembayaran telah berhasil diterima'
+   348→                  : tx.status === 'pending'
+   349→                    ? 'Menunggu pembayaran dari pelanggan'
+   350→                    : tx.status === 'failed'
+   351→                      ? 'Pembayaran gagal diproses'
+   352→                      : tx.status === 'expired'
+   353→                        ? 'Batas waktu pembayaran telah habis'
+   354→                        : 'Dana telah dikembalikan ke pelanggan'}
+   355→              </p>
+   356→            </div>
+   357→          </div>
+   358→
+   359→          {/* Amount Section */}
+   360→          <div className="rounded-lg border bg-muted/30 p-4">
+   361→            <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
+   362→              Jumlah Pembayaran
+   363→            </p>
+   364→            <p className="text-2xl font-bold tracking-tight">{formatRp(tx.amount)}</p>
+   365→            <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
+   366→              <span>
+   367→                Biaya Admin: <span className="font-medium text-foreground">{formatRp(tx.fee)}</span>
+   368→              </span>
+   369→              <span>
+   370→                Jumlah Bersih: <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatRp(tx.netAmount)}</span>
+   371→              </span>
+   372→            </div>
+   373→          </div>
+   374→
+   375→          {/* Details Grid */}
+   376→          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+   377→            <DetailItem
+   378→              icon={Store}
+   379→              label="Merchant"
+   380→              value={tx.merchant.name}
+   381→            />
+   382→            <DetailItem
+   383→              icon={User}
+   384→              label="Pelanggan"
+   385→              value={tx.customerName || tx.customer?.name || '-'}
+   386→            />
+   387→            <DetailItem
+   388→              icon={CreditCard}
+   389→              label="Metode Pembayaran"
+   390→              value={tx.paymentMethod}
+   391→            />
+   392→            <DetailItem
+   393→              icon={CircleDot}
+   394→              label="Saluran"
+   395→              value={tx.paymentChannel}
+   396→            />
+   397→            <DetailItem
+   398→              icon={CalendarDays}
+   399→              label="Tanggal Dibuat"
+   400→              value={formatDate(tx.createdAt)}
+   401→            />
+   402→            {tx.paidAt && (
+   403→              <DetailItem
+   404→                icon={CheckCircle2}
+   405→                label="Tanggal Dibayar"
+   406→                value={formatDate(tx.paidAt)}
+   407→              />
+   408→            )}
+   409→            {tx.customerEmail && (
+   410→              <DetailItem
+   411→                icon={Receipt}
+   412→                label="Email Pelanggan"
+   413→                value={tx.customerEmail}
+   414→              />
+   415→            )}
+   416→            {tx.customerPhone && (
+   417→              <DetailItem
+   418→                icon={Receipt}
+   419→                label="Telepon Pelanggan"
+   420→                value={tx.customerPhone}
+   421→              />
+   422→            )}
+   423→            {tx.description && (
+   424→              <div className="sm:col-span-2">
+   425→                <DetailItem
+   426→                  icon={Receipt}
+   427→                  label="Deskripsi"
+   428→                  value={tx.description}
+   429→                />
+   430→              </div>
+   431→            )}
+   432→          </div>
+   433→
+   434→          <Separator />
+   435→
+   436→          {/* Timeline */}
+   437→          <div>
+   438→            <h4 className="mb-3 text-sm font-semibold">Timeline</h4>
+   439→            <div>
+   440→              {timeline.map((event, idx) => (
+   441→                <TimelineItem
+   442→                  key={idx}
+   443→                  event={event}
+   444→                  isLast={idx === timeline.length - 1}
+   445→                />
+   446→              ))}
+   447→            </div>
+   448→          </div>
+   449→        </div>
+   450→
+   451→        {/* Footer with Refund button */}
+   452→        {tx.status === 'success' && (
+   453→          <DialogFooter>
+   454→            <Button
+   455→              variant="destructive"
+   456→              onClick={handleRefund}
+   457→              disabled={refunding}
+   458→              className="gap-2"
+   459→            >
+   460→              <RotateCcw className="h-4 w-4" />
+   461→              {refunding ? 'Memproses...' : 'Proses Refund'}
+   462→            </Button>
+   463→          </DialogFooter>
+   464→        )}
+   465→      </DialogContent>
+   466→    </Dialog>
+   467→  );
+   468→}
+   469→
+   470→function DetailItem({
+   471→  icon: Icon,
+   472→  label,
+   473→  value,
+   474→}: {
+   475→  icon: React.ElementType;
+   476→  label: string;
+   477→  value: string;
+   478→}) {
+   479→  return (
+   480→    <div className="flex items-start gap-3 rounded-lg border p-3">
+   481→      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   482→        <Icon className="h-4 w-4 text-muted-foreground" />
+   483→      </div>
+   484→      <div className="min-w-0">
+   485→        <p className="text-muted-foreground text-xs">{label}</p>
+   486→        <p className="truncate text-sm font-medium">{value}</p>
+   487→      </div>
+   488→    </div>
+   489→  );
+   490→}
+   491→
+   492→// ── Loading Skeleton ─────────────────────────────────────────────────────────
+   493→
+   494→function TransactionsSkeleton() {
+   495→  return (
+   496→    <div className="space-y-6">
+   497→      {/* Filter bar skeleton */}
+   498→      <Card>
+   499→        <CardContent className="p-4">
+   500→          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+   501→            <Skeleton className="h-9 w-full lg:w-72" />
+   502→            <Skeleton className="h-9 w-full lg:w-36" />
+   503→            <Skeleton className="h-9 w-full lg:w-36" />
+   504→            <Skeleton className="h-9 w-full lg:w-36" />
+   505→            <Skeleton className="h-9 w-full lg:w-36" />
+   506→            <Skeleton className="h-9 w-full lg:w-28" />
+   507→          </div>
+   508→        </CardContent>
+   509→      </Card>
+   510→
+   511→      {/* Stats skeleton */}
+   512→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+   513→        {Array.from({ length: 5 }).map((_, i) => (
+   514→          <Skeleton key={i} className="h-20 rounded-xl" />
+   515→        ))}
+   516→      </div>
+   517→
+   518→      {/* Table skeleton */}
+   519→      <Card>
+   520→        <CardContent className="p-4">
+   521→          <div className="space-y-3">
+   522→            <Skeleton className="h-10 w-full" />
+   523→            {Array.from({ length: 8 }).map((_, i) => (
+   524→              <Skeleton key={i} className="h-14 w-full" />
+   525→            ))}
+   526→          </div>
+   527→        </CardContent>
+   528→      </Card>
+   529→
+   530→      {/* Pagination skeleton */}
+   531→      <div className="flex justify-center">
+   532→        <Skeleton className="h-9 w-72" />
+   533→      </div>
+   534→    </div>
+   535→  );
+   536→}
+   537→
+   538→// ── Pagination Helper ────────────────────────────────────────────────────────
+   539→
+   540→function getPaginationRange(current: number, total: number) {
+   541→  const delta = 2;
+   542→  const range: (number | 'dots')[] = [];
+   543→  const left = Math.max(2, current - delta);
+   544→  const right = Math.min(total - 1, current + delta);
+   545→
+   546→  range.push(1);
+   547→  if (left > 2) range.push('dots');
+   548→  for (let i = left; i <= right; i++) range.push(i);
+   549→  if (right < total - 1) range.push('dots');
+   550→  if (total > 1) range.push(total);
+   551→
+   552→  return range;
+   553→}
+   554→
+   555→// ── Main Component ───────────────────────────────────────────────────────────
+   556→
+   557→export default function Transactions() {
+   558→  const [search, setSearch] = useState('');
+   559→  const [searchInput, setSearchInput] = useState('');
+   560→  const [status, setStatus] = useState<string>('all');
+   561→  const [paymentMethod, setPaymentMethod] = useState<string>('all');
+   562→  const [dateFrom, setDateFrom] = useState('');
+   563→  const [dateTo, setDateTo] = useState('');
+   564→  const [page, setPage] = useState(1);
+   565→  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+   566→  const [dialogOpen, setDialogOpen] = useState(false);
+   567→
+   568→  const limit = 10;
+   569→
+   570→  const buildQueryParams = useCallback(
+   571→    (overrides?: { page?: number; status?: string; search?: string }) => {
+   572→      const params = new URLSearchParams();
+   573→      params.set('page', String(overrides?.page ?? page));
+   574→      params.set('limit', String(limit));
+   575→      const s = overrides?.search ?? search;
+   576→      if (s) params.set('search', s);
+   577→      const st = overrides?.status ?? status;
+   578→      if (st && st !== 'all') params.set('status', st);
+   579→      if (paymentMethod && paymentMethod !== 'all')
+   580→        params.set('paymentMethod', paymentMethod);
+   581→      if (dateFrom) params.set('dateFrom', dateFrom);
+   582→      if (dateTo) params.set('dateTo', dateTo);
+   583→      return params.toString();
+   584→    },
+   585→    [page, search, status, paymentMethod, dateFrom, dateTo],
+   586→  );
+   587→
+   588→  const { data, isLoading, error } = useQuery<TransactionsResponse>({
+   589→    queryKey: ['transactions', page, search, status, paymentMethod, dateFrom, dateTo],
+   590→    queryFn: () => {
+   591→      const qs = buildQueryParams();
+   592→      return fetch(`/api/transactions?${qs}`).then((r) => r.json());
+   593→    },
+   594→    staleTime: 15_000,
+   595→  });
+   596→
+   597→  // Fetch status counts (always use no filters except what's needed)
+   598→  const { data: statusCountsData } = useQuery<StatusCount[]>({
+   599→    queryKey: ['transactions-status-counts', search, paymentMethod, dateFrom, dateTo],
+   600→    queryFn: async () => {
+   601→      // We query the same endpoint but with different pages to get counts via pagination.total
+   602→      // More efficient: just get all statuses in parallel
+   603→      const statuses = ['success', 'pending', 'failed', 'expired', 'refunded'];
+   604→      const baseParams = new URLSearchParams();
+   605→      baseParams.set('limit', '1');
+   606→      baseParams.set('page', '1');
+   607→      if (search) baseParams.set('search', search);
+   608→      if (paymentMethod && paymentMethod !== 'all')
+   609→        baseParams.set('paymentMethod', paymentMethod);
+   610→      if (dateFrom) baseParams.set('dateFrom', dateFrom);
+   611→      if (dateTo) baseParams.set('dateTo', dateTo);
+   612→
+   613→      const results = await Promise.all(
+   614→        statuses.map(async (s) => {
+   615→          const params = new URLSearchParams(baseParams);
+   616→          params.set('status', s);
+   617→          const res = await fetch(`/api/transactions?${params.toString()}`);
+   618→          const json = await res.json();
+   619→          return { status: s, count: json.pagination?.total ?? 0 };
+   620→        }),
+   621→      );
+   622→      return results;
+   623→    },
+   624→    staleTime: 15_000,
+   625→  });
+   626→
+   627→  const transactions = data?.data ?? [];
+   628→  const pagination = data?.pagination;
+   629→
+   630→  const handleSearch = (e: React.FormEvent) => {
+   631→    e.preventDefault();
+   632→    setSearch(searchInput);
+   633→    setPage(1);
+   634→  };
+   635→
+   636→  const handleStatusFilterChange = (value: string) => {
+   637→    setStatus(value);
+   638→    setPage(1);
+   639→  };
+   640→
+   641→  const handlePaymentMethodChange = (value: string) => {
+   642→    setPaymentMethod(value);
+   643→    setPage(1);
+   644→  };
+   645→
+   646→  const handleDateFromChange = (value: string) => {
+   647→    setDateFrom(value);
+   648→    setPage(1);
+   649→  };
+   650→
+   651→  const handleDateToChange = (value: string) => {
+   652→    setDateTo(value);
+   653→    setPage(1);
+   654→  };
+   655→
+   656→  const handleStatusCardClick = (s: string) => {
+   657→    if (status === s) {
+   658→      setStatus('all');
+   659→    } else {
+   660→      setStatus(s);
+   661→    }
+   662→    setPage(1);
+   663→  };
+   664→
+   665→  const handleExportCSV = () => {
+   666→    const qs = buildQueryParams();
+   667→    window.open(`/api/transactions?export=csv&${qs}`, '_blank');
+   668→    toast.success('File CSV sedang diunduh');
+   669→  };
+   670→
+   671→  const handleRowClick = (tx: Transaction) => {
+   672→    setSelectedTx(tx);
+   673→    setDialogOpen(true);
+   674→  };
+   675→
+   676→  const statusCards = [
+   677→    {
+   678→      key: 'success',
+   679→      label: 'Berhasil',
+   680→      icon: CheckCircle2,
+   681→      gradient: 'from-emerald-500 to-teal-400',
+   682→      bgLight: 'bg-emerald-50 dark:bg-emerald-950/30',
+   683→      borderColor: 'border-emerald-200 dark:border-emerald-800',
+   684→      textColor: 'text-emerald-700 dark:text-emerald-400',
+   685→    },
+   686→    {
+   687→      key: 'pending',
+   688→      label: 'Menunggu',
+   689→      icon: Clock,
+   690→      gradient: 'from-amber-500 to-orange-400',
+   691→      bgLight: 'bg-amber-50 dark:bg-amber-950/30',
+   692→      borderColor: 'border-amber-200 dark:border-amber-800',
+   693→      textColor: 'text-amber-700 dark:text-amber-400',
+   694→    },
+   695→    {
+   696→      key: 'failed',
+   697→      label: 'Gagal',
+   698→      icon: XCircle,
+   699→      gradient: 'from-red-500 to-rose-400',
+   700→      bgLight: 'bg-red-50 dark:bg-red-950/30',
+   701→      borderColor: 'border-red-200 dark:border-red-800',
+   702→      textColor: 'text-red-700 dark:text-red-400',
+   703→    },
+   704→    {
+   705→      key: 'expired',
+   706→      label: 'Kedaluwarsa',
+   707→      icon: AlertTriangle,
+   708→      gradient: 'from-gray-500 to-slate-400',
+   709→      bgLight: 'bg-gray-50 dark:bg-gray-900/30',
+   710→      borderColor: 'border-gray-200 dark:border-gray-700',
+   711→      textColor: 'text-gray-600 dark:text-gray-400',
+   712→    },
+   713→    {
+   714→      key: 'refunded',
+   715→      label: 'Refund',
+   716→      icon: RotateCcw,
+   717→      gradient: 'from-blue-500 to-sky-400',
+   718→      bgLight: 'bg-blue-50 dark:bg-blue-950/30',
+   719→      borderColor: 'border-blue-200 dark:border-blue-800',
+   720→      textColor: 'text-blue-700 dark:text-blue-400',
+   721→    },
+   722→  ];
+   723→
+   724→  const getStatusCount = (key: string) =>
+   725→    statusCountsData?.find((s) => s.status === key)?.count ?? 0;
+   726→
+   727→  const pageRange = useMemo(() => {
+   728→    if (!pagination) return [];
+   729→    return getPaginationRange(pagination.page, pagination.totalPages);
+   730→  }, [pagination]);
+   731→
+   732→  if (isLoading) return <TransactionsSkeleton />;
+   733→  if (error || !data) {
+   734→    return (
+   735→      <div className="flex flex-col items-center justify-center gap-3 py-20">
+   736→        <XCircle className="h-10 w-10 text-muted-foreground" />
+   737→        <p className="text-muted-foreground">
+   738→          Gagal memuat data transaksi. Silakan coba lagi.
+   739→        </p>
+   740→        <Button
+   741→          variant="outline"
+   742→          onClick={() =>
+   743→            window.location.reload()
+   744→          }
+   745→        >
+   746→          Coba Lagi
+   747→        </Button>
+   748→      </div>
+   749→    );
+   750→  }
+   751→
+   752→  return (
+   753→    <div className="space-y-5">
+   754→      {/* ─── Filter Bar ─────────────────────────────────────────────── */}
+   755→      <motion.div
+   756→        initial={{ opacity: 0, y: -10 }}
+   757→        animate={{ opacity: 1, y: 0 }}
+   758→        transition={{ duration: 0.3 }}
+   759→      >
+   760→        <Card className="shadow-sm">
+   761→          <CardContent className="p-4">
+   762→            <form
+   763→              onSubmit={handleSearch}
+   764→              className="flex flex-col gap-3 lg:flex-row lg:items-center"
+   765→            >
+   766→              {/* Search */}
+   767→              <div className="relative flex-1 lg:max-w-xs">
+   768→                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   769→                <Input
+   770→                  placeholder="Cari invoice, pelanggan, merchant..."
+   771→                  value={searchInput}
+   772→                  onChange={(e) => setSearchInput(e.target.value)}
+   773→                  className="pl-9"
+   774→                />
+   775→              </div>
+   776→
+   777→              {/* Status Filter */}
+   778→              <Select
+   779→                value={status}
+   780→                onValueChange={handleStatusFilterChange}
+   781→              >
+   782→                <SelectTrigger className="w-full lg:w-40">
+   783→                  <SelectValue placeholder="Semua Status" />
+   784→                </SelectTrigger>
+   785→                <SelectContent>
+   786→                  <SelectItem value="all">Semua Status</SelectItem>
+   787→                  <SelectItem value="success">Berhasil</SelectItem>
+   788→                  <SelectItem value="pending">Menunggu</SelectItem>
+   789→                  <SelectItem value="failed">Gagal</SelectItem>
+   790→                  <SelectItem value="expired">Kedaluwarsa</SelectItem>
+   791→                  <SelectItem value="refunded">Refund</SelectItem>
+   792→                </SelectContent>
+   793→              </Select>
+   794→
+   795→              {/* Payment Method Filter */}
+   796→              <Select
+   797→                value={paymentMethod}
+   798→                onValueChange={handlePaymentMethodChange}
+   799→              >
+   800→                <SelectTrigger className="w-full lg:w-44">
+   801→                  <SelectValue placeholder="Metode Pembayaran" />
+   802→                </SelectTrigger>
+   803→                <SelectContent>
+   804→                  <SelectItem value="all">Semua Metode</SelectItem>
+   805→                  <SelectItem value="QRIS">QRIS</SelectItem>
+   806→                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+   807→                  <SelectItem value="E-Wallet">E-Wallet</SelectItem>
+   808→                  <SelectItem value="Virtual Account">Virtual Account</SelectItem>
+   809→                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+   810→                </SelectContent>
+   811→              </Select>
+   812→
+   813→              {/* Date From */}
+   814→              <Input
+   815→                type="date"
+   816→                value={dateFrom}
+   817→                onChange={(e) => handleDateFromChange(e.target.value)}
+   818→                className="w-full lg:w-40"
+   819→                placeholder="Dari tanggal"
+   820→              />
+   821→
+   822→              {/* Date To */}
+   823→              <Input
+   824→                type="date"
+   825→                value={dateTo}
+   826→                onChange={(e) => handleDateToChange(e.target.value)}
+   827→                className="w-full lg:w-40"
+   828→                placeholder="Sampai tanggal"
+   829→              />
+   830→
+   831→              {/* Export Button */}
+   832→              <Button
+   833→                type="button"
+   834→                variant="outline"
+   835→                onClick={handleExportCSV}
+   836→                className="w-full gap-2 lg:w-auto"
+   837→              >
+   838→                <Download className="h-4 w-4" />
+   839→                <span className="hidden sm:inline">Ekspor CSV</span>
+   840→              </Button>
+   841→            </form>
+   842→          </CardContent>
+   843→        </Card>
+   844→      </motion.div>
+   845→
+   846→      {/* ─── Stats Summary Bar ──────────────────────────────────────── */}
+   847→      <motion.div
+   848→        initial={{ opacity: 0, y: 10 }}
+   849→        animate={{ opacity: 1, y: 0 }}
+   850→        transition={{ duration: 0.3, delay: 0.1 }}
+   851→      >
+   852→        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+   853→          {statusCards.map((card) => {
+   854→            const count = getStatusCount(card.key);
+   855→            const isActive = status === card.key;
+   856→            const Icon = card.icon;
+   857→            return (
+   858→              <motion.button
+   859→                key={card.key}
+   860→                whileHover={{ scale: 1.02 }}
+   861→                whileTap={{ scale: 0.98 }}
+   862→                onClick={() => handleStatusCardClick(card.key)}
+   863→                className={`group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 ${
+   864→                  isActive
+   865→                    ? `${card.bgLight} ${card.borderColor} ring-2 ring-offset-1 ring-offset-background ${card.textColor.replace('text-', 'ring-')}`
+   866→                    : 'bg-card hover:border-border/80 hover:shadow-sm'
+   867→                }`}
+   868→              >
+   869→                <div className="flex items-center justify-between">
+   870→                  <div className="flex items-center gap-2.5">
+   871→                    <div
+   872→                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+   873→                        isActive ? `bg-gradient-to-br ${card.gradient}` : 'bg-muted'
+   874→                      }`}
+   875→                    >
+   876→                      <Icon
+   877→                        className={`h-4 w-4 ${
+   878→                          isActive ? 'text-white' : 'text-muted-foreground'
+   879→                        }`}
+   880→                      />
+   881→                    </div>
+   882→                    <div>
+   883→                      <p className="text-lg font-bold leading-none">{count}</p>
+   884→                      <p
+   885→                        className={`text-xs mt-1 ${
+   886→                          isActive ? card.textColor : 'text-muted-foreground'
+   887→                        }`}
+   888→                      >
+   889→                        {card.label}
+   890→                      </p>
+   891→                    </div>
+   892→                  </div>
+   893→                  {isActive && (
+   894→                    <div
+   895→                      className={`h-2 w-2 rounded-full bg-gradient-to-br ${card.gradient}`}
+   896→                    />
+   897→                  )}
+   898→                </div>
+   899→              </motion.button>
+   900→            );
+   901→          })}
+   902→        </div>
+   903→      </motion.div>
+   904→
+   905→      {/* ─── Transactions Table ──────────────────────────────────────── */}
+   906→      <motion.div
+   907→        initial={{ opacity: 0, y: 10 }}
+   908→        animate={{ opacity: 1, y: 0 }}
+   909→        transition={{ duration: 0.3, delay: 0.2 }}
+   910→      >
+   911→        <Card className="shadow-sm">
+   912→          <CardContent className="p-0">
+   913→            {/* Table Header Info */}
+   914→            <div className="flex items-center justify-between border-b px-4 py-3">
+   915→              <div className="flex items-center gap-2">
+   916→                <ArrowLeftRight className="h-4 w-4 text-emerald-500" />
+   917→                <h3 className="text-sm font-semibold">Daftar Transaksi</h3>
+   918→                <span className="text-muted-foreground text-xs">
+   919→                  ({pagination?.total?.toLocaleString('id-ID')} transaksi)
+   920→                </span>
+   921→              </div>
+   922→              <div className="text-muted-foreground text-xs">
+   923→                Halaman {pagination?.page} dari {pagination?.totalPages}
+   924→              </div>
+   925→            </div>
+   926→
+   927→            {/* Table */}
+   928→            <div className="overflow-x-auto">
+   929→              <Table>
+   930→                <TableHeader>
+   931→                  <TableRow className="hover:bg-transparent">
+   932→                    <TableHead className="pl-4">Invoice</TableHead>
+   933→                    <TableHead>Merchant</TableHead>
+   934→                    <TableHead>Pelanggan</TableHead>
+   935→                    <TableHead className="text-right">Jumlah</TableHead>
+   936→                    <TableHead className="text-right">Biaya</TableHead>
+   937→                    <TableHead>Metode</TableHead>
+   938→                    <TableHead>Saluran</TableHead>
+   939→                    <TableHead>Status</TableHead>
+   940→                    <TableHead>Tanggal</TableHead>
+   941→                  </TableRow>
+   942→                </TableHeader>
+   943→                <TableBody>
+   944→                  <AnimatePresence mode="popLayout">
+   945→                    {transactions.length === 0 ? (
+   946→                      <TableRow>
+   947→                        <TableCell
+   948→                          colSpan={9}
+   949→                          className="h-40 text-center"
+   950→                        >
+   951→                          <div className="flex flex-col items-center gap-2">
+   952→                            <Search className="h-8 w-8 text-muted-foreground/40" />
+   953→                            <p className="text-muted-foreground text-sm">
+   954→                              Tidak ada transaksi ditemukan
+   955→                            </p>
+   956→                            <p className="text-muted-foreground text-xs">
+   957→                              Coba ubah filter atau kata kunci pencarian
+   958→                            </p>
+   959→                          </div>
+   960→                        </TableCell>
+   961→                      </TableRow>
+   962→                    ) : (
+   963→                      transactions.map((tx) => (
+   964→                        <motion.tr
+   965→                          key={tx.id}
+   966→                          initial={{ opacity: 0, x: -8 }}
+   967→                          animate={{ opacity: 1, x: 0 }}
+   968→                          exit={{ opacity: 0, x: 8 }}
+   969→                          transition={{ duration: 0.2 }}
+   970→                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50"
+   971→                          onClick={() => handleRowClick(tx)}
+   972→                        >
+   973→                          <TableCell className="pl-4">
+   974→                            <span className="font-mono text-xs font-medium">
+   975→                              {tx.invoiceNo}
+   976→                            </span>
+   977→                          </TableCell>
+   978→                          <TableCell>
+   979→                            <div className="flex items-center gap-2">
+   980→                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
+   981→                                <Store className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+   982→                              </div>
+   983→                              <span className="max-w-[120px] truncate text-sm">
+   984→                                {tx.merchant.name}
+   985→                              </span>
+   986→                            </div>
+   987→                          </TableCell>
+   988→                          <TableCell>
+   989→                            <span className="text-sm">
+   990→                              {tx.customerName ||
+   991→                                tx.customer?.name ||
+   992→                                '-'}
+   993→                            </span>
+   994→                          </TableCell>
+   995→                          <TableCell className="text-right">
+   996→                            <span className="text-sm font-semibold">
+   997→                              {formatRp(tx.amount)}
+   998→                            </span>
+   999→                          </TableCell>
+  1000→                          <TableCell className="text-right">
+  1001→                            <span className="text-muted-foreground text-xs">
+  1002→                              {formatRp(tx.fee)}
+  1003→                            </span>
+  1004→                          </TableCell>
+  1005→                          <TableCell>
+  1006→                            <div className="flex items-center gap-1.5">
+  1007→                              <CreditCard className="h-3 w-3 text-muted-foreground" />
+  1008→                              <span className="text-xs">{tx.paymentMethod}</span>
+  1009→                            </div>
+  1010→                          </TableCell>
+  1011→                          <TableCell>
+  1012→                            <span className="text-xs text-muted-foreground">
+  1013→                              {tx.paymentChannel}
+  1014→                            </span>
+  1015→                          </TableCell>
+  1016→                          <TableCell>
+  1017→                            <StatusBadge status={tx.status} />
+  1018→                          </TableCell>
+  1019→                          <TableCell>
+  1020→                            <span className="text-xs text-muted-foreground">
+  1021→                              {formatShortDate(tx.createdAt)}
+  1022→                            </span>
+  1023→                          </TableCell>
+  1024→                        </motion.tr>
+  1025→                      ))
+  1026→                    )}
+  1027→                  </AnimatePresence>
+  1028→                </TableBody>
+  1029→              </Table>
+  1030→            </div>
+  1031→
+  1032→            {/* Pagination */}
+  1033→            {pagination && pagination.totalPages > 1 && (
+  1034→              <div className="flex items-center justify-between border-t px-4 py-3">
+  1035→                <p className="text-muted-foreground text-xs">
+  1036→                  Menampilkan {(pagination.page - 1) * pagination.limit + 1}
+  1037→                  –{Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
+  1038→                  dari {pagination.total} transaksi
+  1039→                </p>
+  1040→                <Pagination>
+  1041→                  <PaginationContent>
+  1042→                    <PaginationItem>
+  1043→                      <PaginationPrevious
+  1044→                        href="#"
+  1045→                        onClick={(e) => {
+  1046→                          e.preventDefault();
+  1047→                          if (pagination.page > 1) setPage(pagination.page - 1);
+  1048→                        }}
+  1049→                        className={
+  1050→                          pagination.page <= 1
+  1051→                            ? 'pointer-events-none opacity-50'
+  1052→                            : 'cursor-pointer'
+  1053→                        }
+  1054→                      />
+  1055→                    </PaginationItem>
+  1056→                    {pageRange.map((p, idx) =>
+  1057→                      p === 'dots' ? (
+  1058→                        <PaginationItem key={`dots-${idx}`}>
+  1059→                          <PaginationEllipsis />
+  1060→                        </PaginationItem>
+  1061→                      ) : (
+  1062→                        <PaginationItem key={p}>
+  1063→                          <PaginationLink
+  1064→                            href="#"
+  1065→                            isActive={pagination.page === p}
+  1066→                            onClick={(e) => {
+  1067→                              e.preventDefault();
+  1068→                              setPage(p as number);
+  1069→                            }}
+  1070→                            className="cursor-pointer"
+  1071→                          >
+  1072→                            {p}
+  1073→                          </PaginationLink>
+  1074→                        </PaginationItem>
+  1075→                      ),
+  1076→                    )}
+  1077→                    <PaginationItem>
+  1078→                      <PaginationNext
+  1079→                        href="#"
+  1080→                        onClick={(e) => {
+  1081→                          e.preventDefault();
+  1082→                          if (pagination.page < pagination.totalPages)
+  1083→                            setPage(pagination.page + 1);
+  1084→                        }}
+  1085→                        className={
+  1086→                          pagination.page >= pagination.totalPages
+  1087→                            ? 'pointer-events-none opacity-50'
+  1088→                            : 'cursor-pointer'
+  1089→                        }
+  1090→                      />
+  1091→                    </PaginationItem>
+  1092→                  </PaginationContent>
+  1093→                </Pagination>
+  1094→              </div>
+  1095→            )}
+  1096→          </CardContent>
+  1097→        </Card>
+  1098→      </motion.div>
+  1099→
+  1100→      {/* ─── Detail Dialog ───────────────────────────────────────────── */}
+  1101→      <TransactionDetailDialog
+  1102→        tx={selectedTx}
+  1103→        open={dialogOpen}
+  1104→        onOpenChange={setDialogOpen}
+  1105→      />
+  1106→    </div>
+  1107→  );
+  1108→}
+  1109→

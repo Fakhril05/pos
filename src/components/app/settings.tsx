@@ -1,0 +1,1007 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  User,
+  CreditCard,
+  Bell,
+  Shield,
+  Save,
+  Upload,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Key,
+  QrCode,
+  Building,
+  Wallet,
+  Landmark,
+  Smartphone,
+  Mail,
+  MessageSquare,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+// ── Payment method types ─────────────────────────────────────────────────────
+
+interface PaymentMethodConfig {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  enabled: boolean;
+  feeRate: number;
+  minAmount: number;
+  maxAmount: number;
+}
+
+interface NotificationConfig {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  enabled: boolean;
+  description: string;
+}
+
+// ── Profil Tab ────────────────────────────────────────────────────────────────
+
+function ProfilTab() {
+  const [form, setForm] = useState({
+    businessName: 'Pos Ril Indonesia',
+    email: 'admin@posril.id',
+    phone: '+62 812 3456 7890',
+    address: 'Jl. Sudirman No. 123, Jakarta Selatan 12190',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    // Simulate save
+    await new Promise((r) => setTimeout(r, 1000));
+    setSaving(false);
+    toast.success('Profil berhasil disimpan');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      {/* Logo Upload */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Logo Bisnis</CardTitle>
+          <CardDescription>
+            Upload logo yang akan ditampilkan di halaman pembayaran
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start gap-6">
+            <div className="relative">
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 shadow-lg">
+                <span className="text-2xl font-bold text-white">PR</span>
+              </div>
+              <div className="absolute -bottom-2 -right-2">
+                <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-emerald-500 text-white shadow-md transition-colors hover:bg-emerald-600">
+                  <Upload className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Format yang didukung: PNG, JPG, SVG. Ukuran maksimal 2MB.
+              </p>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Upload className="h-3.5 w-3.5" />
+                Ganti Logo
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                Hapus
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Business Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Informasi Bisnis</CardTitle>
+          <CardDescription>
+            Data bisnis yang akan ditampilkan ke pelanggan
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="businessName">Nama Bisnis</Label>
+              <Input
+                id="businessName"
+                value={form.businessName}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, businessName: e.target.value }))
+                }
+                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
+                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telepon</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, phone: e.target.value }))
+                }
+                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="address">Alamat</Label>
+              <Input
+                id="address"
+                value={form.address}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, address: e.target.value }))
+                }
+                className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+            >
+              {saving ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {saving ? 'Menyimpan...' : 'Simpan Profil'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ── Pembayaran Tab ───────────────────────────────────────────────────────────
+
+function PembayaranTab() {
+  const [methods, setMethods] = useState<PaymentMethodConfig[]>([
+    {
+      id: 'qris',
+      label: 'QRIS',
+      icon: <QrCode className="h-4 w-4" />,
+      enabled: true,
+      feeRate: 0.7,
+      minAmount: 1000,
+      maxAmount: 10000000,
+    },
+    {
+      id: 'bank_transfer',
+      label: 'Bank Transfer',
+      icon: <Landmark className="h-4 w-4" />,
+      enabled: true,
+      feeRate: 4000,
+      minAmount: 10000,
+      maxAmount: 50000000,
+    },
+    {
+      id: 'ewallet',
+      label: 'E-Wallet',
+      icon: <Smartphone className="h-4 w-4" />,
+      enabled: true,
+      feeRate: 2.0,
+      minAmount: 1000,
+      maxAmount: 20000000,
+    },
+    {
+      id: 'va',
+      label: 'Virtual Account',
+      icon: <Building className="h-4 w-4" />,
+      enabled: true,
+      feeRate: 5000,
+      minAmount: 10000,
+      maxAmount: 100000000,
+    },
+    {
+      id: 'cc',
+      label: 'Kartu Kredit',
+      icon: <CreditCard className="h-4 w-4" />,
+      enabled: false,
+      feeRate: 3.5,
+      minAmount: 10000,
+      maxAmount: 50000000,
+    },
+  ]);
+
+  const [saving, setSaving] = useState(false);
+
+  const toggleMethod = (id: string) => {
+    setMethods((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m)),
+    );
+  };
+
+  const updateMethod = (id: string, field: keyof PaymentMethodConfig, value: number) => {
+    setMethods((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await new Promise((r) => setTimeout(r, 1000));
+    setSaving(false);
+    toast.success('Pengaturan pembayaran berhasil disimpan');
+  };
+
+  const formatRp = (n: number) =>
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      {/* Global limits */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-emerald-500" />
+            <CardTitle className="text-base">Batas Transaksi Global</CardTitle>
+          </div>
+          <CardDescription>
+            Batas minimum dan maksimum untuk semua transaksi
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Minimum Transaksi</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  Rp
+                </span>
+                <Input
+                  type="number"
+                  defaultValue={1000}
+                  className="pl-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Maksimum Transaksi</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  Rp
+                </span>
+                <Input
+                  type="number"
+                  defaultValue={100000000}
+                  className="pl-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-method config */}
+      {methods.map((method, i) => (
+        <motion.div
+          key={method.id}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: i * 0.05 }}
+        >
+          <Card className={method.enabled ? '' : 'opacity-60'}>
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                {/* Left: Toggle + Info */}
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                      method.enabled
+                        ? 'bg-gradient-to-br from-emerald-500 to-teal-400 text-white shadow-sm'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {method.icon}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <p className="font-medium">{method.label}</p>
+                      <Badge
+                        variant={method.enabled ? 'default' : 'secondary'}
+                        className={
+                          method.enabled
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-400'
+                            : ''
+                        }
+                      >
+                        {method.enabled ? 'Aktif' : 'Nonaktif'}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      Biaya {method.feeRate <= 1 ? `${method.feeRate}%` : formatRp(method.feeRate)} per transaksi
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Controls */}
+                <div className="flex items-center gap-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Biaya</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={method.feeRate}
+                        onChange={(e) =>
+                          updateMethod(method.id, 'feeRate', parseFloat(e.target.value) || 0)
+                        }
+                        className="h-9 text-xs border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                        disabled={!method.enabled}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Min (Rp)</Label>
+                      <Input
+                        type="number"
+                        value={method.minAmount}
+                        onChange={(e) =>
+                          updateMethod(method.id, 'minAmount', parseInt(e.target.value) || 0)
+                        }
+                        className="h-9 text-xs border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                        disabled={!method.enabled}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Maks (Rp)</Label>
+                      <Input
+                        type="number"
+                        value={method.maxAmount}
+                        onChange={(e) =>
+                          updateMethod(method.id, 'maxAmount', parseInt(e.target.value) || 0)
+                        }
+                        className="h-9 text-xs border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                        disabled={!method.enabled}
+                      />
+                    </div>
+                  </div>
+                  <Separator orientation="vertical" className="hidden h-10 lg:block" />
+                  <Switch
+                    checked={method.enabled}
+                    onCheckedChange={() => toggleMethod(method.id)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
+
+      {/* Save */}
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+        >
+          {saving ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Notifikasi Tab ───────────────────────────────────────────────────────────
+
+function NotifikasiTab() {
+  const [notifications, setNotifications] = useState<NotificationConfig[]>([
+    {
+      id: 'email',
+      label: 'Email',
+      icon: <Mail className="h-4 w-4" />,
+      enabled: true,
+      description: 'Kirim notifikasi transaksi via email',
+    },
+    {
+      id: 'webhook',
+      label: 'Webhook',
+      icon: <Key className="h-4 w-4" />,
+      enabled: true,
+      description: 'Kirim event ke endpoint webhook Anda',
+    },
+    {
+      id: 'sms',
+      label: 'SMS',
+      icon: <MessageSquare className="h-4 w-4" />,
+      enabled: false,
+      description: 'Kirim notifikasi penting via SMS',
+    },
+  ]);
+
+  const [webhookUrl, setWebhookUrl] = useState('https://api.example.com/webhook/payment');
+  const [saving, setSaving] = useState(false);
+
+  const toggleNotification = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, enabled: !n.enabled } : n)),
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await new Promise((r) => setTimeout(r, 1000));
+    setSaving(false);
+    toast.success('Pengaturan notifikasi berhasil disimpan');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      {/* Notification Toggles */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-emerald-500" />
+            <CardTitle className="text-base">Jenis Notifikasi</CardTitle>
+          </div>
+          <CardDescription>
+            Pilih kanal notifikasi yang ingin diaktifkan
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {notifications.map((notif, i) => (
+            <motion.div
+              key={notif.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+            >
+              <div className="flex items-center justify-between rounded-xl border border-border/50 p-4 transition-colors hover:bg-muted/30">
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                      notif.enabled
+                        ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {notif.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{notif.label}</p>
+                    <p className="text-muted-foreground text-xs">{notif.description}</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={notif.enabled}
+                  onCheckedChange={() => toggleNotification(notif.id)}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Webhook URL */}
+      {notifications.find((n) => n.id === 'webhook')?.enabled && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Konfigurasi Webhook</CardTitle>
+              <CardDescription>
+                Endpoint yang akan menerima event notifikasi pembayaran
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="webhookUrl">Webhook URL</Label>
+                <Input
+                  id="webhookUrl"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="https://api.example.com/webhook/payment"
+                  className="border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800 font-mono text-sm"
+                />
+              </div>
+
+              <Separator />
+
+              {/* Event types */}
+              <div>
+                <Label className="text-sm mb-3 block">Event yang Dikirim</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'payment.success',
+                    'payment.failed',
+                    'payment.expired',
+                    'refund.created',
+                    'refund.processed',
+                    'payout.processed',
+                  ].map((event) => (
+                    <Badge
+                      key={event}
+                      variant="outline"
+                      className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-default"
+                    >
+                      {event}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Test webhook */}
+              <Button variant="outline" className="gap-2" onClick={() => toast.info('Test webhook dikirim')}>
+                <Bell className="h-3.5 w-3.5" />
+                Kirim Test Webhook
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Save */}
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+        >
+          {saving ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Keamanan Tab ──────────────────────────────────────────────────────────────
+
+function KeamananTab() {
+  const [passwordForm, setPasswordForm] = useState({
+    current: '',
+    newPassword: '',
+    confirm: '',
+  });
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [twoFA, setTwoFA] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+
+  const apiKey = 'prl_sk_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+
+  const maskedApiKey = `${apiKey.slice(0, 8)}${'•'.repeat(24)}${apiKey.slice(-4)}`;
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.current || !passwordForm.newPassword || !passwordForm.confirm) {
+      toast.error('Semua field password harus diisi');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirm) {
+      toast.error('Password baru dan konfirmasi tidak cocok');
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('Password baru minimal 8 karakter');
+      return;
+    }
+
+    setChangingPassword(true);
+    await new Promise((r) => setTimeout(r, 1500));
+    setChangingPassword(false);
+    setPasswordForm({ current: '', newPassword: '', confirm: '' });
+    toast.success('Password berhasil diubah');
+  };
+
+  const handleRegenerate = async () => {
+    setShowRegenerateDialog(false);
+    toast.success('API Key baru telah digenerate');
+  };
+
+  const handleCopyApiKey = () => {
+    navigator.clipboard.writeText(apiKey);
+    toast.success('API Key disalin ke clipboard');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-emerald-500" />
+            <CardTitle className="text-base">Ubah Password</CardTitle>
+          </div>
+          <CardDescription>
+            Perbarui password akun Anda secara berkala untuk keamanan
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="currentPassword">Password Saat Ini</Label>
+            <div className="relative">
+              <Input
+                id="currentPassword"
+                type={showCurrent ? 'text' : 'password'}
+                value={passwordForm.current}
+                onChange={(e) =>
+                  setPasswordForm((f) => ({ ...f, current: e.target.value }))
+                }
+                placeholder="Masukkan password saat ini"
+                className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Password Baru</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showNew ? 'text' : 'password'}
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
+                  }
+                  placeholder="Minimal 8 karakter"
+                  className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirm ? 'text' : 'password'}
+                  value={passwordForm.confirm}
+                  onChange={(e) =>
+                    setPasswordForm((f) => ({ ...f, confirm: e.target.value }))
+                  }
+                  placeholder="Ulangi password baru"
+                  className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 dark:border-emerald-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleChangePassword}
+              disabled={changingPassword}
+              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+            >
+              {changingPassword ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Shield className="h-4 w-4" />
+              )}
+              {changingPassword ? 'Mengubah...' : 'Ubah Password'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2FA Toggle */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Autentikasi Dua Faktor (2FA)</CardTitle>
+          <CardDescription>
+            Tambahkan lapisan keamanan ekstra untuk akun Anda
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-xl border border-border/50 p-4 transition-colors hover:bg-muted/30">
+            <div className="flex items-center gap-4">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                  twoFA
+                    ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {twoFA ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+              </div>
+              <div>
+                <p className="font-medium text-sm">
+                  {twoFA ? '2FA Diaktifkan' : '2FA Nonaktif'}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {twoFA
+                    ? 'Akun Anda terlindungi dengan autentikasi dua faktor'
+                    : 'Aktifkan untuk meningkatkan keamanan akun'}
+                </p>
+              </div>
+            </div>
+            <Switch checked={twoFA} onCheckedChange={(checked) => {
+              setTwoFA(checked);
+              toast.success(checked ? '2FA diaktifkan' : '2FA dinonaktifkan');
+            }} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* API Key */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Key className="h-4 w-4 text-emerald-500" />
+            <CardTitle className="text-base">API Key</CardTitle>
+          </div>
+          <CardDescription>
+            Gunakan API key untuk mengakses API Pos Ril dari aplikasi Anda
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Live API Key</Label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  readOnly
+                  type={apiKeyVisible ? 'text' : 'password'}
+                  value={apiKeyVisible ? apiKey : maskedApiKey}
+                  className="font-mono text-sm border-emerald-200 dark:border-emerald-800 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setApiKeyVisible(!apiKeyVisible)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {apiKeyVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopyApiKey}
+                className="shrink-0"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-emerald-600 dark:text-emerald-400"
+                >
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <div className="flex gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Jangan bagikan API key Anda kepada siapa pun. Regenerate akan membatalkan key sebelumnya secara permanen.
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowRegenerateDialog(true)}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Regenerate API Key
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleCopyApiKey} className="gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+              </svg>
+              Salin Key
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Regenerate Confirm Dialog */}
+      <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Regenerate API Key?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan membuat API key baru dan membatalkan key saat ini secara permanen.
+              Semua integrasi yang menggunakan key lama akan berhenti berfungsi. Tindakan ini
+              tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRegenerate}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Ya, Regenerate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </motion.div>
+  );
+}
+
+// ── Main Settings Component ───────────────────────────────────────────────────
+
+export default function Settings() {
+  return (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card>
+          <CardContent className="p-1">
+            <Tabs defaultValue="profil" className="w-full">
+              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+                <TabsTrigger
+                  value="profil"
+                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                >
+                  <User className="h-4 w-4" />
+                  Profil
+                </TabsTrigger>
+                <TabsTrigger
+                  value="pembayaran"
+                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Pembayaran
+                </TabsTrigger>
+                <TabsTrigger
+                  value="notifikasi"
+                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                >
+                  <Bell className="h-4 w-4" />
+                  Notifikasi
+                </TabsTrigger>
+                <TabsTrigger
+                  value="keamanan"
+                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                >
+                  <Shield className="h-4 w-4" />
+                  Keamanan
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="pt-6">
+                <TabsContent value="profil">
+                  <ProfilTab />
+                </TabsContent>
+                <TabsContent value="pembayaran">
+                  <PembayaranTab />
+                </TabsContent>
+                <TabsContent value="notifikasi">
+                  <NotifikasiTab />
+                </TabsContent>
+                <TabsContent value="keamanan">
+                  <KeamananTab />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
