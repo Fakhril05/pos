@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -18,6 +18,9 @@ import {
   Banknote,
   X,
   Receipt,
+  Plus,
+  MapPin,
+  Loader2,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,11 +30,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Pagination,
@@ -162,6 +168,13 @@ export default function Merchants() {
   const [searchInput, setSearchInput] = useState('');
   const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+  });
 
   // ── Fetch paginated merchants ──
   const { data, isLoading, isError } = useQuery({
@@ -218,6 +231,48 @@ export default function Merchants() {
 
   const merchants = data?.data ?? [];
   const pagination = data?.pagination;
+
+  // ── Create Merchant Mutation ──
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (body: { name: string; email: string; phone?: string; address?: string }) =>
+      fetch('/api/merchants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).then((r) => {
+        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+        return r.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['merchants'] });
+      queryClient.invalidateQueries({ queryKey: ['merchants-stats'] });
+      setCreateOpen(false);
+      setCreateForm({ name: '', email: '', phone: '', address: '' });
+      toast.success('Merchant baru berhasil ditambahkan');
+    },
+    onError: (err: string) => {
+      toast.error(err || 'Gagal menambahkan merchant');
+    },
+  });
+
+  const handleSubmitCreate = useCallback(() => {
+    if (!createForm.name.trim()) {
+      toast.error('Nama merchant wajib diisi');
+      return;
+    }
+    if (!createForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email)) {
+      toast.error('Format email tidak valid');
+      return;
+    }
+    createMutation.mutate({
+      name: createForm.name.trim(),
+      email: createForm.email.trim(),
+      phone: createForm.phone.trim() || undefined,
+      address: createForm.address.trim() || undefined,
+    });
+  }, [createForm, createMutation]);
 
   // ── Handlers ──
   const handleSearch = (e: React.FormEvent) => {
@@ -302,37 +357,45 @@ export default function Merchants() {
         ))}
       </div>
 
-      {/* ── Search ── */}
-      <motion.form
-        onSubmit={handleSearch}
+      {/* ── Search + Add ── */}
+      <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.2 }}
         className="flex flex-col sm:flex-row gap-3"
       >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari nama atau email merchant..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9 pr-9"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={handleClearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press">
-          <Search className="h-4 w-4 mr-2" />
-          Cari
+        <form onSubmit={handleSearch} className="flex flex-1 gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama atau email merchant..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press">
+            <Search className="h-4 w-4 mr-2" />
+            Cari
+          </Button>
+        </form>
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press w-full sm:w-auto"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Tambah Merchant
         </Button>
-      </motion.form>
+      </motion.div>
 
       {/* ── Active search indicator ── */}
       <AnimatePresence>
@@ -520,6 +583,114 @@ export default function Merchants() {
           </p>
         </div>
       )}
+
+      {/* ── Create Merchant Dialog ── */}
+      <Dialog open={createOpen} onOpenChange={(open) => {
+        setCreateOpen(open);
+        if (!open) setCreateForm({ name: '', email: '', phone: '', address: '' });
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-emerald-500" />
+              Tambah Merchant Baru
+            </DialogTitle>
+            <DialogDescription>
+              Isi detail di bawah untuk menambahkan merchant baru ke sistem.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            {/* Nama */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-name">Nama Merchant *</Label>
+              <div className="relative">
+                <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="create-name"
+                  placeholder="contoh: Toko Sejahtera"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-email">Email *</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="create-email"
+                  type="email"
+                  placeholder="contoh: admin@tokosejahtera.com"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Telepon */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-phone">Telepon</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="create-phone"
+                  placeholder="contoh: 081234567890"
+                  value={createForm.phone}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Alamat */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-address">Alamat</Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="create-address"
+                  placeholder="contoh: Jl. Sudirman No. 123, Jakarta"
+                  value={createForm.address}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, address: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateOpen(false);
+                setCreateForm({ name: '', email: '', phone: '', address: '' });
+              }}
+              disabled={createMutation.isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleSubmitCreate}
+              disabled={createMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                'Tambah Merchant'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Merchant Detail Dialog ── */}
       <Dialog open={!!selectedMerchant} onOpenChange={() => setSelectedMerchant(null)}>

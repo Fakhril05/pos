@@ -49,3 +49,46 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, email, phone } = body as {
+      name: string;
+      email: string;
+      phone?: string;
+    };
+
+    if (!name || !email) {
+      return NextResponse.json(
+        { error: 'Nama dan email wajib diisi' },
+        { status: 400 },
+      );
+    }
+
+    // Check if email already exists
+    const existing = await db.customer.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json(
+        { error: 'Email sudah terdaftar' },
+        { status: 409 },
+      );
+    }
+
+    const customer = await db.customer.create({
+      data: {
+        name,
+        email,
+        phone: phone || null,
+      },
+    });
+
+    return NextResponse.json({ data: customer }, { status: 201 });
+  } catch (error) {
+    console.error('[Customers POST]', error);
+    return NextResponse.json(
+      { error: 'Failed to create customer' },
+      { status: 500 },
+    );
+  }
+}

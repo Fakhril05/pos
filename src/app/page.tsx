@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/app-store'
 import { Sidebar } from '@/components/app/sidebar'
 import { Header } from '@/components/app/header'
 import { MobileNav } from '@/components/app/mobile-nav'
+import { QuickStats } from '@/components/app/quick-stats'
 import { LoadingBar } from '@/components/app/loading-bar'
 import { AnimatePresence, motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
@@ -38,11 +39,18 @@ export default function Home() {
       <LoadingBar />
       <Sidebar />
       <Header />
+      <motion.div
+        initial={false}
+        animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <QuickStats />
+      </motion.div>
       <motion.main
         initial={false}
         animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="flex min-h-[calc(100vh-4rem)] flex-col pt-16 pb-20 md:pb-0"
+        className="flex min-h-[calc(100vh-5.5rem)] flex-col pt-[4.75rem] pb-20 md:pb-0"
       >
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <AnimatePresence mode="wait">

@@ -1,0 +1,1101 @@
+     1→'use client';
+     2→
+     3→import { useState, useCallback, useEffect } from 'react';
+     4→import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import { toast } from 'sonner';
+     7→import {
+     8→  Link2,
+     9→  Plus,
+    10→  Search,
+    11→  Copy,
+    12→  Pencil,
+    13→  Trash2,
+    14→  Store,
+    15→  CalendarDays,
+    16→  Clock,
+    17→  Layers,
+    18→  Tag,
+    19→  LinkIcon,
+    20→  MoreHorizontal,
+    21→} from 'lucide-react';
+    22→import { Card, CardContent } from '@/components/ui/card';
+    23→import { Button } from '@/components/ui/button';
+    24→import { Input } from '@/components/ui/input';
+    25→import { Label } from '@/components/ui/label';
+    26→import { Textarea } from '@/components/ui/textarea';
+    27→import { Badge } from '@/components/ui/badge';
+    28→import { Progress } from '@/components/ui/progress';
+    29→import { Skeleton } from '@/components/ui/skeleton';
+    30→import {
+    31→  Select,
+    32→  SelectContent,
+    33→  SelectItem,
+    34→  SelectTrigger,
+    35→  SelectValue,
+    36→} from '@/components/ui/select';
+    37→import {
+    38→  Dialog,
+    39→  DialogContent,
+    40→  DialogHeader,
+    41→  DialogTitle,
+    42→  DialogDescription,
+    43→  DialogFooter,
+    44→} from '@/components/ui/dialog';
+    45→import {
+    46→  AlertDialog,
+    47→  AlertDialogAction,
+    48→  AlertDialogCancel,
+    49→  AlertDialogContent,
+    50→  AlertDialogDescription,
+    51→  AlertDialogFooter,
+    52→  AlertDialogHeader,
+    53→  AlertDialogTitle,
+    54→} from '@/components/ui/alert-dialog';
+    55→import {
+    56→  DropdownMenu,
+    57→  DropdownMenuContent,
+    58→  DropdownMenuItem,
+    59→  DropdownMenuSeparator,
+    60→  DropdownMenuTrigger,
+    61→} from '@/components/ui/dropdown-menu';
+    62→import {
+    63→  Pagination,
+    64→  PaginationContent,
+    65→  PaginationItem,
+    66→  PaginationLink,
+    67→  PaginationPrevious,
+    68→  PaginationNext,
+    69→  PaginationEllipsis,
+    70→} from '@/components/ui/pagination';
+    71→
+    72→// ── Helpers ──────────────────────────────────────────────────────────────────
+    73→
+    74→const formatRp = (amount: number) =>
+    75→  new Intl.NumberFormat('id-ID', {
+    76→    style: 'currency',
+    77→    currency: 'IDR',
+    78→    minimumFractionDigits: 0,
+    79→  }).format(amount);
+    80→
+    81→const formatDate = (dateStr: string) => {
+    82→  const d = new Date(dateStr);
+    83→  return d.toLocaleDateString('id-ID', {
+    84→    day: 'numeric',
+    85→    month: 'short',
+    86→    year: 'numeric',
+    87→  });
+    88→};
+    89→
+    90→const isExpired = (link: PaymentLinkItem) => {
+    91→  if (link.status === 'expired') return true;
+    92→  if (link.expiresAt && new Date(link.expiresAt) < new Date()) return true;
+    93→  return false;
+    94→};
+    95→
+    96→// ── Types ────────────────────────────────────────────────────────────────────
+    97→
+    98→interface PaymentLinkItem {
+    99→  id: string;
+   100→  title: string;
+   101→  description: string | null;
+   102→  amount: number;
+   103→  merchantId: string;
+   104→  status: string;
+   105→  type: string;
+   106→  maxQty: number;
+   107→  soldQty: number;
+   108→  expiresAt: string | null;
+   109→  createdAt: string;
+   110→  updatedAt: string;
+   111→  merchant: { id: string; name: string; logo: string | null };
+   112→  _count: { transactions: number };
+   113→}
+   114→
+   115→interface MerchantOption {
+   116→  id: string;
+   117→  name: string;
+   118→}
+   119→
+   120→interface PaginationInfo {
+   121→  page: number;
+   122→  limit: number;
+   123→  total: number;
+   124→  totalPages: number;
+   125→}
+   126→
+   127→// ── Form state type ──────────────────────────────────────────────────────────
+   128→
+   129→type FormData = {
+   130→  title: string;
+   131→  description: string;
+   132→  amount: string;
+   133→  merchantId: string;
+   134→  type: string;
+   135→  maxQty: string;
+   136→  expiresAt: string;
+   137→};
+   138→
+   139→const emptyForm: FormData = {
+   140→  title: '',
+   141→  description: '',
+   142→  amount: '',
+   143→  merchantId: '',
+   144→  type: 'single',
+   145→  maxQty: '1',
+   146→  expiresAt: '',
+   147→};
+   148→
+   149→// ── Page range helper ────────────────────────────────────────────────────────
+   150→
+   151→function getPageRange(current: number, total: number) {
+   152→  const pages: (number | 'ellipsis')[] = [];
+   153→  if (total <= 7) {
+   154→    for (let i = 1; i <= total; i++) pages.push(i);
+   155→  } else {
+   156→    pages.push(1);
+   157→    if (current > 3) pages.push('ellipsis');
+   158→    const start = Math.max(2, current - 1);
+   159→    const end = Math.min(total - 1, current + 1);
+   160→    for (let i = start; i <= end; i++) pages.push(i);
+   161→    if (current < total - 2) pages.push('ellipsis');
+   162→    pages.push(total);
+   163→  }
+   164→  return pages;
+   165→}
+   166→
+   167→// ── Status badge ─────────────────────────────────────────────────────────────
+   168→
+   169→function StatusBadge({ status }: { status: string }) {
+   170→  const expired = status === 'expired';
+   171→  return (
+   172→    <Badge
+   173→      variant="outline"
+   174→      className={
+   175→        expired
+   176→          ? 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'
+   177→          : 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800'
+   178→      }
+   179→    >
+   180→      <span className={`mr-1 inline-block h-1.5 w-1.5 rounded-full ${expired ? 'bg-gray-500' : 'bg-emerald-500'}`} />
+   181→      {expired ? 'Kedaluwarsa' : 'Aktif'}
+   182→    </Badge>
+   183→  );
+   184→}
+   185→
+   186→// ── Type badge ───────────────────────────────────────────────────────────────
+   187→
+   188→function TypeBadge({ type }: { type: string }) {
+   189→  if (type === 'multi') {
+   190→    return (
+   191→      <Badge variant="outline" className="bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800">
+   192→        <Layers className="mr-1 h-3 w-3" />
+   193→        Multi Pakai
+   194→      </Badge>
+   195→    );
+   196→  }
+   197→  return (
+   198→    <Badge variant="outline" className="bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800">
+   199→      <Tag className="mr-1 h-3 w-3" />
+   200→      Sekali Pakai
+   201→    </Badge>
+   202→  );
+   203→}
+   204→
+   205→// ── Loading skeleton ─────────────────────────────────────────────────────────
+   206→
+   207→function PaymentLinksSkeleton() {
+   208→  return (
+   209→    <div className="space-y-6">
+   210→      {/* Filter bar skeleton */}
+   211→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   212→        <Skeleton className="h-10 flex-1" />
+   213→        <Skeleton className="h-10 w-[160px]" />
+   214→      </div>
+   215→      {/* Cards skeleton */}
+   216→      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+   217→        {Array.from({ length: 6 }).map((_, i) => (
+   218→          <Card key={i} className="overflow-hidden">
+   219→            <CardContent className="p-5 space-y-4">
+   220→              <div className="flex items-start justify-between">
+   221→                <div className="space-y-2 flex-1">
+   222→                  <Skeleton className="h-5 w-32" />
+   223→                  <Skeleton className="h-4 w-24" />
+   224→                </div>
+   225→                <Skeleton className="h-6 w-16 rounded-full" />
+   226→              </div>
+   227→              <Skeleton className="h-7 w-36" />
+   228→              <div className="space-y-2">
+   229→                <Skeleton className="h-2.5 w-full" />
+   230→                <Skeleton className="h-2.5 w-full" />
+   231→              </div>
+   232→              <div className="flex gap-2 pt-2">
+   233→                <Skeleton className="h-8 w-8" />
+   234→                <Skeleton className="h-8 w-8" />
+   235→                <Skeleton className="h-8 w-8" />
+   236→              </div>
+   237→            </CardContent>
+   238→          </Card>
+   239→        ))}
+   240→      </div>
+   241→    </div>
+   242→  );
+   243→}
+   244→
+   245→// ── Main component ───────────────────────────────────────────────────────────
+   246→
+   247→export default function PaymentLinks() {
+   248→  const queryClient = useQueryClient();
+   249→
+   250→  // ─── Local state ─────────────────────────────────────────────────────
+   251→  const [page, setPage] = useState(1);
+   252→  const [search, setSearch] = useState('');
+   253→  const [searchInput, setSearchInput] = useState('');
+   254→  const [statusFilter, setStatusFilter] = useState('all');
+   255→  const [createOpen, setCreateOpen] = useState(false);
+   256→  const [editOpen, setEditOpen] = useState(false);
+   257→  const [deleteOpen, setDeleteOpen] = useState(false);
+   258→  const [selectedLink, setSelectedLink] = useState<PaymentLinkItem | null>(null);
+   259→  const [form, setForm] = useState<FormData>(emptyForm);
+   260→
+   261→  // ─── Queries ─────────────────────────────────────────────────────────
+   262→  const { data, isLoading, error } = useQuery<{
+   263→    data: PaymentLinkItem[];
+   264→    pagination: PaginationInfo;
+   265→  }>({
+   266→    queryKey: ['payment-links', page, search, statusFilter],
+   267→    queryFn: () => {
+   268→      const params = new URLSearchParams({
+   269→        page: String(page),
+   270→        limit: '9',
+   271→      });
+   272→      if (search) params.set('search', search);
+   273→      return fetch(`/api/payment-links?${params}`).then((r) => r.json());
+   274→    },
+   275→    staleTime: 15_000,
+   276→  });
+   277→
+   278→  const { data: merchantsData } = useQuery<{ data: MerchantOption[] }>({
+   279→    queryKey: ['merchants-select'],
+   280→    queryFn: () =>
+   281→      fetch('/api/merchants?limit=100').then((r) => r.json()),
+   282→    staleTime: 60_000,
+   283→  });
+   284→
+   285→  const merchants = merchantsData?.data ?? [];
+   286→
+   287→  // Client-side status filtering (API doesn't support status filter directly)
+   288→  const filteredData = data?.data.filter((link) => {
+   289→    if (statusFilter === 'all') return true;
+   290→    if (statusFilter === 'active') return !isExpired(link);
+   291→    if (statusFilter === 'expired') return isExpired(link);
+   292→    return true;
+   293→  });
+   294→
+   295→  const pagination = data?.pagination;
+   296→  const links = filteredData ?? [];
+   297→
+   298→  // ─── Mutations ───────────────────────────────────────────────────────
+   299→  const createMutation = useMutation({
+   300→    mutationFn: (body: Record<string, unknown>) =>
+   301→      fetch('/api/payment-links', {
+   302→        method: 'POST',
+   303→        headers: { 'Content-Type': 'application/json' },
+   304→        body: JSON.stringify(body),
+   305→      }).then((r) => {
+   306→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   307→        return r.json();
+   308→      }),
+   309→    onSuccess: () => {
+   310→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   311→      setCreateOpen(false);
+   312→      setForm(emptyForm);
+   313→      toast.success('Link pembayaran berhasil dibuat');
+   314→    },
+   315→    onError: (err: string) => {
+   316→      toast.error(err || 'Gagal membuat link pembayaran');
+   317→    },
+   318→  });
+   319→
+   320→  const updateMutation = useMutation({
+   321→    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+   322→      fetch(`/api/payment-links/${id}`, {
+   323→        method: 'PUT',
+   324→        headers: { 'Content-Type': 'application/json' },
+   325→        body: JSON.stringify(body),
+   326→      }).then((r) => {
+   327→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   328→        return r.json();
+   329→      }),
+   330→    onSuccess: () => {
+   331→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   332→      setEditOpen(false);
+   333→      setSelectedLink(null);
+   334→      setForm(emptyForm);
+   335→      toast.success('Link pembayaran berhasil diperbarui');
+   336→    },
+   337→    onError: (err: string) => {
+   338→      toast.error(err || 'Gagal memperbarui link pembayaran');
+   339→    },
+   340→  });
+   341→
+   342→  const deleteMutation = useMutation({
+   343→    mutationFn: (id: string) =>
+   344→      fetch(`/api/payment-links/${id}`, { method: 'DELETE' }).then((r) => {
+   345→        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+   346→        return r.json();
+   347→      }),
+   348→    onSuccess: () => {
+   349→      queryClient.invalidateQueries({ queryKey: ['payment-links'] });
+   350→      setDeleteOpen(false);
+   351→      setSelectedLink(null);
+   352→      toast.success('Link pembayaran berhasil dihapus');
+   353→    },
+   354→    onError: (err: string) => {
+   355→      toast.error(err || 'Gagal menghapus link pembayaran');
+   356→    },
+   357→  });
+   358→
+   359→  // ─── Handlers ────────────────────────────────────────────────────────
+   360→  const handleSearch = useCallback(
+   361→    (e: React.FormEvent) => {
+   362→      e.preventDefault();
+   363→      setSearch(searchInput);
+   364→      setPage(1);
+   365→    },
+   366→    [searchInput],
+   367→  );
+   368→
+   369→  const handleStatusFilter = useCallback((value: string) => {
+   370→    setStatusFilter(value);
+   371→    setPage(1);
+   372→  }, []);
+   373→
+   374→  const openCreate = useCallback(() => {
+   375→    setForm(emptyForm);
+   376→    setCreateOpen(true);
+   377→  }, []);
+   378→
+   379→  const openEdit = useCallback((link: PaymentLinkItem) => {
+   380→    setSelectedLink(link);
+   381→    setForm({
+   382→      title: link.title,
+   383→      description: link.description ?? '',
+   384→      amount: String(link.amount),
+   385→      merchantId: link.merchantId,
+   386→      type: link.type,
+   387→      maxQty: String(link.maxQty),
+   388→      expiresAt: link.expiresAt
+   389→        ? new Date(link.expiresAt).toISOString().split('T')[0]
+   390→        : '',
+   391→    });
+   392→    setEditOpen(true);
+   393→  }, []);
+   394→
+   395→  const openDelete = useCallback((link: PaymentLinkItem) => {
+   396→    setSelectedLink(link);
+   397→    setDeleteOpen(true);
+   398→  }, []);
+   399→
+   400→  const handleCopyLink = useCallback((link: PaymentLinkItem) => {
+   401→    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${link.id}`;
+   402→    navigator.clipboard.writeText(url).then(() => {
+   403→      toast.success('Tautan berhasil disalin ke clipboard');
+   404→    });
+   405→  }, []);
+   406→
+   407→  const handleSubmitCreate = useCallback(() => {
+   408→    if (!form.title || !form.amount || !form.merchantId) {
+   409→      toast.error('Judul, jumlah, dan merchant wajib diisi');
+   410→      return;
+   411→    }
+   412→    createMutation.mutate({
+   413→      title: form.title,
+   414→      description: form.description || undefined,
+   415→      amount: Number(form.amount),
+   416→      merchantId: form.merchantId,
+   417→      type: form.type,
+   418→      maxQty: form.type === 'multi' ? Number(form.maxQty) || 1 : 1,
+   419→      expiresAt: form.expiresAt || undefined,
+   420→    });
+   421→  }, [form, createMutation]);
+   422→
+   423→  const handleSubmitEdit = useCallback(() => {
+   424→    if (!selectedLink || !form.title || !form.amount || !form.merchantId) {
+   425→      toast.error('Judul, jumlah, dan merchant wajib diisi');
+   426→      return;
+   427→    }
+   428→    updateMutation.mutate({
+   429→      id: selectedLink.id,
+   430→      body: {
+   431→        title: form.title,
+   432→        description: form.description || undefined,
+   433→        amount: Number(form.amount),
+   434→        merchantId: form.merchantId,
+   435→        type: form.type,
+   436→        maxQty: form.type === 'multi' ? Number(form.maxQty) || 1 : 1,
+   437→        expiresAt: form.expiresAt || null,
+   438→      },
+   439→    });
+   440→  }, [form, selectedLink, updateMutation]);
+   441→
+   442→  const handleConfirmDelete = useCallback(() => {
+   443→    if (selectedLink) deleteMutation.mutate(selectedLink.id);
+   444→  }, [selectedLink, deleteMutation]);
+   445→
+   446→  const updateField = useCallback((field: keyof FormData, value: string) => {
+   447→    setForm((prev) => {
+   448→      const next = { ...prev, [field]: value };
+   449→      // Reset maxQty when switching to single
+   450→      if (field === 'type' && value === 'single') {
+   451→        next.maxQty = '1';
+   452→      }
+   453→      return next;
+   454→    });
+   455→  }, []);
+   456→
+   457→  // ─── Render ──────────────────────────────────────────────────────────
+   458→
+   459→  if (isLoading) return <PaymentLinksSkeleton />;
+   460→  if (error || !data) {
+   461→    return (
+   462→      <div className="flex items-center justify-center py-20">
+   463→        <p className="text-muted-foreground">
+   464→          Gagal memuat data link pembayaran. Silakan coba lagi.
+   465→        </p>
+   466→      </div>
+   467→    );
+   468→  }
+   469→
+   470→  return (
+   471→    <div className="space-y-6">
+   472→      {/* ─── Header + Filters ────────────────────────────────────── */}
+   473→      <motion.div
+   474→        initial={{ opacity: 0, y: -10 }}
+   475→        animate={{ opacity: 1, y: 0 }}
+   476→        transition={{ duration: 0.3 }}
+   477→      >
+   478→        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   479→          <div>
+   480→            <h2 className="text-xl font-bold tracking-tight">Link Pembayaran</h2>
+   481→            <p className="text-muted-foreground text-sm">
+   482→              Kelola dan pantau semua link pembayaran Anda
+   483→            </p>
+   484→          </div>
+   485→          <Button onClick={openCreate} className="w-full sm:w-auto btn-press">
+   486→            <Plus className="mr-2 h-4 w-4" />
+   487→            Buat Link Baru
+   488→          </Button>
+   489→        </div>
+   490→      </motion.div>
+   491→
+   492→      {/* ─── Filter bar ───────────────────────────────────────────── */}
+   493→      <motion.div
+   494→        initial={{ opacity: 0, y: -5 }}
+   495→        animate={{ opacity: 1, y: 0 }}
+   496→        transition={{ duration: 0.3, delay: 0.1 }}
+   497→        className="flex flex-col gap-3 sm:flex-row sm:items-center"
+   498→      >
+   499→        <form onSubmit={handleSearch} className="relative flex-1">
+   500→          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   501→          <Input
+   502→            placeholder="Cari link atau merchant..."
+   503→            value={searchInput}
+   504→            onChange={(e) => setSearchInput(e.target.value)}
+   505→            className="pl-9"
+   506→          />
+   507→        </form>
+   508→        <Select value={statusFilter} onValueChange={handleStatusFilter}>
+   509→          <SelectTrigger className="w-full sm:w-[180px]">
+   510→            <SelectValue placeholder="Status" />
+   511→          </SelectTrigger>
+   512→          <SelectContent>
+   513→            <SelectItem value="all">Semua Status</SelectItem>
+   514→            <SelectItem value="active">Aktif</SelectItem>
+   515→            <SelectItem value="expired">Kedaluwarsa</SelectItem>
+   516→          </SelectContent>
+   517→        </Select>
+   518→      </motion.div>
+   519→
+   520→      {/* ─── Summary bar ──────────────────────────────────────────── */}
+   521→      <motion.div
+   522→        initial={{ opacity: 0 }}
+   523→        animate={{ opacity: 1 }}
+   524→        transition={{ duration: 0.3, delay: 0.15 }}
+   525→        className="flex items-center gap-2 text-sm text-muted-foreground"
+   526→      >
+   527→        <Link2 className="h-4 w-4" />
+   528→        <span>
+   529→          Menampilkan {links.length} dari {pagination?.total ?? 0} link pembayaran
+   530→        </span>
+   531→        {search && (
+   532→          <Badge variant="secondary" className="ml-2">
+   533→            &ldquo;{search}&rdquo;
+   534→            <button
+   535→              onClick={() => {
+   536→                setSearch('');
+   537→                setSearchInput('');
+   538→                setPage(1);
+   539→              }}
+   540→              className="ml-1.5 hover:text-foreground"
+   541→              aria-label="Hapus pencarian"
+   542→            >
+   543→              ✕
+   544→            </button>
+   545→          </Badge>
+   546→        )}
+   547→      </motion.div>
+   548→
+   549→      {/* ─── Cards Grid ───────────────────────────────────────────── */}
+   550→      {links.length === 0 ? (
+   551→        <motion.div
+   552→          initial={{ opacity: 0, scale: 0.95 }}
+   553→          animate={{ opacity: 1, scale: 1 }}
+   554→          transition={{ duration: 0.3 }}
+   555→          className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16"
+   556→        >
+   557→          <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-2xl">
+   558→            <LinkIcon className="text-muted-foreground h-8 w-8" />
+   559→          </div>
+   560→          <p className="mt-4 text-lg font-medium">Tidak ada link pembayaran</p>
+   561→          <p className="text-muted-foreground mt-1 text-sm">
+   562→            {search || statusFilter !== 'all'
+   563→              ? 'Coba ubah filter pencarian Anda'
+   564→              : 'Buat link pembayaran pertama Anda'}
+   565→          </p>
+   566→        </motion.div>
+   567→      ) : (
+   568→        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+   569→          <AnimatePresence mode="popLayout">
+   570→            {links.map((link, idx) => {
+   571→              const expired = isExpired(link);
+   572→              const progressPct =
+   573→                link.maxQty > 0
+   574→                  ? Math.min(100, (link.soldQty / link.maxQty) * 100)
+   575→                  : 0;
+   576→
+   577→              return (
+   578→                <motion.div
+   579→                  key={link.id}
+   580→                  layout
+   581→                  initial={{ opacity: 0, y: 20, scale: 0.97 }}
+   582→                  animate={{ opacity: 1, y: 0, scale: 1 }}
+   583→                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
+   584→                  transition={{
+   585→                    duration: 0.35,
+   586→                    delay: idx * 0.05,
+   587→                    ease: 'easeOut',
+   588→                  }}
+   589→                >
+   590→                  <Card
+   591→                    className={
+   592→                      'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg card-hover' +
+   593→                      (expired ? ' opacity-70' : '')
+   594→                    }
+   595→                  >
+   596→                    {/* Gradient accent top */}
+   597→                    <div
+   598→                      className={
+   599→                        'absolute left-0 top-0 h-1 w-full bg-gradient-to-r ' +
+   600→                        (expired
+   601→                          ? 'from-gray-400 to-gray-300 dark:from-gray-600 dark:to-gray-500'
+   602→                          : 'from-emerald-500 to-teal-400')
+   603→                      }
+   604→                    />
+   605→
+   606→                    <CardContent className="p-5">
+   607→                      {/* Top row: badges + menu */}
+   608→                      <div className="flex items-start justify-between gap-2">
+   609→                        <div className="flex flex-wrap items-center gap-1.5">
+   610→                          <StatusBadge status={expired ? 'expired' : link.status} />
+   611→                          <TypeBadge type={link.type} />
+   612→                        </div>
+   613→                        <DropdownMenu>
+   614→                          <DropdownMenuTrigger asChild>
+   615→                            <Button
+   616→                              variant="ghost"
+   617→                              size="icon"
+   618→                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+   619→                            >
+   620→                              <MoreHorizontal className="h-4 w-4" />
+   621→                              <span className="sr-only">Menu</span>
+   622→                            </Button>
+   623→                          </DropdownMenuTrigger>
+   624→                          <DropdownMenuContent align="end">
+   625→                            <DropdownMenuItem onClick={() => handleCopyLink(link)}>
+   626→                              <Copy className="mr-2 h-4 w-4" />
+   627→                              Salin Tautan
+   628→                            </DropdownMenuItem>
+   629→                            <DropdownMenuItem onClick={() => openEdit(link)}>
+   630→                              <Pencil className="mr-2 h-4 w-4" />
+   631→                              Edit
+   632→                            </DropdownMenuItem>
+   633→                            <DropdownMenuSeparator />
+   634→                            <DropdownMenuItem
+   635→                              onClick={() => openDelete(link)}
+   636→                              className="text-red-600 focus:text-red-600 dark:text-red-400"
+   637→                            >
+   638→                              <Trash2 className="mr-2 h-4 w-4" />
+   639→                              Hapus
+   640→                            </DropdownMenuItem>
+   641→                          </DropdownMenuContent>
+   642→                        </DropdownMenu>
+   643→                      </div>
+   644→
+   645→                      {/* Title + merchant */}
+   646→                      <div className="mt-3 space-y-1">
+   647→                        <h3 className="truncate text-base font-semibold leading-tight">
+   648→                          {link.title}
+   649→                        </h3>
+   650→                        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+   651→                          <Store className="h-3.5 w-3.5" />
+   652→                          <span className="truncate">{link.merchant.name}</span>
+   653→                        </div>
+   654→                      </div>
+   655→
+   656→                      {/* Description */}
+   657→                      {link.description && (
+   658→                        <p className="text-muted-foreground mt-2 line-clamp-2 text-xs leading-relaxed">
+   659→                          {link.description}
+   660→                        </p>
+   661→                      )}
+   662→
+   663→                      {/* Amount */}
+   664→                      <div className="mt-4">
+   665→                        <p className="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+   666→                          {formatRp(link.amount)}
+   667→                        </p>
+   668→                      </div>
+   669→
+   670→                      {/* Progress bar (for multi-use) */}
+   671→                      <div className="mt-3 space-y-1.5">
+   672→                        <div className="flex items-center justify-between text-xs">
+   673→                          <span className="text-muted-foreground">
+   674→                            {link.type === 'multi' ? 'Terjual' : 'Transaksi'}
+   675→                          </span>
+   676→                          <span className="font-medium">
+   677→                            {link.soldQty}
+   678→                            {link.type === 'multi' && (
+   679→                              <span className="text-muted-foreground">
+   680→                                {' '}/ {link.maxQty}
+   681→                              </span>
+   682→                            )}
+   683→                          </span>
+   684→                        </div>
+   685→                        {link.type === 'multi' && (
+   686→                          <Progress
+   687→                            value={progressPct}
+   688→                            className="h-2"
+   689→                          />
+   690→                        )}
+   691→                      </div>
+   692→
+   693→                      {/* Footer: dates */}
+   694→                      <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs">
+   695→                        <div className="flex items-center gap-1">
+   696→                          <CalendarDays className="h-3 w-3" />
+   697→                          <span>{formatDate(link.createdAt)}</span>
+   698→                        </div>
+   699→                        {link.expiresAt && (
+   700→                          <div className="flex items-center gap-1">
+   701→                            <Clock className="h-3 w-3" />
+   702→                            <span className={expired ? 'text-gray-500' : ''}>
+   703→                              {formatDate(link.expiresAt)}
+   704→                            </span>
+   705→                          </div>
+   706→                        )}
+   707→                      </div>
+   708→
+   709→                      {/* Quick action: copy link button */}
+   710→                      <Button
+   711→                        variant="outline"
+   712→                        size="sm"
+   713→                        className="mt-3 w-full gap-2 text-xs"
+   714→                        onClick={() => handleCopyLink(link)}
+   715→                      >
+   716→                        <Copy className="h-3.5 w-3.5" />
+   717→                        Salin Tautan Pembayaran
+   718→                      </Button>
+   719→                    </CardContent>
+   720→                  </Card>
+   721→                </motion.div>
+   722→              );
+   723→            })}
+   724→          </AnimatePresence>
+   725→        </div>
+   726→      )}
+   727→
+   728→      {/* ─── Pagination ────────────────────────────────────────────── */}
+   729→      {pagination && pagination.totalPages > 1 && (
+   730→        <motion.div
+   731→          initial={{ opacity: 0 }}
+   732→          animate={{ opacity: 1 }}
+   733→          transition={{ duration: 0.3, delay: 0.3 }}
+   734→          className="flex flex-col items-center gap-3"
+   735→        >
+   736→          <Pagination>
+   737→            <PaginationContent>
+   738→              <PaginationItem>
+   739→                <PaginationPrevious
+   740→                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+   741→                  className={
+   742→                    page <= 1
+   743→                      ? 'pointer-events-none opacity-50'
+   744→                      : 'cursor-pointer'
+   745→                  }
+   746→                  aria-disabled={page <= 1}
+   747→                />
+   748→              </PaginationItem>
+   749→              {getPageRange(page, pagination.totalPages).map((p, i) =>
+   750→                p === 'ellipsis' ? (
+   751→                  <PaginationItem key={`el-${i}`}>
+   752→                    <PaginationEllipsis />
+   753→                  </PaginationItem>
+   754→                ) : (
+   755→                  <PaginationItem key={p}>
+   756→                    <PaginationLink
+   757→                      isActive={p === page}
+   758→                      onClick={() => setPage(p)}
+   759→                      className="cursor-pointer"
+   760→                    >
+   761→                      {p}
+   762→                    </PaginationLink>
+   763→                  </PaginationItem>
+   764→                ),
+   765→              )}
+   766→              <PaginationItem>
+   767→                <PaginationNext
+   768→                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+   769→                  className={
+   770→                    page >= pagination.totalPages
+   771→                      ? 'pointer-events-none opacity-50'
+   772→                      : 'cursor-pointer'
+   773→                  }
+   774→                  aria-disabled={page >= pagination.totalPages}
+   775→                />
+   776→              </PaginationItem>
+   777→            </PaginationContent>
+   778→          </Pagination>
+   779→          <p className="text-muted-foreground text-xs">
+   780→            Halaman {page} dari {pagination.totalPages}
+   781→          </p>
+   782→        </motion.div>
+   783→      )}
+   784→
+   785→      {/* ─── Create Dialog ─────────────────────────────────────────── */}
+   786→      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+   787→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+   788→          <DialogHeader>
+   789→            <DialogTitle className="flex items-center gap-2">
+   790→              <Plus className="h-5 w-5 text-emerald-500" />
+   791→              Buat Link Pembayaran Baru
+   792→            </DialogTitle>
+   793→            <DialogDescription>
+   794→              Isi detail di bawah untuk membuat link pembayaran baru.
+   795→            </DialogDescription>
+   796→          </DialogHeader>
+   797→
+   798→          <div className="grid gap-4 py-2">
+   799→            {/* Title */}
+   800→            <div className="grid gap-2">
+   801→              <Label htmlFor="create-title">Judul *</Label>
+   802→              <Input
+   803→                id="create-title"
+   804→                placeholder="contoh: Pembayaran Tiket Konser"
+   805→                value={form.title}
+   806→                onChange={(e) => updateField('title', e.target.value)}
+   807→              />
+   808→            </div>
+   809→
+   810→            {/* Description */}
+   811→            <div className="grid gap-2">
+   812→              <Label htmlFor="create-desc">Deskripsi</Label>
+   813→              <Textarea
+   814→                id="create-desc"
+   815→                placeholder="Deskripsi singkat tentang link pembayaran ini (opsional)"
+   816→                value={form.description}
+   817→                onChange={(e) => updateField('description', e.target.value)}
+   818→                rows={3}
+   819→              />
+   820→            </div>
+   821→
+   822→            {/* Amount */}
+   823→            <div className="grid gap-2">
+   824→              <Label htmlFor="create-amount">Jumlah (IDR) *</Label>
+   825→              <div className="relative">
+   826→                <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+   827→                  Rp
+   828→                </span>
+   829→                <Input
+   830→                  id="create-amount"
+   831→                  type="number"
+   832→                  placeholder="0"
+   833→                  className="pl-10"
+   834→                  value={form.amount}
+   835→                  onChange={(e) => updateField('amount', e.target.value)}
+   836→                />
+   837→              </div>
+   838→              {form.amount && Number(form.amount) > 0 && (
+   839→                <p className="text-muted-foreground text-xs">
+   840→                  {formatRp(Number(form.amount))}
+   841→                </p>
+   842→              )}
+   843→            </div>
+   844→
+   845→            {/* Merchant */}
+   846→            <div className="grid gap-2">
+   847→              <Label>Merchant *</Label>
+   848→              <Select
+   849→                value={form.merchantId}
+   850→                onValueChange={(v) => updateField('merchantId', v)}
+   851→              >
+   852→                <SelectTrigger className="w-full">
+   853→                  <SelectValue placeholder="Pilih merchant" />
+   854→                </SelectTrigger>
+   855→                <SelectContent>
+   856→                  {merchants.map((m) => (
+   857→                    <SelectItem key={m.id} value={m.id}>
+   858→                      {m.name}
+   859→                    </SelectItem>
+   860→                  ))}
+   861→                </SelectContent>
+   862→              </Select>
+   863→            </div>
+   864→
+   865→            {/* Type */}
+   866→            <div className="grid gap-2">
+   867→              <Label>Tipe</Label>
+   868→              <Select
+   869→                value={form.type}
+   870→                onValueChange={(v) => updateField('type', v)}
+   871→              >
+   872→                <SelectTrigger className="w-full">
+   873→                  <SelectValue />
+   874→                </SelectTrigger>
+   875→                <SelectContent>
+   876→                  <SelectItem value="single">Sekali Pakai</SelectItem>
+   877→                  <SelectItem value="multi">Multi Pakai</SelectItem>
+   878→                </SelectContent>
+   879→              </Select>
+   880→            </div>
+   881→
+   882→            {/* Max Qty (multi only) */}
+   883→            {form.type === 'multi' && (
+   884→              <motion.div
+   885→                initial={{ opacity: 0, height: 0 }}
+   886→                animate={{ opacity: 1, height: 'auto' }}
+   887→                exit={{ opacity: 0, height: 0 }}
+   888→                className="grid gap-2"
+   889→              >
+   890→                <Label htmlFor="create-maxqty">Jumlah Maksimal</Label>
+   891→                <Input
+   892→                  id="create-maxqty"
+   893→                  type="number"
+   894→                  min="1"
+   895→                  placeholder="1"
+   896→                  value={form.maxQty}
+   897→                  onChange={(e) => updateField('maxQty', e.target.value)}
+   898→                />
+   899→              </motion.div>
+   900→            )}
+   901→
+   902→            {/* Expiry */}
+   903→            <div className="grid gap-2">
+   904→              <Label htmlFor="create-expiry">Tanggal Kedaluwarsa</Label>
+   905→              <Input
+   906→                id="create-expiry"
+   907→                type="date"
+   908→                value={form.expiresAt}
+   909→                onChange={(e) => updateField('expiresAt', e.target.value)}
+   910→                min={new Date().toISOString().split('T')[0]}
+   911→              />
+   912→            </div>
+   913→          </div>
+   914→
+   915→          <DialogFooter>
+   916→            <Button
+   917→              variant="outline"
+   918→              onClick={() => setCreateOpen(false)}
+   919→              disabled={createMutation.isPending}
+   920→            >
+   921→              Batal
+   922→            </Button>
+   923→            <Button
+   924→              onClick={handleSubmitCreate}
+   925→              disabled={createMutation.isPending}
+   926→              className="bg-emerald-600 hover:bg-emerald-700"
+   927→            >
+   928→              {createMutation.isPending ? 'Menyimpan...' : 'Buat Link'}
+   929→            </Button>
+   930→          </DialogFooter>
+   931→        </DialogContent>
+   932→      </Dialog>
+   933→
+   934→      {/* ─── Edit Dialog ───────────────────────────────────────────── */}
+   935→      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+   936→        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+   937→          <DialogHeader>
+   938→            <DialogTitle className="flex items-center gap-2">
+   939→              <Pencil className="h-5 w-5 text-emerald-500" />
+   940→              Edit Link Pembayaran
+   941→            </DialogTitle>
+   942→            <DialogDescription>
+   943→              Perbarui detail link pembayaran.
+   944→            </DialogDescription>
+   945→          </DialogHeader>
+   946→
+   947→          <div className="grid gap-4 py-2">
+   948→            <div className="grid gap-2">
+   949→              <Label htmlFor="edit-title">Judul *</Label>
+   950→              <Input
+   951→                id="edit-title"
+   952→                value={form.title}
+   953→                onChange={(e) => updateField('title', e.target.value)}
+   954→              />
+   955→            </div>
+   956→
+   957→            <div className="grid gap-2">
+   958→              <Label htmlFor="edit-desc">Deskripsi</Label>
+   959→              <Textarea
+   960→                id="edit-desc"
+   961→                value={form.description}
+   962→                onChange={(e) => updateField('description', e.target.value)}
+   963→                rows={3}
+   964→              />
+   965→            </div>
+   966→
+   967→            <div className="grid gap-2">
+   968→              <Label htmlFor="edit-amount">Jumlah (IDR) *</Label>
+   969→              <div className="relative">
+   970→                <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+   971→                  Rp
+   972→                </span>
+   973→                <Input
+   974→                  id="edit-amount"
+   975→                  type="number"
+   976→                  className="pl-10"
+   977→                  value={form.amount}
+   978→                  onChange={(e) => updateField('amount', e.target.value)}
+   979→                />
+   980→              </div>
+   981→              {form.amount && Number(form.amount) > 0 && (
+   982→                <p className="text-muted-foreground text-xs">
+   983→                  {formatRp(Number(form.amount))}
+   984→                </p>
+   985→              )}
+   986→            </div>
+   987→
+   988→            <div className="grid gap-2">
+   989→              <Label>Merchant *</Label>
+   990→              <Select
+   991→                value={form.merchantId}
+   992→                onValueChange={(v) => updateField('merchantId', v)}
+   993→              >
+   994→                <SelectTrigger className="w-full">
+   995→                  <SelectValue placeholder="Pilih merchant" />
+   996→                </SelectTrigger>
+   997→                <SelectContent>
+   998→                  {merchants.map((m) => (
+   999→                    <SelectItem key={m.id} value={m.id}>
+  1000→                      {m.name}
+  1001→                    </SelectItem>
+  1002→                  ))}
+  1003→                </SelectContent>
+  1004→              </Select>
+  1005→            </div>
+  1006→
+  1007→            <div className="grid gap-2">
+  1008→              <Label>Tipe</Label>
+  1009→              <Select
+  1010→                value={form.type}
+  1011→                onValueChange={(v) => updateField('type', v)}
+  1012→              >
+  1013→                <SelectTrigger className="w-full">
+  1014→                  <SelectValue />
+  1015→                </SelectTrigger>
+  1016→                <SelectContent>
+  1017→                  <SelectItem value="single">Sekali Pakai</SelectItem>
+  1018→                  <SelectItem value="multi">Multi Pakai</SelectItem>
+  1019→                </SelectContent>
+  1020→              </Select>
+  1021→            </div>
+  1022→
+  1023→            {form.type === 'multi' && (
+  1024→              <motion.div
+  1025→                initial={{ opacity: 0, height: 0 }}
+  1026→                animate={{ opacity: 1, height: 'auto' }}
+  1027→                exit={{ opacity: 0, height: 0 }}
+  1028→                className="grid gap-2"
+  1029→              >
+  1030→                <Label htmlFor="edit-maxqty">Jumlah Maksimal</Label>
+  1031→                <Input
+  1032→                  id="edit-maxqty"
+  1033→                  type="number"
+  1034→                  min="1"
+  1035→                  value={form.maxQty}
+  1036→                  onChange={(e) => updateField('maxQty', e.target.value)}
+  1037→                />
+  1038→              </motion.div>
+  1039→            )}
+  1040→
+  1041→            <div className="grid gap-2">
+  1042→              <Label htmlFor="edit-expiry">Tanggal Kedaluwarsa</Label>
+  1043→              <Input
+  1044→                id="edit-expiry"
+  1045→                type="date"
+  1046→                value={form.expiresAt}
+  1047→                onChange={(e) => updateField('expiresAt', e.target.value)}
+  1048→              />
+  1049→            </div>
+  1050→          </div>
+  1051→
+  1052→          <DialogFooter>
+  1053→            <Button
+  1054→              variant="outline"
+  1055→              onClick={() => setEditOpen(false)}
+  1056→              disabled={updateMutation.isPending}
+  1057→            >
+  1058→              Batal
+  1059→            </Button>
+  1060→            <Button
+  1061→              onClick={handleSubmitEdit}
+  1062→              disabled={updateMutation.isPending}
+  1063→              className="bg-emerald-600 hover:bg-emerald-700"
+  1064→            >
+  1065→              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+  1066→            </Button>
+  1067→          </DialogFooter>
+  1068→        </DialogContent>
+  1069→      </Dialog>
+  1070→
+  1071→      {/* ─── Delete AlertDialog ────────────────────────────────────── */}
+  1072→      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+  1073→        <AlertDialogContent>
+  1074→          <AlertDialogHeader>
+  1075→            <AlertDialogTitle>Hapus Link Pembayaran?</AlertDialogTitle>
+  1076→            <AlertDialogDescription>
+  1077→              Tindakan ini tidak dapat dibatalkan. Link pembayaran{" "}
+  1078→              <span className="font-semibold text-foreground">
+  1079→                &ldquo;{selectedLink?.title}&rdquo;
+  1080→              </span>{" "}
+  1081→              akan dihapus secara permanen beserta data terkait.
+  1082→            </AlertDialogDescription>
+  1083→          </AlertDialogHeader>
+  1084→          <AlertDialogFooter>
+  1085→            <AlertDialogCancel disabled={deleteMutation.isPending}>
+  1086→              Batal
+  1087→            </AlertDialogCancel>
+  1088→            <AlertDialogAction
+  1089→              onClick={handleConfirmDelete}
+  1090→              disabled={deleteMutation.isPending}
+  1091→              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+  1092→            >
+  1093→              {deleteMutation.isPending ? 'Menghapus...' : 'Ya, Hapus'}
+  1094→            </AlertDialogAction>
+  1095→          </AlertDialogFooter>
+  1096→        </AlertDialogContent>
+  1097→      </AlertDialog>
+  1098→    </div>
+  1099→  );
+  1100→}
+  1101→

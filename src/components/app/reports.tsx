@@ -129,33 +129,33 @@ interface ReportsData {
 const areaChartConfig = {
   revenue: {
     label: 'Pendapatan',
-    color: '#10b981',
+    color: 'hsl(160, 84%, 39%)',
   },
   count: {
     label: 'Transaksi',
-    color: '#6ee7b7',
+    color: 'hsl(160, 60%, 65%)',
   },
 } satisfies ChartConfig;
 
 const barChartConfig = {
   count: {
     label: 'Jumlah Transaksi',
-    color: '#10b981',
+    color: 'hsl(160, 84%, 39%)',
   },
   revenue: {
     label: 'Pendapatan',
-    color: '#34d399',
+    color: 'hsl(152, 70%, 53%)',
   },
 } satisfies ChartConfig;
 
-const PIE_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'];
+const PIE_COLORS = ['hsl(160, 84%, 39%)', 'hsl(152, 70%, 53%)', 'hsl(160, 60%, 65%)', 'hsl(160, 40%, 80%)', 'hsl(160, 20%, 90%)'];
 
 const statusChartConfig = {
-  success: { label: 'Berhasil', color: '#10b981' },
-  pending: { label: 'Menunggu', color: '#f59e0b' },
-  failed: { label: 'Gagal', color: '#ef4444' },
-  expired: { label: 'Kedaluwarsa', color: '#6b7280' },
-  refunded: { label: 'Refund', color: '#06b6d4' },
+  success: { label: 'Berhasil', color: 'hsl(160, 84%, 39%)' },
+  pending: { label: 'Menunggu', color: 'hsl(38, 92%, 50%)' },
+  failed: { label: 'Gagal', color: 'hsl(0, 84%, 60%)' },
+  expired: { label: 'Kedaluwarsa', color: 'hsl(220, 9%, 46%)' },
+  refunded: { label: 'Refund', color: 'hsl(192, 91%, 36%)' },
 } satisfies ChartConfig;
 
 // ── Status label helper ──────────────────────────────────────────────────────
@@ -557,12 +557,12 @@ export default function Reports() {
               <AreaChart data={dailyRevenue} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
                 <defs>
                   <linearGradient id="reportRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="reportCountGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6ee7b7" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="hsl(160, 60%, 65%)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="hsl(160, 60%, 65%)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
@@ -611,7 +611,7 @@ export default function Reports() {
                   fill="url(#reportRevenueGrad)"
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 5, strokeWidth: 2, fill: '#10b981' }}
+                  activeDot={{ r: 5, strokeWidth: 2, fill: 'hsl(160, 84%, 39%)' }}
                 />
                 <Area
                   yAxisId="count"
@@ -622,7 +622,7 @@ export default function Reports() {
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 2, fill: '#6ee7b7' }}
+                  activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(160, 60%, 65%)' }}
                 />
               </AreaChart>
             </ChartContainer>

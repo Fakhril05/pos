@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Users,
   Wallet,
@@ -17,10 +18,12 @@ import {
   XCircle,
   Receipt,
   User as UserIcon,
+  Plus,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -40,6 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Pagination,
@@ -262,11 +266,16 @@ function CustomersSkeleton() {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function Customers() {
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', email: '', phone: '' });
+  const [formErrors, setFormErrors] = useState<{ name?: string; email?: string }>({});
 
   const limit = 10;
 
@@ -318,6 +327,31 @@ export default function Customers() {
     staleTime: 15_000,
   });
 
+  // ─── Mutations ───────────────────────────────────────────────────────
+
+  const createMutation = useMutation({
+    mutationFn: (body: { name: string; email: string; phone?: string }) =>
+      fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).then((r) => {
+        if (!r.ok) return r.json().then((e) => Promise.reject(e.error));
+        return r.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers-stats'] });
+      setCreateOpen(false);
+      setCreateForm({ name: '', email: '', phone: '' });
+      setFormErrors({});
+      toast.success('Pelanggan berhasil ditambahkan');
+    },
+    onError: (err: string) => {
+      toast.error(err || 'Gagal menambahkan pelanggan');
+    },
+  });
+
   // ─── Derived ─────────────────────────────────────────────────────────
 
   const customers = listData?.data ?? [];
@@ -349,6 +383,28 @@ export default function Customers() {
     setSelectedCustomerId(customer.id);
     setDialogOpen(true);
   }, []);
+
+  const validateCreateForm = () => {
+    const errors: { name?: string; email?: string } = {};
+    if (!createForm.name.trim()) errors.name = 'Nama wajib diisi';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!createForm.email.trim()) {
+      errors.email = 'Email wajib diisi';
+    } else if (!emailRegex.test(createForm.email)) {
+      errors.email = 'Format email tidak valid';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateSubmit = () => {
+    if (!validateCreateForm()) return;
+    createMutation.mutate({
+      name: createForm.name.trim(),
+      email: createForm.email.trim(),
+      phone: createForm.phone.trim() || undefined,
+    });
+  };
 
   // ─── Avatar colors ───────────────────────────────────────────────────
 
@@ -482,15 +538,24 @@ export default function Customers() {
                   ({pagination?.total?.toLocaleString('id-ID')} pelanggan)
                 </span>
               </div>
-              <form onSubmit={handleSearch} className="relative w-full sm:w-auto sm:max-w-xs">
-                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  placeholder="Cari nama, email, telepon..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-9"
-                />
-              </form>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => setCreateOpen(true)}
+                  className="w-full sm:w-auto btn-press bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Pelanggan
+                </Button>
+                <form onSubmit={handleSearch} className="relative w-full sm:w-auto sm:max-w-xs">
+                  <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    placeholder="Cari nama, email, telepon..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    className="pl-9"
+                  />
+                </form>
+              </div>
             </div>
 
             {/* Active search indicator */}
@@ -866,6 +931,94 @@ export default function Customers() {
               </div>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Create Customer Dialog ──────────────────────────── */}
+      <Dialog open={createOpen} onOpenChange={(open) => {
+        setCreateOpen(open);
+        if (!open) {
+          setCreateForm({ name: '', email: '', phone: '' });
+          setFormErrors({});
+        }
+      }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-emerald-500" />
+              Tambah Pelanggan Baru
+            </DialogTitle>
+            <DialogDescription>
+              Isi detail di bawah untuk menambahkan pelanggan baru.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            {/* Nama */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-name">Nama *</Label>
+              <Input
+                id="create-name"
+                placeholder="Nama lengkap pelanggan"
+                value={createForm.name}
+                onChange={(e) => {
+                  setCreateForm((f) => ({ ...f, name: e.target.value }));
+                  if (formErrors.name) setFormErrors((f) => ({ ...f, name: undefined }));
+                }}
+                className={formErrors.name ? 'border-red-400 focus-visible:ring-red-400' : ''}
+              />
+              {formErrors.name && (
+                <p className="text-xs text-red-500">{formErrors.name}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-email">Email *</Label>
+              <Input
+                id="create-email"
+                type="email"
+                placeholder="contoh: email@domain.com"
+                value={createForm.email}
+                onChange={(e) => {
+                  setCreateForm((f) => ({ ...f, email: e.target.value }));
+                  if (formErrors.email) setFormErrors((f) => ({ ...f, email: undefined }));
+                }}
+                className={formErrors.email ? 'border-red-400 focus-visible:ring-red-400' : ''}
+              />
+              {formErrors.email && (
+                <p className="text-xs text-red-500">{formErrors.email}</p>
+              )}
+            </div>
+
+            {/* Telepon */}
+            <div className="grid gap-2">
+              <Label htmlFor="create-phone">Telepon</Label>
+              <Input
+                id="create-phone"
+                placeholder="contoh: 08123456789"
+                value={createForm.phone}
+                onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              disabled={createMutation.isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleCreateSubmit}
+              disabled={createMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {createMutation.isPending ? 'Menyimpan...' : 'Tambah Pelanggan'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -42,7 +42,7 @@ export function MobileNav() {
 
   return (
     <>
-      <nav className="mobile-nav pb-safe fixed right-0 bottom-0 left-0 z-40 flex border-t border-border bg-background/95 backdrop-blur-xl md:hidden">
+      <nav className="mobile-nav pb-safe fixed right-0 bottom-0 left-0 z-50 flex border-t border-border bg-background/95 backdrop-blur-xl md:hidden">
         <div className="flex w-full items-center justify-around">
           {primaryNavItems.map((item) => {
             const isActive = activePage === item.id

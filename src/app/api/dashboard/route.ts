@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // --- Stats ---
-    const [totalResult, successResult, totalTxResult, activeMerchantsResult, todayResult] =
+    const [totalResult, successResult, totalTxResult, activeMerchantsResult, todayResult, pendingResult] =
       await Promise.all([
         db.transaction.aggregate({
           _sum: { amount: true },
@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
             paidAt: { gte: todayStart },
           },
         }),
+        db.transaction.count({ where: { status: 'pending' } }),
       ]);
 
     const totalRevenue = totalResult._sum.amount ?? 0;
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
       avgTransaction,
       activeMerchants,
       todayRevenue,
+      pendingTransactions: pendingResult,
     };
 
     // --- Monthly chart data (last 12 months) ---

@@ -152,25 +152,25 @@ interface DashboardData {
 const revenueChartConfig = {
   revenue: {
     label: 'Pendapatan',
-    color: '#10b981',
+    color: 'hsl(160, 84%, 39%)',
   },
   count: {
     label: 'Jumlah Transaksi',
-    color: '#6ee7b7',
+    color: 'hsl(160, 60%, 65%)',
   },
 } satisfies ChartConfig;
 
-const PIE_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5'];
+const PIE_COLORS = ['hsl(160, 84%, 39%)', 'hsl(152, 70%, 53%)', 'hsl(160, 60%, 65%)', 'hsl(160, 40%, 80%)', 'hsl(160, 20%, 90%)'];
 
 const pieChartConfig = {
   value: {
     label: 'Jumlah Transaksi',
   },
-  QRIS: { label: 'QRIS', color: '#10b981' },
-  'Bank Transfer': { label: 'Bank Transfer', color: '#34d399' },
-  'E-Wallet': { label: 'E-Wallet', color: '#6ee7b7' },
-  'Virtual Account': { label: 'Virtual Account', color: '#a7f3d0' },
-  'Credit Card': { label: 'Credit Card', color: '#d1fae5' },
+  QRIS: { label: 'QRIS', color: 'hsl(160, 84%, 39%)' },
+  'Bank Transfer': { label: 'Bank Transfer', color: 'hsl(152, 70%, 53%)' },
+  'E-Wallet': { label: 'E-Wallet', color: 'hsl(160, 60%, 65%)' },
+  'Virtual Account': { label: 'Virtual Account', color: 'hsl(160, 40%, 80%)' },
+  'Credit Card': { label: 'Credit Card', color: 'hsl(160, 20%, 90%)' },
 } satisfies ChartConfig;
 
 // ── Status badge helper ──────────────────────────────────────────────────────
@@ -651,12 +651,12 @@ export default function Dashboard() {
               <AreaChart data={enrichedMonthly} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
                 <defs>
                   <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="countGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6ee7b7" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#6ee7b7" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="hsl(160, 60%, 65%)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="hsl(160, 60%, 65%)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
@@ -704,7 +704,7 @@ export default function Dashboard() {
                   fill="url(#revenueGradient)"
                   strokeWidth={2.5}
                   dot={false}
-                  activeDot={{ r: 5, strokeWidth: 2, fill: '#10b981' }}
+                  activeDot={{ r: 5, strokeWidth: 2, fill: 'hsl(160, 84%, 39%)' }}
                 />
                 <Area
                   yAxisId="count"
@@ -715,7 +715,7 @@ export default function Dashboard() {
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 2, fill: '#6ee7b7' }}
+                  activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(160, 60%, 65%)' }}
                 />
               </AreaChart>
             </ChartContainer>
