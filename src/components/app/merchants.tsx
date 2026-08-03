@@ -287,7 +287,7 @@ export default function Merchants() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: i * 0.08 }}
           >
-            <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <Card className="shadow-sm hover:shadow-md transition-shadow card-hover">
               <CardContent className="p-4 sm:p-6 flex items-center gap-4">
                 <div className={`flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>{
                   <stat.icon className="h-5 w-5 text-white" />
@@ -328,7 +328,7 @@ export default function Merchants() {
             </button>
           )}
         </div>
-        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press">
           <Search className="h-4 w-4 mr-2" />
           Cari
         </Button>
@@ -401,7 +401,7 @@ export default function Merchants() {
                 transition={{ duration: 0.3, delay: i * 0.04 }}
               >
                 <Card
-                  className="overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group"
+                  className="overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group card-hover"
                   onClick={() => setSelectedMerchant(m.id)}
                 >
                   {/* Gradient top border */}

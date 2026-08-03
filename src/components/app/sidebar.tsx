@@ -110,7 +110,7 @@ export function Sidebar() {
       initial={false}
       animate={{ width: sidebarOpen ? 260 : 72 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar"
+      className="fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-sidebar-border bg-sidebar md:flex"
     >
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-4">

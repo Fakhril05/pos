@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Area,
   AreaChart,
@@ -40,6 +42,10 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import {
+  useTransactionSocket,
+  type SocketTransaction,
+} from '@/hooks/use-socket';
 import {
   ChartContainer,
   ChartTooltip,
@@ -320,6 +326,7 @@ const statusDotColors: Record<string, string> = {
 
 function ActivityFeed() {
   const { setActivePage } = useAppStore();
+  const [liveItems, setLiveItems] = useState<SocketTransaction[]>([]);
 
   const { data: activityData, isLoading: activityLoading } = useQuery<{
     data: ActivityTransaction[];
@@ -331,7 +338,25 @@ function ActivityFeed() {
     refetchInterval: 30_000,
   });
 
-  const items = activityData?.data?.slice(0, 6) ?? [];
+  const baseItems = activityData?.data?.slice(0, 6) ?? [];
+
+  // Socket integration — receive live transactions
+  useTransactionSocket({
+    onTransaction: (tx) => {
+      setLiveItems((prev) => [tx, ...prev].slice(0, 10));
+      toast('Pembayaran Baru!', {
+        description: `${formatRp(tx.amount)} dari ${tx.customerName} — ${tx.merchantName}`,
+        icon: <CreditCard className="h-4 w-4 text-emerald-500" />,
+      });
+    },
+  });
+
+  // Merge: live items first, then DB items, deduplicated
+  const liveIds = new Set(liveItems.map((t) => t.id));
+  const merged: (ActivityTransaction | SocketTransaction)[] = [
+    ...liveItems,
+    ...baseItems.filter((t) => !liveIds.has(t.id)),
+  ].slice(0, 6);
 
   return (
     <motion.div
@@ -339,7 +364,7 @@ function ActivityFeed() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.8 }}
     >
-      <Card className="shadow-sm">
+      <Card className="card-hover shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -368,7 +393,7 @@ function ActivityFeed() {
                 </div>
               ))}
             </div>
-          ) : items.length === 0 ? (
+          ) : merged.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Belum ada aktivitas terkini.
             </p>
@@ -377,13 +402,27 @@ function ActivityFeed() {
               {/* Vertical connecting line */}
               <div className="absolute bottom-0 left-[11px] top-2 w-px bg-border" />
 
-              {items.map((tx, idx) => (
+              {merged.map((tx, idx) => {
+                // Handle both ActivityTransaction (nested) and SocketTransaction (flat)
+                const merchantName =
+                  'merchant' in tx && tx.merchant
+                    ? (tx as ActivityTransaction).merchant.name
+                    : (tx as SocketTransaction).merchantName;
+                const customerName =
+                  'customer' in tx && tx.customer
+                    ? (tx as ActivityTransaction).customer!.name
+                    : (tx as SocketTransaction).customerName;
+
+                return (
                 <motion.div
                   key={tx.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.8 + idx * 0.07 }}
-                  className="group relative flex gap-4 rounded-lg p-2.5 transition-colors hover:bg-muted/50"
+                  transition={{ duration: 0.3, delay: idx * 0.07 }}
+                  className={cn(
+                    'group relative flex gap-4 rounded-lg p-2.5 transition-colors hover:bg-muted/50',
+                    idx < liveItems.length && 'bg-emerald-50/50 dark:bg-emerald-950/20'
+                  )}
                 >
                   {/* Timeline dot */}
                   <div className="relative z-10 mt-1 flex shrink-0 items-start justify-center">
@@ -399,13 +438,10 @@ function ActivityFeed() {
                   <div className="min-w-0 flex-1 pb-3">
                     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
                       <p className="text-sm">
-                        <span className="font-semibold">{tx.merchant.name}</span>
+                        <span className="font-semibold">{merchantName}</span>
                         <span className="text-muted-foreground"> — </span>
                         <span className="text-muted-foreground">
-                          {tx.customer?.name ?? tx.customerName ?? 'Pelanggan'
-                            .split(' ')
-                            .slice(0, 2)
-                            .join(' ')}
+                          {customerName.split(' ').slice(0, 2).join(' ')}
                         </span>
                       </p>
                       <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -417,7 +453,8 @@ function ActivityFeed() {
                     </p>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -541,10 +578,10 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.1, ease: 'easeOut' }}
             >
-              <Card className="group relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm transition-all hover:shadow-md">
+              <Card className="card-hover group relative overflow-hidden bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm">
                 {/* gradient top accent */}
                 <div
-                  className={`absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r ${card.gradient}`}
+                  className={`absolute left-0 right-0 top-0 h-[3px] bg-gradient-to-r ${card.gradient}`}
                 />
                 <CardContent className="p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
                   <div className="flex items-start justify-between">
@@ -599,7 +636,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
-        <Card className="shadow-sm">
+        <Card className="card-hover shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">Pendapatan Bulanan</CardTitle>
             <p className="text-muted-foreground text-sm">
@@ -694,7 +731,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Card className="shadow-sm">
+          <Card className="card-hover shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ShoppingBag className="h-4 w-4 text-emerald-500" />
@@ -741,7 +778,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <Card className="shadow-sm">
+          <Card className="card-hover shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-emerald-500" />
@@ -756,9 +793,9 @@ export default function Dashboard() {
                 return (
                   <div
                     key={merchant.id}
-                    className="flex items-center gap-4 rounded-lg p-3 transition-colors hover:bg-muted/50"
+                    className="flex items-center gap-4 rounded-lg p-3 transition-all duration-200 hover:bg-muted/60 hover:shadow-sm"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 text-sm font-bold text-white shadow-sm">
                       {idx + 1}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -794,7 +831,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.7 }}
       >
-        <Card className="shadow-sm">
+        <Card className="card-hover shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">Distribusi Metode Pembayaran</CardTitle>
             <p className="text-muted-foreground text-sm">
@@ -845,9 +882,9 @@ export default function Dashboard() {
                   const total = pieData.reduce((s, p) => s + p.value, 0);
                   const pct = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0';
                   return (
-                    <div key={entry.name} className="flex items-center gap-3">
+                    <div key={entry.name} className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition-all duration-150 hover:bg-muted/60">
                       <div
-                        className="h-3 w-3 shrink-0 rounded-sm"
+                        className="h-3 w-3 shrink-0 rounded-sm ring-1 ring-black/5 dark:ring-white/10"
                         style={{
                           backgroundColor: PIE_COLORS[i % PIE_COLORS.length],
                         }}

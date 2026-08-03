@@ -482,7 +482,7 @@ export default function PaymentLinks() {
               Kelola dan pantau semua link pembayaran Anda
             </p>
           </div>
-          <Button onClick={openCreate} className="w-full sm:w-auto">
+          <Button onClick={openCreate} className="w-full sm:w-auto btn-press">
             <Plus className="mr-2 h-4 w-4" />
             Buat Link Baru
           </Button>
@@ -589,7 +589,7 @@ export default function PaymentLinks() {
                 >
                   <Card
                     className={
-                      'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg' +
+                      'group relative overflow-hidden border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg card-hover' +
                       (expired ? ' opacity-70' : '')
                     }
                   >

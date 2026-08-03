@@ -1,0 +1,695 @@
+     1→'use client';
+     2→
+     3→import { useState, useMemo } from 'react';
+     4→import { useQuery } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import { toast } from 'sonner';
+     7→import {
+     8→  Store,
+     9→  Search,
+    10→  Copy,
+    11→  Check,
+    12→  Mail,
+    13→  Phone,
+    14→  Key,
+    15→  ArrowUpRight,
+    16→  CalendarDays,
+    17→  CreditCard,
+    18→  Banknote,
+    19→  X,
+    20→  Receipt,
+    21→} from 'lucide-react';
+    22→
+    23→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    24→import { Input } from '@/components/ui/input';
+    25→import { Button } from '@/components/ui/button';
+    26→import { Badge } from '@/components/ui/badge';
+    27→import { Skeleton } from '@/components/ui/skeleton';
+    28→import { Separator } from '@/components/ui/separator';
+    29→import { ScrollArea } from '@/components/ui/scroll-area';
+    30→import {
+    31→  Dialog,
+    32→  DialogContent,
+    33→  DialogHeader,
+    34→  DialogTitle,
+    35→} from '@/components/ui/dialog';
+    36→import {
+    37→  Pagination,
+    38→  PaginationContent,
+    39→  PaginationItem,
+    40→  PaginationLink,
+    41→  PaginationPrevious,
+    42→  PaginationNext,
+    43→  PaginationEllipsis,
+    44→} from '@/components/ui/pagination';
+    45→
+    46→// ─── Helpers ───────────────────────────────────────────────────────────────
+    47→
+    48→const formatMoney = (amount: number) =>
+    49→  new Intl.NumberFormat('id-ID', {
+    50→    style: 'currency',
+    51→    currency: 'IDR',
+    52→    minimumFractionDigits: 0,
+    53→  }).format(amount);
+    54→
+    55→const maskKey = (key: string) =>
+    56→  key.length > 12
+    57→    ? key.slice(0, 8) + '••••' + key.slice(-4)
+    58→    : key.slice(0, 4) + '••••' + key.slice(-4);
+    59→
+    60→const statusLabel: Record<string, string> = {
+    61→  active: 'Aktif',
+    62→  inactive: 'Nonaktif',
+    63→};
+    64→
+    65→const statusColor: Record<string, string> = {
+    66→  active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    67→  inactive: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    68→};
+    69→
+    70→const txStatusLabel: Record<string, string> = {
+    71→  success: 'Berhasil',
+    72→  pending: 'Menunggu',
+    73→  failed: 'Gagal',
+    74→  expired: 'Kedaluwarsa',
+    75→  refunded: 'Refund',
+    76→};
+    77→
+    78→const txStatusColor: Record<string, string> = {
+    79→  success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    80→  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    81→  failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+    82→  expired: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    83→  refunded: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+    84→};
+    85→
+    86→const payoutStatusLabel: Record<string, string> = {
+    87→  pending: 'Menunggu',
+    88→  processing: 'Diproses',
+    89→  completed: 'Berhasil',
+    90→  failed: 'Gagal',
+    91→  cancelled: 'Dibatalkan',
+    92→};
+    93→
+    94→const payoutStatusColor: Record<string, string> = {
+    95→  pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+    96→  processing: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
+    97→  completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    98→  failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+    99→  cancelled: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+   100→};
+   101→
+   102→const formatDate = (d: string) =>
+   103→  new Date(d).toLocaleDateString('id-ID', {
+   104→    day: 'numeric',
+   105→    month: 'short',
+   106→    year: 'numeric',
+   107→  });
+   108→
+   109→const formatDateTime = (d: string) =>
+   110→  new Date(d).toLocaleDateString('id-ID', {
+   111→    day: 'numeric',
+   112→    month: 'short',
+   113→    year: 'numeric',
+   114→    hour: '2-digit',
+   115→    minute: '2-digit',
+   116→  });
+   117→
+   118→// ─── Types ─────────────────────────────────────────────────────────────────
+   119→
+   120→interface Merchant {
+   121→  id: string;
+   122→  name: string;
+   123→  email: string;
+   124→  phone: string | null;
+   125→  address: string | null;
+   126→  logo: string | null;
+   127→  status: string;
+   128→  apiKey: string;
+   129→  totalSales: number;
+   130→  totalTx: number;
+   131→  createdAt: string;
+   132→  updatedAt: string;
+   133→  _count: { transactions: number; paymentLinks: number; payouts: number };
+   134→}
+   135→
+   136→interface MerchantDetail extends Merchant {
+   137→  transactions: {
+   138→    id: string;
+   139→    invoiceNo: string;
+   140→    amount: number;
+   141→    fee: number;
+   142→    status: string;
+   143→    paymentMethod: string;
+   144→    createdAt: string;
+   145→  }[];
+   146→  payouts: {
+   147→    id: string;
+   148→    amount: number;
+   149→    fee: number;
+   150→    status: string;
+   151→    bankName: string;
+   152→    accountNo: string;
+   153→    createdAt: string;
+   154→  }[];
+   155→}
+   156→
+   157→// ─── Component ─────────────────────────────────────────────────────────────
+   158→
+   159→export default function Merchants() {
+   160→  const [page, setPage] = useState(1);
+   161→  const [search, setSearch] = useState('');
+   162→  const [searchInput, setSearchInput] = useState('');
+   163→  const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
+   164→  const [copiedId, setCopiedId] = useState<string | null>(null);
+   165→
+   166→  // ── Fetch paginated merchants ──
+   167→  const { data, isLoading, isError } = useQuery({
+   168→    queryKey: ['merchants', page, search],
+   169→    queryFn: async () => {
+   170→      const params = new URLSearchParams({
+   171→        page: String(page),
+   172→        limit: '9',
+   173→      });
+   174→      if (search) params.set('search', search);
+   175→      const res = await fetch(`/api/merchants?${params}`);
+   176→      if (!res.ok) throw new Error('Gagal memuat data merchant');
+   177→      const json = await res.json();
+   178→      return json as {
+   179→        data: Merchant[];
+   180→        pagination: { page: number; limit: number; total: number; totalPages: number };
+   181→      };
+   182→    },
+   183→    staleTime: 15_000,
+   184→  });
+   185→
+   186→  // ── Fetch stats (all merchants) ──
+   187→  const { data: allMerchants } = useQuery({
+   188→    queryKey: ['merchants-stats'],
+   189→    queryFn: async () => {
+   190→      const res = await fetch('/api/merchants?limit=9999');
+   191→      if (!res.ok) throw new Error('Gagal memuat statistik');
+   192→      const json = await res.json();
+   193→      return json.data as Merchant[];
+   194→    },
+   195→    staleTime: 30_000,
+   196→  });
+   197→
+   198→  // ── Fetch merchant detail ──
+   199→  const { data: detail, isLoading: detailLoading } = useQuery({
+   200→    queryKey: ['merchant-detail', selectedMerchant],
+   201→    queryFn: async () => {
+   202→      const res = await fetch(`/api/merchants/${selectedMerchant}`);
+   203→      if (!res.ok) throw new Error('Gagal memuat detail merchant');
+   204→      const json = await res.json();
+   205→      return json.data as MerchantDetail;
+   206→    },
+   207→    enabled: !!selectedMerchant,
+   208→    staleTime: 10_000,
+   209→  });
+   210→
+   211→  const stats = useMemo(() => {
+   212→    if (!allMerchants) return { total: 0, active: 0, revenue: 0 };
+   213→    const total = allMerchants.length;
+   214→    const active = allMerchants.filter((m) => m.status === 'active').length;
+   215→    const revenue = allMerchants.reduce((s, m) => s + m.totalSales, 0);
+   216→    return { total, active, revenue };
+   217→  }, [allMerchants]);
+   218→
+   219→  const merchants = data?.data ?? [];
+   220→  const pagination = data?.pagination;
+   221→
+   222→  // ── Handlers ──
+   223→  const handleSearch = (e: React.FormEvent) => {
+   224→    e.preventDefault();
+   225→    setSearch(searchInput);
+   226→    setPage(1);
+   227→  };
+   228→
+   229→  const handleClearSearch = () => {
+   230→    setSearchInput('');
+   231→    setSearch('');
+   232→    setPage(1);
+   233→  };
+   234→
+   235→  const handleCopyKey = (id: string, key: string) => {
+   236→    navigator.clipboard.writeText(key);
+   237→    setCopiedId(id);
+   238→    toast.success('API Key berhasil disalin');
+   239→    setTimeout(() => setCopiedId(null), 2000);
+   240→  };
+   241→
+   242→  // ── Page range for pagination ──
+   243→  const pageRange = useMemo(() => {
+   244→    if (!pagination) return [];
+   245→    const { page: p, totalPages: tp } = pagination;
+   246→    const pages: (number | 'ellipsis')[] = [];
+   247→    if (tp <= 7) {
+   248→      for (let i = 1; i <= tp; i++) pages.push(i);
+   249→    } else {
+   250→      pages.push(1);
+   251→      if (p > 3) pages.push('ellipsis');
+   252→      const start = Math.max(2, p - 1);
+   253→      const end = Math.min(tp - 1, p + 1);
+   254→      for (let i = start; i <= end; i++) pages.push(i);
+   255→      if (p < tp - 2) pages.push('ellipsis');
+   256→      pages.push(tp);
+   257→    }
+   258→    return pages;
+   259→  }, [pagination]);
+   260→
+   261→  // ─── Render ───────────────────────────────────────────────────────────
+   262→
+   263→  if (isError) {
+   264→    return (
+   265→      <div className="flex flex-col items-center justify-center py-20">
+   266→        <Store className="h-12 w-12 text-muted-foreground mb-4" />
+   267→        <p className="text-muted-foreground">Gagal memuat data merchant</p>
+   268→        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+   269→          Coba Lagi
+   270→        </Button>
+   271→      </div>
+   272→    );
+   273→  }
+   274→
+   275→  return (
+   276→    <div className="space-y-6">
+   277→      {/* ── Stats Row ── */}
+   278→      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   279→        {[
+   280→          { label: 'Total Merchant', value: stats.total.toLocaleString('id-ID'), icon: Store, gradient: 'from-emerald-500 to-teal-500' },
+   281→          { label: 'Merchant Aktif', value: stats.active.toLocaleString('id-ID'), icon: ArrowUpRight, gradient: 'from-emerald-600 to-green-500' },
+   282→          { label: 'Total Pendapatan Merchant', value: formatMoney(stats.revenue), icon: Banknote, gradient: 'from-teal-500 to-emerald-500' },
+   283→        ].map((stat, i) => (
+   284→          <motion.div
+   285→            key={stat.label}
+   286→            initial={{ opacity: 0, y: 20 }}
+   287→            animate={{ opacity: 1, y: 0 }}
+   288→            transition={{ duration: 0.4, delay: i * 0.08 }}
+   289→          >
+   290→            <Card className="shadow-sm hover:shadow-md transition-shadow">
+   291→              <CardContent className="p-4 sm:p-6 flex items-center gap-4">
+   292→                <div className={`flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>{
+   293→                  <stat.icon className="h-5 w-5 text-white" />
+   294→                }</div>
+   295→                <div className="min-w-0">
+   296→                  <p className="text-sm text-muted-foreground truncate">{stat.label}</p>
+   297→                  <p className="text-lg font-bold truncate">{stat.value}</p>
+   298→                </div>
+   299→              </CardContent>
+   300→            </Card>
+   301→          </motion.div>
+   302→        ))}
+   303→      </div>
+   304→
+   305→      {/* ── Search ── */}
+   306→      <motion.form
+   307→        onSubmit={handleSearch}
+   308→        initial={{ opacity: 0, y: 12 }}
+   309→        animate={{ opacity: 1, y: 0 }}
+   310→        transition={{ duration: 0.35, delay: 0.2 }}
+   311→        className="flex flex-col sm:flex-row gap-3"
+   312→      >
+   313→        <div className="relative flex-1">
+   314→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   315→          <Input
+   316→            placeholder="Cari nama atau email merchant..."
+   317→            value={searchInput}
+   318→            onChange={(e) => setSearchInput(e.target.value)}
+   319→            className="pl-9 pr-9"
+   320→          />
+   321→          {search && (
+   322→            <button
+   323→              type="button"
+   324→              onClick={handleClearSearch}
+   325→              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+   326→            >
+   327→              <X className="h-4 w-4" />
+   328→            </button>
+   329→          )}
+   330→        </div>
+   331→        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+   332→          <Search className="h-4 w-4 mr-2" />
+   333→          Cari
+   334→        </Button>
+   335→      </motion.form>
+   336→
+   337→      {/* ── Active search indicator ── */}
+   338→      <AnimatePresence>
+   339→        {search && (
+   340→          <motion.div
+   341→            initial={{ opacity: 0, height: 0 }}
+   342→            animate={{ opacity: 1, height: 'auto' }}
+   343→            exit={{ opacity: 0, height: 0 }}
+   344→            className="flex items-center gap-2"
+   345→          >
+   346→            <span className="text-sm text-muted-foreground">Filter:</span>
+   347→            <Badge variant="secondary" className="gap-1 pr-1">
+   348→              &ldquo;{search}&rdquo;
+   349→              <button onClick={handleClearSearch} className="ml-1 rounded-full p-0.5 hover:bg-muted">
+   350→                <X className="h-3 w-3" />
+   351→              </button>
+   352→            </Badge>
+   353→          </motion.div>
+   354→        )}
+   355→      </AnimatePresence>
+   356→
+   357→      {/* ── Cards Grid ── */}
+   358→      {isLoading ? (
+   359→        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   360→          {Array.from({ length: 6 }).map((_, i) => (
+   361→            <Card key={i} className="overflow-hidden">
+   362→              <Skeleton className="h-1.5 w-full" />
+   363→              <CardContent className="p-5 space-y-3">
+   364→                <Skeleton className="h-5 w-3/4" />
+   365→                <Skeleton className="h-4 w-1/2" />
+   366→                <Skeleton className="h-4 w-2/3" />
+   367→                <Skeleton className="h-4 w-full" />
+   368→                <div className="flex gap-4 pt-2">
+   369→                  <Skeleton className="h-4 w-20" />
+   370→                  <Skeleton className="h-4 w-20" />
+   371→                </div>
+   372→              </CardContent>
+   373→            </Card>
+   374→          ))}
+   375→        </div>
+   376→      ) : merchants.length === 0 ? (
+   377→        <motion.div
+   378→          initial={{ opacity: 0, scale: 0.95 }}
+   379→          animate={{ opacity: 1, scale: 1 }}
+   380→          className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed"
+   381→        >
+   382→          <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-4">
+   383→            <Store className="h-7 w-7 text-muted-foreground" />
+   384→          </div>
+   385→          <p className="text-muted-foreground font-medium">Tidak ada merchant ditemukan</p>
+   386→          <p className="text-sm text-muted-foreground mt-1">Coba ubah kata kunci pencarian</p>
+   387→        </motion.div>
+   388→      ) : (
+   389→        <motion.div
+   390→          layout
+   391→          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+   392→        >
+   393→          <AnimatePresence mode="popLayout">
+   394→            {merchants.map((m, i) => (
+   395→              <motion.div
+   396→                key={m.id}
+   397→                layout
+   398→                initial={{ opacity: 0, y: 16 }}
+   399→                animate={{ opacity: 1, y: 0 }}
+   400→                exit={{ opacity: 0, y: -8 }}
+   401→                transition={{ duration: 0.3, delay: i * 0.04 }}
+   402→              >
+   403→                <Card
+   404→                  className="overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group"
+   405→                  onClick={() => setSelectedMerchant(m.id)}
+   406→                >
+   407→                  {/* Gradient top border */}
+   408→                  <div className={`h-1.5 w-full bg-gradient-to-r ${m.status === 'active' ? 'from-emerald-400 via-emerald-500 to-teal-400' : 'from-gray-300 via-gray-400 to-gray-300'}`} />
+   409→                  <CardContent className="p-5 space-y-3.5">
+   410→                    {/* Name + Status */}
+   411→                    <div className="flex items-start justify-between gap-2">
+   412→                      <div className="min-w-0">
+   413→                        <h3 className="font-semibold text-sm truncate group-hover:text-emerald-600 transition-colors">
+   414→                          {m.name}
+   415→                        </h3>
+   416→                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+   417→                          <Mail className="h-3 w-3 flex-shrink-0" />
+   418→                          <span className="truncate">{m.email}</span>
+   419→                        </div>
+   420→                      </div>
+   421→                      <Badge className={`text-[10px] px-2 py-0.5 flex-shrink-0 ${statusColor[m.status] || ''}`}>
+   422→                        {statusLabel[m.status] || m.status}
+   423→                      </Badge>
+   424→                    </div>
+   425→
+   426→                    {/* Phone */}
+   427→                    {m.phone && (
+   428→                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   429→                        <Phone className="h-3 w-3 flex-shrink-0" />
+   430→                        <span>{m.phone}</span>
+   431→                      </div>
+   432→                    )}
+   433→
+   434→                    {/* API Key */}
+   435→                    <div className="flex items-center gap-2">
+   436→                      <Key className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+   437→                      <code className="text-xs bg-muted px-2 py-1 rounded font-mono flex-1 truncate">
+   438→                        {maskKey(m.apiKey)}
+   439→                      </code>
+   440→                      <button
+   441→                        onClick={(e) => {
+   442→                          e.stopPropagation();
+   443→                          handleCopyKey(m.id, m.apiKey);
+   444→                        }}
+   445→                        className="flex-shrink-0 text-muted-foreground hover:text-emerald-600 transition-colors"
+   446→                        aria-label="Salin API Key"
+   447→                      >
+   448→                        {copiedId === m.id ? (
+   449→                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+   450→                        ) : (
+   451→                          <Copy className="h-3.5 w-3.5" />
+   452→                        )}
+   453→                      </button>
+   454→                    </div>
+   455→
+   456→                    <Separator />
+   457→
+   458→                    {/* Sales & Transactions */}
+   459→                    <div className="flex items-center justify-between text-xs">
+   460→                      <div className="flex items-center gap-1.5">
+   461→                        <CreditCard className="h-3 w-3 text-emerald-600" />
+   462→                        <span className="font-semibold text-emerald-600">{formatMoney(m.totalSales)}</span>
+   463→                      </div>
+   464→                      <span className="text-muted-foreground">
+   465→                        {m._count.transactions.toLocaleString('id-ID')} transaksi
+   466→                      </span>
+   467→                    </div>
+   468→
+   469→                    {/* Created date */}
+   470→                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   471→                      <CalendarDays className="h-3 w-3 flex-shrink-0" />
+   472→                      <span>Bergabung {formatDate(m.createdAt)}</span>
+   473→                    </div>
+   474→                  </CardContent>
+   475→                </Card>
+   476→              </motion.div>
+   477→            ))}
+   478→          </AnimatePresence>
+   479→        </motion.div>
+   480→      )}
+   481→
+   482→      {/* ── Pagination ── */}
+   483→      {pagination && pagination.totalPages > 1 && (
+   484→        <div className="space-y-3">
+   485→          <Pagination>
+   486→            <PaginationContent>
+   487→              <PaginationItem>
+   488→                <PaginationPrevious
+   489→                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+   490→                  className={page === 1 ? 'pointer-events-none opacity-40' : 'cursor-pointer'}
+   491→                />
+   492→              </PaginationItem>
+   493→              {pageRange.map((p, i) =>
+   494→                p === 'ellipsis' ? (
+   495→                  <PaginationItem key={`e${i}`}>
+   496→                    <PaginationEllipsis />
+   497→                  </PaginationItem>
+   498→                ) : (
+   499→                  <PaginationItem key={p}>
+   500→                    <PaginationLink
+   501→                      isActive={p === page}
+   502→                      onClick={() => setPage(p as number)}
+   503→                      className="cursor-pointer"
+   504→                    >
+   505→                      {p}
+   506→                    </PaginationLink>
+   507→                  </PaginationItem>
+   508→                )
+   509→              )}
+   510→              <PaginationItem>
+   511→                <PaginationNext
+   512→                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+   513→                  className={page === pagination.totalPages ? 'pointer-events-none opacity-40' : 'cursor-pointer'}
+   514→                />
+   515→              </PaginationItem>
+   516→            </PaginationContent>
+   517→          </Pagination>
+   518→          <p className="text-center text-sm text-muted-foreground">
+   519→            Menampilkan {(page - 1) * pagination.limit + 1}&ndash;{Math.min(page * pagination.limit, pagination.total)} dari {pagination.total} merchant
+   520→          </p>
+   521→        </div>
+   522→      )}
+   523→
+   524→      {/* ── Merchant Detail Dialog ── */}
+   525→      <Dialog open={!!selectedMerchant} onOpenChange={() => setSelectedMerchant(null)}>
+   526→        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+   527→          <DialogHeader>
+   528→            <DialogTitle className="flex items-center gap-2">
+   529→              <Store className="h-5 w-5 text-emerald-600" />
+   530→              Detail Merchant
+   531→            </DialogTitle>
+   532→          </DialogHeader>
+   533→
+   534→          {detailLoading ? (
+   535→            <div className="flex-1 space-y-4 p-4">
+   536→              <Skeleton className="h-6 w-1/3" />
+   537→              <Skeleton className="h-4 w-1/2" />
+   538→              <Skeleton className="h-4 w-2/3" />
+   539→              <Separator />
+   540→              <Skeleton className="h-20 w-full" />
+   541→              <Skeleton className="h-20 w-full" />
+   542→            </div>
+   543→          ) : detail ? (
+   544→            <ScrollArea className="flex-1 pr-1">
+   545→              <div className="space-y-5 pb-4">
+   546→                {/* Merchant Info */}
+   547→                <div className="space-y-3">
+   548→                  <div className="flex items-center gap-3">
+   549→                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
+   550→                      {detail.name.charAt(0).toUpperCase()}
+   551→                    </div>
+   552→                    <div className="flex-1 min-w-0">
+   553→                      <h3 className="font-semibold text-lg truncate">{detail.name}</h3>
+   554→                      <div className="flex items-center gap-2 flex-wrap">
+   555→                        <Badge className={`text-xs ${statusColor[detail.status] || ''}`}>
+   556→                          {statusLabel[detail.status] || detail.status}
+   557→                        </Badge>
+   558→                        <span className="text-xs text-muted-foreground">{detail.email}</span>
+   559→                      </div>
+   560→                    </div>
+   561→                  </div>
+   562→
+   563→                  {/* Info grid */}
+   564→                  <div className="grid grid-cols-2 gap-3">
+   565→                    {[
+   566→                      { icon: Mail, label: 'Email', value: detail.email },
+   567→                      { icon: Phone, label: 'Telepon', value: detail.phone || '-' },
+   568→                      { icon: CalendarDays, label: 'Bergabung', value: formatDate(detail.createdAt) },
+   569→                      { icon: CreditCard, label: 'Total Transaksi', value: String(detail._count.transactions) },
+   570→                    ].map((item) => (
+   571→                      <div key={item.label} className="rounded-lg border p-3">
+   572→                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+   573→                          <item.icon className="h-3 w-3" />
+   574→                          {item.label}
+   575→                        </div>
+   576→                        <p className="text-sm font-medium truncate">{item.value}</p>
+   577→                      </div>
+   578→                    ))}
+   579→                    <div className="rounded-lg border p-3 col-span-2">
+   580→                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+   581→                        <Banknote className="h-3 w-3" />
+   582→                        Total Penjualan
+   583→                      </div>
+   584→                      <p className="text-sm font-semibold text-emerald-600">{formatMoney(detail.totalSales)}</p>
+   585→                    </div>
+   586→                  </div>
+   587→
+   588→                  {/* API Key */}
+   589→                  <div className="rounded-lg border p-3">
+   590→                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+   591→                      <Key className="h-3 w-3" />
+   592→                      API Key
+   593→                    </div>
+   594→                    <div className="flex items-center gap-2">
+   595→                      <code className="text-xs bg-muted px-2 py-1.5 rounded font-mono flex-1 break-all">
+   596→                        {detail.apiKey}
+   597→                      </code>
+   598→                      <Button
+   599→                        size="sm"
+   600→                        variant="outline"
+   601→                        className="flex-shrink-0"
+   602→                        onClick={() => handleCopyKey(detail.id, detail.apiKey)}
+   603→                      >
+   604→                        {copiedId === detail.id ? (
+   605→                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+   606→                        ) : (
+   607→                          <Copy className="h-3.5 w-3.5" />
+   608→                        )}
+   609→                      </Button>
+   610→                    </div>
+   611→                  </div>
+   612→                </div>
+   613→
+   614→                <Separator />
+   615→
+   616→                {/* Recent Transactions */}
+   617→                <div>
+   618→                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   619→                    <Receipt className="h-4 w-4 text-emerald-600" />
+   620→                    Transaksi Terbaru
+   621→                  </h4>
+   622→                  {detail.transactions.length === 0 ? (
+   623→                    <p className="text-sm text-muted-foreground py-4 text-center">Belum ada transaksi</p>
+   624→                  ) : (
+   625→                    <div className="space-y-2">
+   626→                      {detail.transactions.map((tx) => (
+   627→                        <motion.div
+   628→                          key={tx.id}
+   629→                          initial={{ opacity: 0, x: -8 }}
+   630→                          animate={{ opacity: 1, x: 0 }}
+   631→                          className="flex items-center justify-between rounded-lg border p-3"
+   632→                        >
+   633→                          <div className="min-w-0 flex-1">
+   634→                            <div className="flex items-center gap-2">
+   635→                              <code className="text-xs font-mono text-muted-foreground">{tx.invoiceNo}</code>
+   636→                              <Badge className={`text-[10px] px-1.5 py-0 ${txStatusColor[tx.status] || ''}`}>
+   637→                                {txStatusLabel[tx.status] || tx.status}
+   638→                              </Badge>
+   639→                            </div>
+   640→                            <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(tx.createdAt)}</p>
+   641→                          </div>
+   642→                          <span className="text-sm font-semibold text-emerald-600 ml-3">
+   643→                            {formatMoney(tx.amount)}
+   644→                          </span>
+   645→                        </motion.div>
+   646→                      ))}
+   647→                    </div>
+   648→                  )}
+   649→                </div>
+   650→
+   651→                <Separator />
+   652→
+   653→                {/* Recent Payouts */}
+   654→                <div>
+   655→                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   656→                    <Banknote className="h-4 w-4 text-emerald-600" />
+   657→                    Pencairan Terbaru
+   658→                  </h4>
+   659→                  {detail.payouts.length === 0 ? (
+   660→                    <p className="text-sm text-muted-foreground py-4 text-center">Belum ada pencairan</p>
+   661→                  ) : (
+   662→                    <div className="space-y-2">
+   663→                      {detail.payouts.map((po) => (
+   664→                        <motion.div
+   665→                          key={po.id}
+   666→                          initial={{ opacity: 0, x: -8 }}
+   667→                          animate={{ opacity: 1, x: 0 }}
+   668→                          className="flex items-center justify-between rounded-lg border p-3"
+   669→                        >
+   670→                          <div className="min-w-0 flex-1">
+   671→                            <div className="flex items-center gap-2">
+   672→                              <span className="text-xs text-muted-foreground">{po.bankName} - {po.accountNo}</span>
+   673→                              <Badge className={`text-[10px] px-1.5 py-0 ${payoutStatusColor[po.status] || ''}`}>
+   674→                                {payoutStatusLabel[po.status] || po.status}
+   675→                              </Badge>
+   676→                            </div>
+   677→                            <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(po.createdAt)}</p>
+   678→                          </div>
+   679→                          <span className="text-sm font-semibold ml-3">
+   680→                            {formatMoney(po.amount)}
+   681→                          </span>
+   682→                        </motion.div>
+   683→                      ))}
+   684→                    </div>
+   685→                  )}
+   686→                </div>
+   687→              </div>
+   688→            </ScrollArea>
+   689→          ) : null}
+   690→        </DialogContent>
+   691→      </Dialog>
+   692→    </div>
+   693→  );
+   694→}
+   695→

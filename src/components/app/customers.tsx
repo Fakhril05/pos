@@ -401,7 +401,7 @@ export default function Customers() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
         >
-          <Card className="shadow-sm transition-shadow hover:shadow-md">
+          <Card className="shadow-sm transition-shadow hover:shadow-md card-hover">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400">
@@ -424,7 +424,7 @@ export default function Customers() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Card className="shadow-sm transition-shadow hover:shadow-md">
+          <Card className="shadow-sm transition-shadow hover:shadow-md card-hover">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-400">
@@ -447,7 +447,7 @@ export default function Customers() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.15 }}
         >
-          <Card className="shadow-sm transition-shadow hover:shadow-md">
+          <Card className="shadow-sm transition-shadow hover:shadow-md card-hover">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-400">
@@ -471,7 +471,7 @@ export default function Customers() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card className="shadow-sm">
+        <Card className="shadow-sm card-hover">
           <CardContent className="p-0">
             {/* Header with search */}
             <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -553,7 +553,7 @@ export default function Customers() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 8 }}
                           transition={{ duration: 0.2 }}
-                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50"
+                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50 table-row-hover"
                           onClick={() => handleRowClick(customer)}
                         >
                           {/* Avatar + Name */}

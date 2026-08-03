@@ -90,7 +90,7 @@ function ProfilTab() {
       className="space-y-6"
     >
       {/* Logo Upload */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="text-base">Logo Bisnis</CardTitle>
           <CardDescription>
@@ -126,7 +126,7 @@ function ProfilTab() {
       </Card>
 
       {/* Business Info */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="text-base">Informasi Bisnis</CardTitle>
           <CardDescription>
@@ -189,7 +189,7 @@ function ProfilTab() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
             >
               {saving ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -288,7 +288,7 @@ function PembayaranTab() {
       className="space-y-6"
     >
       {/* Global limits */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Wallet className="h-4 w-4 text-emerald-500" />
@@ -338,7 +338,7 @@ function PembayaranTab() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3, delay: i * 0.05 }}
         >
-          <Card className={method.enabled ? '' : 'opacity-60'}>
+          <Card className={method.enabled ? '' : 'opacity-60 card-hover'}>
             <CardContent className="p-5">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 {/* Left: Toggle + Info */}
@@ -430,7 +430,7 @@ function PembayaranTab() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
         >
           {saving ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -495,7 +495,7 @@ function NotifikasiTab() {
       className="space-y-6"
     >
       {/* Notification Toggles */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-emerald-500" />
@@ -546,7 +546,7 @@ function NotifikasiTab() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
               <CardTitle className="text-base">Konfigurasi Webhook</CardTitle>
               <CardDescription>
@@ -605,7 +605,7 @@ function NotifikasiTab() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+          className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
         >
           {saving ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -678,7 +678,7 @@ function KeamananTab() {
       className="space-y-6"
     >
       {/* Change Password */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-emerald-500" />
@@ -765,7 +765,7 @@ function KeamananTab() {
             <Button
               onClick={handleChangePassword}
               disabled={changingPassword}
-              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm btn-press"
             >
               {changingPassword ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -779,7 +779,7 @@ function KeamananTab() {
       </Card>
 
       {/* 2FA Toggle */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <CardTitle className="text-base">Autentikasi Dua Faktor (2FA)</CardTitle>
           <CardDescription>
@@ -818,7 +818,7 @@ function KeamananTab() {
       </Card>
 
       {/* API Key */}
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Key className="h-4 w-4 text-emerald-500" />

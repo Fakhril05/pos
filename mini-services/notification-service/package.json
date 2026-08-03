@@ -1,0 +1,10 @@
+{
+  "name": "pos-ril-notification-service",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1",
+    "zod": "^3.23.8"
+  }
+}

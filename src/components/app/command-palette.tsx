@@ -100,7 +100,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
             <CommandItem
               key={cmd.page}
               onSelect={() => handleSelect(cmd.page)}
-              className="cursor-pointer"
+              className="cursor-pointer focus-ring"
             >
               <cmd.icon className="mr-2 h-4 w-4 text-emerald-500" />
               <span>{cmd.label}</span>
@@ -114,7 +114,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange: controlledO
             <CommandItem
               key={`${cmd.label}-${i}`}
               onSelect={() => handleSelect(cmd.page)}
-              className="cursor-pointer"
+              className="cursor-pointer focus-ring"
             >
               <cmd.icon className="mr-2 h-4 w-4 text-emerald-500" />
               <span>{cmd.label}</span>

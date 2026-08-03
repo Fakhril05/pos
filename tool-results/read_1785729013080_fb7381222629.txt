@@ -1,0 +1,874 @@
+     1→'use client';
+     2→
+     3→import { useState, useCallback, useMemo } from 'react';
+     4→import { useQuery } from '@tanstack/react-query';
+     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→import {
+     7→  Users,
+     8→  Wallet,
+     9→  TrendingUp,
+    10→  Search,
+    11→  Mail,
+    12→  Phone,
+    13→  ArrowLeftRight,
+    14→  CalendarDays,
+    15→  Store,
+    16→  MapPin,
+    17→  XCircle,
+    18→  Receipt,
+    19→  User as UserIcon,
+    20→} from 'lucide-react';
+    21→import { Card, CardContent } from '@/components/ui/card';
+    22→import { Button } from '@/components/ui/button';
+    23→import { Input } from '@/components/ui/input';
+    24→import { Badge } from '@/components/ui/badge';
+    25→import { Skeleton } from '@/components/ui/skeleton';
+    26→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    27→import { ScrollArea } from '@/components/ui/scroll-area';
+    28→import { Separator } from '@/components/ui/separator';
+    29→import {
+    30→  Table,
+    31→  TableBody,
+    32→  TableCell,
+    33→  TableHead,
+    34→  TableHeader,
+    35→  TableRow,
+    36→} from '@/components/ui/table';
+    37→import {
+    38→  Dialog,
+    39→  DialogContent,
+    40→  DialogHeader,
+    41→  DialogTitle,
+    42→  DialogDescription,
+    43→} from '@/components/ui/dialog';
+    44→import {
+    45→  Pagination,
+    46→  PaginationContent,
+    47→  PaginationItem,
+    48→  PaginationLink,
+    49→  PaginationPrevious,
+    50→  PaginationNext,
+    51→  PaginationEllipsis,
+    52→} from '@/components/ui/pagination';
+    53→
+    54→// ── Helpers ──────────────────────────────────────────────────────────────────
+    55→
+    56→const formatRp = (amount: number) =>
+    57→  new Intl.NumberFormat('id-ID', {
+    58→    style: 'currency',
+    59→    currency: 'IDR',
+    60→    minimumFractionDigits: 0,
+    61→  }).format(amount);
+    62→
+    63→const formatDate = (dateStr: string) => {
+    64→  const d = new Date(dateStr);
+    65→  return d.toLocaleDateString('id-ID', {
+    66→    day: 'numeric',
+    67→    month: 'short',
+    68→    year: 'numeric',
+    69→  });
+    70→};
+    71→
+    72→const formatDateTime = (dateStr: string) => {
+    73→  const d = new Date(dateStr);
+    74→  return d.toLocaleDateString('id-ID', {
+    75→    day: 'numeric',
+    76→    month: 'short',
+    77→    year: 'numeric',
+    78→    hour: '2-digit',
+    79→    minute: '2-digit',
+    80→  });
+    81→};
+    82→
+    83→const getInitials = (name: string) => {
+    84→  return name
+    85→    .split(' ')
+    86→    .map((w) => w[0])
+    87→    .slice(0, 2)
+    88→    .join('')
+    89→    .toUpperCase();
+    90→};
+    91→
+    92→// ── Types ────────────────────────────────────────────────────────────────────
+    93→
+    94→interface CustomerItem {
+    95→  id: string;
+    96→  name: string;
+    97→  email: string;
+    98→  phone: string | null;
+    99→  address: string | null;
+   100→  totalSpent: number;
+   101→  totalTx: number;
+   102→  createdAt: string;
+   103→  updatedAt: string;
+   104→  _count: { transactions: number };
+   105→}
+   106→
+   107→interface CustomerTransaction {
+   108→  id: string;
+   109→  invoiceNo: string;
+   110→  amount: number;
+   111→  fee: number;
+   112→  netAmount: number;
+   113→  paymentMethod: string;
+   114→  paymentChannel: string;
+   115→  status: string;
+   116→  description: string | null;
+   117→  paidAt: string | null;
+   118→  createdAt: string;
+   119→  merchant: { id: string; name: string; logo: string | null };
+   120→}
+   121→
+   122→interface CustomerDetail {
+   123→  id: string;
+   124→  name: string;
+   125→  email: string;
+   126→  phone: string | null;
+   127→  address: string | null;
+   128→  totalSpent: number;
+   129→  totalTx: number;
+   130→  createdAt: string;
+   131→  updatedAt: string;
+   132→  transactions: CustomerTransaction[];
+   133→}
+   134→
+   135→interface CustomersResponse {
+   136→  data: CustomerItem[];
+   137→  pagination: {
+   138→    page: number;
+   139→    limit: number;
+   140→    total: number;
+   141→    totalPages: number;
+   142→  };
+   143→}
+   144→
+   145→// ── Status Badge ─────────────────────────────────────────────────────────────
+   146→
+   147→function StatusBadge({ status }: { status: string }) {
+   148→  const map: Record<string, { label: string; className: string }> = {
+   149→    success: {
+   150→      label: 'Berhasil',
+   151→      className:
+   152→        'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+   153→    },
+   154→    pending: {
+   155→      label: 'Menunggu',
+   156→      className:
+   157→        'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800',
+   158→    },
+   159→    failed: {
+   160→      label: 'Gagal',
+   161→      className:
+   162→        'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+   163→    },
+   164→    expired: {
+   165→      label: 'Kedaluwarsa',
+   166→      className:
+   167→        'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+   168→    },
+   169→    refunded: {
+   170→      label: 'Refund',
+   171→      className:
+   172→        'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800',
+   173→    },
+   174→  };
+   175→  const cfg = map[status] ?? {
+   176→    label: status,
+   177→    className: 'bg-muted text-muted-foreground border-border',
+   178→  };
+   179→  return (
+   180→    <Badge
+   181→      variant="outline"
+   182→      className={`text-[11px] font-medium px-2 py-0.5 ${cfg.className}`}
+   183→    >
+   184→      {cfg.label}
+   185→    </Badge>
+   186→  );
+   187→}
+   188→
+   189→// ── Pagination Helper ────────────────────────────────────────────────────────
+   190→
+   191→function getPaginationRange(current: number, total: number) {
+   192→  const delta = 2;
+   193→  const range: (number | 'dots')[] = [];
+   194→  const left = Math.max(2, current - delta);
+   195→  const right = Math.min(total - 1, current + delta);
+   196→
+   197→  range.push(1);
+   198→  if (left > 2) range.push('dots');
+   199→  for (let i = left; i <= right; i++) range.push(i);
+   200→  if (right < total - 1) range.push('dots');
+   201→  if (total > 1) range.push(total);
+   202→
+   203→  return range;
+   204→}
+   205→
+   206→// ── Skeleton ─────────────────────────────────────────────────────────────────
+   207→
+   208→function CustomersSkeleton() {
+   209→  return (
+   210→    <div className="space-y-6">
+   211→      {/* Stats skeleton */}
+   212→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+   213→        {Array.from({ length: 3 }).map((_, i) => (
+   214→          <Card key={i} className="shadow-sm">
+   215→            <CardContent className="p-5">
+   216→              <div className="flex items-center gap-4">
+   217→                <Skeleton className="h-11 w-11 rounded-xl" />
+   218→                <div className="flex-1 space-y-2">
+   219→                  <Skeleton className="h-7 w-28" />
+   220→                  <Skeleton className="h-4 w-32" />
+   221→                </div>
+   222→              </div>
+   223→            </CardContent>
+   224→          </Card>
+   225→        ))}
+   226→      </div>
+   227→
+   228→      {/* Search skeleton */}
+   229→      <Card className="shadow-sm">
+   230→        <CardContent className="p-4">
+   231→          <Skeleton className="h-10 w-full max-w-sm" />
+   232→        </CardContent>
+   233→      </Card>
+   234→
+   235→      {/* Table skeleton */}
+   236→      <Card className="shadow-sm">
+   237→        <CardContent className="p-0">
+   238→          <div className="border-b px-4 py-3">
+   239→            <Skeleton className="h-5 w-40" />
+   240→          </div>
+   241→          <div className="space-y-0">
+   242→            {Array.from({ length: 8 }).map((_, i) => (
+   243→              <div key={i} className="flex items-center gap-4 border-b px-4 py-3 last:border-0">
+   244→                <Skeleton className="h-9 w-9 rounded-full" />
+   245→                <Skeleton className="h-4 w-32" />
+   246→                <Skeleton className="ml-auto h-4 w-24 hidden sm:block" />
+   247→                <Skeleton className="h-4 w-28 hidden md:block" />
+   248→                <Skeleton className="h-4 w-20" />
+   249→              </div>
+   250→            ))}
+   251→          </div>
+   252→        </CardContent>
+   253→      </Card>
+   254→
+   255→      <div className="flex justify-center">
+   256→        <Skeleton className="h-9 w-72" />
+   257→      </div>
+   258→    </div>
+   259→  );
+   260→}
+   261→
+   262→// ── Main Component ───────────────────────────────────────────────────────────
+   263→
+   264→export default function Customers() {
+   265→  const [search, setSearch] = useState('');
+   266→  const [searchInput, setSearchInput] = useState('');
+   267→  const [page, setPage] = useState(1);
+   268→  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+   269→  const [dialogOpen, setDialogOpen] = useState(false);
+   270→
+   271→  const limit = 10;
+   272→
+   273→  // ─── Queries ──────────────────────────────────────────────────────────
+   274→
+   275→  // Paginated customer list
+   276→  const {
+   277→    data: listData,
+   278→    isLoading: listLoading,
+   279→    error: listError,
+   280→  } = useQuery<CustomersResponse>({
+   281→    queryKey: ['customers', page, search],
+   282→    queryFn: () => {
+   283→      const params = new URLSearchParams();
+   284→      params.set('page', String(page));
+   285→      params.set('limit', String(limit));
+   286→      if (search) params.set('search', search);
+   287→      return fetch(`/api/customers?${params.toString()}`).then((r) =>
+   288→        r.json(),
+   289→      );
+   290→    },
+   291→    staleTime: 15_000,
+   292→  });
+   293→
+   294→  // Stats query: fetch all customers (no pagination) for accurate aggregates
+   295→  const { data: statsData } = useQuery<{ data: CustomerItem[] }>({
+   296→    queryKey: ['customers-stats', search],
+   297→    queryFn: () => {
+   298→      const params = new URLSearchParams();
+   299→      params.set('page', '1');
+   300→      params.set('limit', '9999');
+   301→      if (search) params.set('search', search);
+   302→      return fetch(`/api/customers?${params.toString()}`).then((r) =>
+   303→        r.json(),
+   304→      );
+   305→    },
+   306→    staleTime: 30_000,
+   307→  });
+   308→
+   309→  // Customer detail with transactions
+   310→  const {
+   311→    data: detailData,
+   312→    isLoading: detailLoading,
+   313→  } = useQuery<{ data: CustomerDetail }>({
+   314→    queryKey: ['customer-detail', selectedCustomerId],
+   315→    queryFn: () =>
+   316→      fetch(`/api/customers/${selectedCustomerId}`).then((r) => r.json()),
+   317→    enabled: !!selectedCustomerId && dialogOpen,
+   318→    staleTime: 15_000,
+   319→  });
+   320→
+   321→  // ─── Derived ─────────────────────────────────────────────────────────
+   322→
+   323→  const customers = listData?.data ?? [];
+   324→  const pagination = listData?.pagination;
+   325→  const customerDetail = detailData?.data ?? null;
+   326→
+   327→  const stats = useMemo(() => {
+   328→    const items = statsData?.data ?? [];
+   329→    const totalCustomers = items.length;
+   330→    const totalSpent = items.reduce((sum, c) => sum + c.totalSpent, 0);
+   331→    const avgSpent = totalCustomers > 0 ? totalSpent / totalCustomers : 0;
+   332→    return { totalCustomers, totalSpent, avgSpent };
+   333→  }, [statsData]);
+   334→
+   335→  const pageRange = useMemo(() => {
+   336→    if (!pagination) return [];
+   337→    return getPaginationRange(pagination.page, pagination.totalPages);
+   338→  }, [pagination]);
+   339→
+   340→  // ─── Handlers ─────────────────────────────────────────────────────────
+   341→
+   342→  const handleSearch = useCallback((e: React.FormEvent) => {
+   343→    e.preventDefault();
+   344→    setSearch(searchInput);
+   345→    setPage(1);
+   346→  }, [searchInput]);
+   347→
+   348→  const handleRowClick = useCallback((customer: CustomerItem) => {
+   349→    setSelectedCustomerId(customer.id);
+   350→    setDialogOpen(true);
+   351→  }, []);
+   352→
+   353→  // ─── Avatar colors ───────────────────────────────────────────────────
+   354→
+   355→  const avatarColors = [
+   356→    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+   357→    'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400',
+   358→    'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-400',
+   359→    'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400',
+   360→    'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400',
+   361→    'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400',
+   362→  ];
+   363→
+   364→  const getAvatarColor = (name: string) => {
+   365→    let hash = 0;
+   366→    for (let i = 0; i < name.length; i++) {
+   367→      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+   368→    }
+   369→    return avatarColors[Math.abs(hash) % avatarColors.length];
+   370→  };
+   371→
+   372→  // ─── Render ──────────────────────────────────────────────────────────
+   373→
+   374→  if (listLoading) return <CustomersSkeleton />;
+   375→  if (listError || !listData) {
+   376→    return (
+   377→      <div className="flex flex-col items-center justify-center gap-3 py-20">
+   378→        <XCircle className="h-10 w-10 text-muted-foreground" />
+   379→        <p className="text-muted-foreground">
+   380→          Gagal memuat data pelanggan. Silakan coba lagi.
+   381→        </p>
+   382→        <Button variant="outline" onClick={() => window.location.reload()}>
+   383→          Coba Lagi
+   384→        </Button>
+   385→      </div>
+   386→    );
+   387→  }
+   388→
+   389→  return (
+   390→    <div className="space-y-6">
+   391→      {/* ─── Stats Row ────────────────────────────────────────────── */}
+   392→      <motion.div
+   393→        initial={{ opacity: 0, y: -10 }}
+   394→        animate={{ opacity: 1, y: 0 }}
+   395→        transition={{ duration: 0.4 }}
+   396→        className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+   397→      >
+   398→        {/* Total Pelanggan */}
+   399→        <motion.div
+   400→          initial={{ opacity: 0, y: 10 }}
+   401→          animate={{ opacity: 1, y: 0 }}
+   402→          transition={{ duration: 0.3, delay: 0.05 }}
+   403→        >
+   404→          <Card className="shadow-sm transition-shadow hover:shadow-md">
+   405→            <CardContent className="p-5">
+   406→              <div className="flex items-center gap-4">
+   407→                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400">
+   408→                  <Users className="h-5 w-5 text-white" />
+   409→                </div>
+   410→                <div className="min-w-0 flex-1">
+   411→                  <p className="text-2xl font-bold tracking-tight">
+   412→                    {stats.totalCustomers.toLocaleString('id-ID')}
+   413→                  </p>
+   414→                  <p className="text-muted-foreground text-sm">Total Pelanggan</p>
+   415→                </div>
+   416→              </div>
+   417→            </CardContent>
+   418→          </Card>
+   419→        </motion.div>
+   420→
+   421→        {/* Total Belanja */}
+   422→        <motion.div
+   423→          initial={{ opacity: 0, y: 10 }}
+   424→          animate={{ opacity: 1, y: 0 }}
+   425→          transition={{ duration: 0.3, delay: 0.1 }}
+   426→        >
+   427→          <Card className="shadow-sm transition-shadow hover:shadow-md">
+   428→            <CardContent className="p-5">
+   429→              <div className="flex items-center gap-4">
+   430→                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-400">
+   431→                  <Wallet className="h-5 w-5 text-white" />
+   432→                </div>
+   433→                <div className="min-w-0 flex-1">
+   434→                  <p className="text-2xl font-bold tracking-tight">
+   435→                    {formatRp(stats.totalSpent)}
+   436→                  </p>
+   437→                  <p className="text-muted-foreground text-sm">Total Belanja</p>
+   438→                </div>
+   439→              </div>
+   440→            </CardContent>
+   441→          </Card>
+   442→        </motion.div>
+   443→
+   444→        {/* Rata-rata Belanja */}
+   445→        <motion.div
+   446→          initial={{ opacity: 0, y: 10 }}
+   447→          animate={{ opacity: 1, y: 0 }}
+   448→          transition={{ duration: 0.3, delay: 0.15 }}
+   449→        >
+   450→          <Card className="shadow-sm transition-shadow hover:shadow-md">
+   451→            <CardContent className="p-5">
+   452→              <div className="flex items-center gap-4">
+   453→                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-400">
+   454→                  <TrendingUp className="h-5 w-5 text-white" />
+   455→                </div>
+   456→                <div className="min-w-0 flex-1">
+   457→                  <p className="text-2xl font-bold tracking-tight">
+   458→                    {formatRp(stats.avgSpent)}
+   459→                  </p>
+   460→                  <p className="text-muted-foreground text-sm">Rata-rata Belanja</p>
+   461→                </div>
+   462→              </div>
+   463→            </CardContent>
+   464→          </Card>
+   465→        </motion.div>
+   466→      </motion.div>
+   467→
+   468→      {/* ─── Search + Table ────────────────────────────────────────── */}
+   469→      <motion.div
+   470→        initial={{ opacity: 0, y: 10 }}
+   471→        animate={{ opacity: 1, y: 0 }}
+   472→        transition={{ duration: 0.3, delay: 0.2 }}
+   473→      >
+   474→        <Card className="shadow-sm">
+   475→          <CardContent className="p-0">
+   476→            {/* Header with search */}
+   477→            <div className="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+   478→              <div className="flex items-center gap-2">
+   479→                <Users className="h-4 w-4 text-emerald-500" />
+   480→                <h3 className="text-sm font-semibold">Daftar Pelanggan</h3>
+   481→                <span className="text-muted-foreground text-xs">
+   482→                  ({pagination?.total?.toLocaleString('id-ID')} pelanggan)
+   483→                </span>
+   484→              </div>
+   485→              <form onSubmit={handleSearch} className="relative w-full sm:w-auto sm:max-w-xs">
+   486→                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+   487→                <Input
+   488→                  placeholder="Cari nama, email, telepon..."
+   489→                  value={searchInput}
+   490→                  onChange={(e) => setSearchInput(e.target.value)}
+   491→                  className="pl-9"
+   492→                />
+   493→              </form>
+   494→            </div>
+   495→
+   496→            {/* Active search indicator */}
+   497→            {search && (
+   498→              <div className="flex items-center gap-2 border-b px-4 py-2 bg-muted/30">
+   499→                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+   500→                <span className="text-muted-foreground text-xs">
+   501→                  Hasil pencarian untuk &ldquo;{search}&rdquo;
+   502→                </span>
+   503→                <button
+   504→                  onClick={() => {
+   505→                    setSearch('');
+   506→                    setSearchInput('');
+   507→                    setPage(1);
+   508→                  }}
+   509→                  className="ml-auto text-muted-foreground text-xs hover:text-foreground transition-colors"
+   510→                  aria-label="Hapus pencarian"
+   511→                >
+   512→                  ✕ Hapus
+   513→                </button>
+   514→              </div>
+   515→            )}
+   516→
+   517→            {/* Table */}
+   518→            <div className="overflow-x-auto">
+   519→              <Table>
+   520→                <TableHeader>
+   521→                  <TableRow className="hover:bg-transparent">
+   522→                    <TableHead className="pl-4">Pelanggan</TableHead>
+   523→                    <TableHead className="hidden sm:table-cell">Email</TableHead>
+   524→                    <TableHead className="hidden md:table-cell">Telepon</TableHead>
+   525→                    <TableHead className="text-right">Total Transaksi</TableHead>
+   526→                    <TableHead className="text-right">Total Belanja</TableHead>
+   527→                    <TableHead className="hidden lg:table-cell">Terdaftar</TableHead>
+   528→                  </TableRow>
+   529→                </TableHeader>
+   530→                <TableBody>
+   531→                  <AnimatePresence mode="popLayout">
+   532→                    {customers.length === 0 ? (
+   533→                      <TableRow>
+   534→                        <TableCell colSpan={6} className="h-48 text-center">
+   535→                          <div className="flex flex-col items-center gap-3">
+   536→                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+   537→                              <Users className="h-7 w-7 text-muted-foreground/50" />
+   538→                            </div>
+   539→                            <p className="text-muted-foreground text-sm font-medium">
+   540→                              Tidak ada pelanggan ditemukan
+   541→                            </p>
+   542→                            <p className="text-muted-foreground text-xs">
+   543→                              Coba ubah kata kunci pencarian Anda
+   544→                            </p>
+   545→                          </div>
+   546→                        </TableCell>
+   547→                      </TableRow>
+   548→                    ) : (
+   549→                      customers.map((customer) => (
+   550→                        <motion.tr
+   551→                          key={customer.id}
+   552→                          initial={{ opacity: 0, x: -8 }}
+   553→                          animate={{ opacity: 1, x: 0 }}
+   554→                          exit={{ opacity: 0, x: 8 }}
+   555→                          transition={{ duration: 0.2 }}
+   556→                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50"
+   557→                          onClick={() => handleRowClick(customer)}
+   558→                        >
+   559→                          {/* Avatar + Name */}
+   560→                          <TableCell className="pl-4">
+   561→                            <div className="flex items-center gap-3">
+   562→                              <Avatar className="h-9 w-9">
+   563→                                <AvatarFallback
+   564→                                  className={`text-xs font-semibold ${getAvatarColor(customer.name)}`}
+   565→                                >
+   566→                                  {getInitials(customer.name)}
+   567→                                </AvatarFallback>
+   568→                              </Avatar>
+   569→                              <div className="min-w-0">
+   570→                                <p className="truncate text-sm font-medium">
+   571→                                  {customer.name}
+   572→                                </p>
+   573→                                <p className="text-muted-foreground truncate text-xs sm:hidden">
+   574→                                  {customer.email}
+   575→                                </p>
+   576→                              </div>
+   577→                            </div>
+   578→                          </TableCell>
+   579→
+   580→                          {/* Email */}
+   581→                          <TableCell className="hidden sm:table-cell">
+   582→                            <div className="flex items-center gap-2">
+   583→                              <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+   584→                              <span className="text-sm text-muted-foreground truncate max-w-[180px]">
+   585→                                {customer.email}
+   586→                              </span>
+   587→                            </div>
+   588→                          </TableCell>
+   589→
+   590→                          {/* Phone */}
+   591→                          <TableCell className="hidden md:table-cell">
+   592→                            <div className="flex items-center gap-2">
+   593→                              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+   594→                              <span className="text-sm text-muted-foreground">
+   595→                                {customer.phone || '-'}
+   596→                              </span>
+   597→                            </div>
+   598→                          </TableCell>
+   599→
+   600→                          {/* Total Transaksi */}
+   601→                          <TableCell className="text-right">
+   602→                            <span className="text-sm font-medium">
+   603→                              {customer._count.transactions}
+   604→                            </span>
+   605→                          </TableCell>
+   606→
+   607→                          {/* Total Belanja */}
+   608→                          <TableCell className="text-right">
+   609→                            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+   610→                              {formatRp(customer.totalSpent)}
+   611→                            </span>
+   612→                          </TableCell>
+   613→
+   614→                          {/* Terdaftar */}
+   615→                          <TableCell className="hidden lg:table-cell">
+   616→                            <span className="text-xs text-muted-foreground">
+   617→                              {formatDate(customer.createdAt)}
+   618→                            </span>
+   619→                          </TableCell>
+   620→                        </motion.tr>
+   621→                      ))
+   622→                    )}
+   623→                  </AnimatePresence>
+   624→                </TableBody>
+   625→              </Table>
+   626→            </div>
+   627→
+   628→            {/* Pagination */}
+   629→            {pagination && pagination.totalPages > 1 && (
+   630→              <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
+   631→                <p className="text-muted-foreground text-xs">
+   632→                  Menampilkan {(pagination.page - 1) * pagination.limit + 1}
+   633→                  –{Math.min(
+   634→                    pagination.page * pagination.limit,
+   635→                    pagination.total,
+   636→                  )}{' '}
+   637→                  dari {pagination.total} pelanggan
+   638→                </p>
+   639→                <Pagination>
+   640→                  <PaginationContent>
+   641→                    <PaginationItem>
+   642→                      <PaginationPrevious
+   643→                        href="#"
+   644→                        onClick={(e) => {
+   645→                          e.preventDefault();
+   646→                          if (pagination.page > 1)
+   647→                            setPage(pagination.page - 1);
+   648→                        }}
+   649→                        className={
+   650→                          pagination.page <= 1
+   651→                            ? 'pointer-events-none opacity-50'
+   652→                            : 'cursor-pointer'
+   653→                        }
+   654→                      />
+   655→                    </PaginationItem>
+   656→                    {pageRange.map((p, idx) =>
+   657→                      p === 'dots' ? (
+   658→                        <PaginationItem key={`dots-${idx}`}>
+   659→                          <PaginationEllipsis />
+   660→                        </PaginationItem>
+   661→                      ) : (
+   662→                        <PaginationItem key={p}>
+   663→                          <PaginationLink
+   664→                            href="#"
+   665→                            isActive={pagination.page === p}
+   666→                            onClick={(e) => {
+   667→                              e.preventDefault();
+   668→                              setPage(p as number);
+   669→                            }}
+   670→                            className="cursor-pointer"
+   671→                          >
+   672→                            {p}
+   673→                          </PaginationLink>
+   674→                        </PaginationItem>
+   675→                      ),
+   676→                    )}
+   677→                    <PaginationItem>
+   678→                      <PaginationNext
+   679→                        href="#"
+   680→                        onClick={(e) => {
+   681→                          e.preventDefault();
+   682→                          if (pagination.page < pagination.totalPages)
+   683→                            setPage(pagination.page + 1);
+   684→                        }}
+   685→                        className={
+   686→                          pagination.page >= pagination.totalPages
+   687→                            ? 'pointer-events-none opacity-50'
+   688→                            : 'cursor-pointer'
+   689→                        }
+   690→                      />
+   691→                    </PaginationItem>
+   692→                  </PaginationContent>
+   693→                </Pagination>
+   694→              </div>
+   695→            )}
+   696→          </CardContent>
+   697→        </Card>
+   698→      </motion.div>
+   699→
+   700→      {/* ─── Customer Detail Dialog ─────────────────────────────────── */}
+   701→      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   702→        <DialogContent className="max-h-[90vh] overflow-hidden sm:max-w-2xl">
+   703→          <DialogHeader>
+   704→            <DialogTitle className="flex items-center gap-2">
+   705→              <UserIcon className="h-5 w-5 text-emerald-500" />
+   706→              Detail Pelanggan
+   707→            </DialogTitle>
+   708→            <DialogDescription>
+   709→              Informasi lengkap pelanggan dan riwayat transaksi
+   710→            </DialogDescription>
+   711→          </DialogHeader>
+   712→
+   713→          {detailLoading ? (
+   714→            <div className="space-y-4 py-4">
+   715→              <div className="flex items-center gap-4">
+   716→                <Skeleton className="h-14 w-14 rounded-full" />
+   717→                <div className="space-y-2">
+   718→                  <Skeleton className="h-5 w-40" />
+   719→                  <Skeleton className="h-4 w-56" />
+   720→                </div>
+   721→              </div>
+   722→              <Separator />
+   723→              <div className="grid grid-cols-2 gap-4">
+   724→                {Array.from({ length: 4 }).map((_, i) => (
+   725→                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+   726→                ))}
+   727→              </div>
+   728→              <Skeleton className="h-40 w-full rounded-lg" />
+   729→            </div>
+   730→          ) : customerDetail ? (
+   731→            <div className="flex flex-col overflow-hidden">
+   732→              {/* Customer Info */}
+   733→              <div className="flex items-center gap-4 pb-4">
+   734→                <Avatar className="h-14 w-14">
+   735→                  <AvatarFallback
+   736→                    className={`text-base font-semibold ${getAvatarColor(customerDetail.name)}`}
+   737→                  >
+   738→                    {getInitials(customerDetail.name)}
+   739→                  </AvatarFallback>
+   740→                </Avatar>
+   741→                <div className="min-w-0 flex-1">
+   742→                  <h4 className="truncate text-lg font-semibold">
+   743→                    {customerDetail.name}
+   744→                  </h4>
+   745→                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+   746→                    <span className="flex items-center gap-1">
+   747→                      <Mail className="h-3.5 w-3.5" />
+   748→                      {customerDetail.email}
+   749→                    </span>
+   750→                    {customerDetail.phone && (
+   751→                      <span className="flex items-center gap-1">
+   752→                        <Phone className="h-3.5 w-3.5" />
+   753→                        {customerDetail.phone}
+   754→                      </span>
+   755→                    )}
+   756→                  </div>
+   757→                </div>
+   758→              </div>
+   759→
+   760→              <Separator />
+   761→
+   762→              {/* Quick stats */}
+   763→              <div className="grid grid-cols-2 gap-3 py-4 sm:grid-cols-4">
+   764→                <div className="rounded-lg border p-3">
+   765→                  <p className="text-muted-foreground text-xs">Total Transaksi</p>
+   766→                  <p className="mt-1 text-lg font-bold">
+   767→                    {customerDetail.transactions.length}
+   768→                  </p>
+   769→                </div>
+   770→                <div className="rounded-lg border p-3">
+   771→                  <p className="text-muted-foreground text-xs">Total Belanja</p>
+   772→                  <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">
+   773→                    {formatRp(customerDetail.totalSpent)}
+   774→                  </p>
+   775→                </div>
+   776→                <div className="rounded-lg border p-3">
+   777→                  <p className="text-muted-foreground text-xs">Terdaftar</p>
+   778→                  <p className="mt-1 text-sm font-medium">
+   779→                    {formatDate(customerDetail.createdAt)}
+   780→                  </p>
+   781→                </div>
+   782→                <div className="rounded-lg border p-3">
+   783→                  <p className="text-muted-foreground text-xs">Alamat</p>
+   784→                  <p className="mt-1 text-sm font-medium truncate">
+   785→                    {customerDetail.address || '-'}
+   786→                  </p>
+   787→                </div>
+   788→              </div>
+   789→
+   790→              <Separator />
+   791→
+   792→              {/* Transaction History */}
+   793→              <div className="pt-4">
+   794→                <div className="mb-3 flex items-center gap-2">
+   795→                  <Receipt className="h-4 w-4 text-emerald-500" />
+   796→                  <h5 className="text-sm font-semibold">Riwayat Transaksi</h5>
+   797→                  <Badge
+   798→                    variant="secondary"
+   799→                    className="ml-auto text-xs"
+   800→                  >
+   801→                    {customerDetail.transactions.length} transaksi
+   802→                  </Badge>
+   803→                </div>
+   804→
+   805→                <ScrollArea className="max-h-72">
+   806→                  {customerDetail.transactions.length === 0 ? (
+   807→                    <div className="flex flex-col items-center justify-center gap-2 py-10">
+   808→                      <ArrowLeftRight className="h-8 w-8 text-muted-foreground/40" />
+   809→                      <p className="text-muted-foreground text-sm">
+   810→                        Belum ada transaksi
+   811→                      </p>
+   812→                    </div>
+   813→                  ) : (
+   814→                    <div className="space-y-2 pr-3">
+   815→                      {customerDetail.transactions.map((tx) => (
+   816→                        <motion.div
+   817→                          key={tx.id}
+   818→                          initial={{ opacity: 0, y: 4 }}
+   819→                          animate={{ opacity: 1, y: 0 }}
+   820→                          className="group/tx rounded-lg border p-3 transition-colors hover:bg-muted/50"
+   821→                        >
+   822→                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+   823→                            <div className="flex items-start gap-3 min-w-0">
+   824→                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
+   825→                                <Store className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+   826→                              </div>
+   827→                              <div className="min-w-0">
+   828→                                <div className="flex items-center gap-2">
+   829→                                  <span className="font-mono text-xs font-medium">
+   830→                                    {tx.invoiceNo}
+   831→                                  </span>
+   832→                                  <StatusBadge status={tx.status} />
+   833→                                </div>
+   834→                                <p className="text-muted-foreground mt-0.5 truncate text-xs">
+   835→                                  {tx.merchant.name}
+   836→                                </p>
+   837→                                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+   838→                                  <span className="flex items-center gap-1">
+   839→                                    <ArrowLeftRight className="h-3 w-3" />
+   840→                                    {tx.paymentMethod}
+   841→                                  </span>
+   842→                                  <span>•</span>
+   843→                                  <span>{tx.paymentChannel}</span>
+   844→                                  <span>•</span>
+   845→                                  <span className="flex items-center gap-1">
+   846→                                    <CalendarDays className="h-3 w-3" />
+   847→                                    {formatDateTime(tx.createdAt)}
+   848→                                  </span>
+   849→                                </div>
+   850→                              </div>
+   851→                            </div>
+   852→                            <div className="text-right shrink-0 sm:ml-4">
+   853→                              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+   854→                                {formatRp(tx.amount)}
+   855→                              </p>
+   856→                              <p className="text-muted-foreground text-[11px]">
+   857→                                Biaya: {formatRp(tx.fee)}
+   858→                              </p>
+   859→                            </div>
+   860→                          </div>
+   861→                        </motion.div>
+   862→                      ))}
+   863→                    </div>
+   864→                  )}
+   865→                </ScrollArea>
+   866→              </div>
+   867→            </div>
+   868→          ) : null}
+   869→        </DialogContent>
+   870→      </Dialog>
+   871→    </div>
+   872→  );
+   873→}
+   874→

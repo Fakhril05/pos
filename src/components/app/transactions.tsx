@@ -757,7 +757,7 @@ export default function Transactions() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Card className="shadow-sm">
+        <Card className="shadow-sm card-hover">
           <CardContent className="p-4">
             <form
               onSubmit={handleSearch}
@@ -833,7 +833,7 @@ export default function Transactions() {
                 type="button"
                 variant="outline"
                 onClick={handleExportCSV}
-                className="w-full gap-2 lg:w-auto"
+                className="w-full gap-2 lg:w-auto btn-press"
               >
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Ekspor CSV</span>
@@ -908,7 +908,7 @@ export default function Transactions() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card className="shadow-sm">
+        <Card className="shadow-sm card-hover">
           <CardContent className="p-0">
             {/* Table Header Info */}
             <div className="flex items-center justify-between border-b px-4 py-3">
@@ -967,7 +967,7 @@ export default function Transactions() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 8 }}
                           transition={{ duration: 0.2 }}
-                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50"
+                          className="group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50 table-row-hover"
                           onClick={() => handleRowClick(tx)}
                         >
                           <TableCell className="pl-4">

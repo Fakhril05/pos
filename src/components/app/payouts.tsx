@@ -341,7 +341,7 @@ export default function Payouts() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: i * 0.08 }}
           >
-            <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <Card className="shadow-sm hover:shadow-md transition-shadow card-hover">
               <CardContent className="p-4 sm:p-6 flex items-center gap-4">
                 <div className={`flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                   <stat.icon className="h-5 w-5 text-white" />
@@ -379,7 +379,7 @@ export default function Payouts() {
           </Select>
         </div>
         <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto btn-press"
           onClick={() => setCreateOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -473,7 +473,7 @@ export default function Payouts() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -4 }}
                             transition={{ duration: 0.2, delay: i * 0.03 }}
-                            className="hover:bg-muted/50 transition-colors"
+                            className="hover:bg-muted/50 transition-colors table-row-hover"
                           >
                             <TableCell className="pl-6">
                               <div className="flex items-center gap-2">

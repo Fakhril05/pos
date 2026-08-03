@@ -4,7 +4,14 @@ import { randomUUID } from 'crypto'
 
 const paymentMethods = ['QRIS', 'Bank Transfer', 'E-Wallet', 'Virtual Account', 'Credit Card']
 const paymentChannels = ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'BCA', 'BNI', 'BRI', 'Mandiri', 'Permata', 'QRIS', 'Visa', 'Mastercard']
-const statuses = ['success', 'pending', 'failed', 'expired', 'refunded']
+// Weighted: 70% success, 10% pending, 8% failed, 7% expired, 5% refunded
+const statuses = [
+  ...Array(70).fill('success'),
+  ...Array(10).fill('pending'),
+  ...Array(8).fill('failed'),
+  ...Array(7).fill('expired'),
+  ...Array(5).fill('refunded'),
+]
 const merchantNames = ['Toko Makmur Jaya', 'Warung Digital', 'Berkat Store', 'Jaya Elektronik', 'Maju Bersama', 'Kedai Kopi Nusantara', 'Baju Online ID', 'Pulsa Murah 88', 'Gadget Zone', 'Fresh Market']
 const customerNames = ['Budi Santoso', 'Siti Rahayu', 'Ahmad Hidayat', 'Dewi Lestari', 'Rudi Hartono', 'Nurul Aini', 'Fajar Pratama', 'Rina Wati', 'Dedi Kurniawan', 'Anisa Putri', 'Bambang Suryo', 'Maya Sari', 'Hendra Wijaya', 'Lisa Permata', 'Rizky Ramadhan']
 const bankNames = ['BCA', 'BNI', 'BRI', 'Mandiri', 'Permata', 'CIMB']

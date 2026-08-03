@@ -503,7 +503,7 @@ export default function Reports() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.08, ease: 'easeOut' }}
             >
-              <Card className="group relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+              <Card className="group relative overflow-hidden border shadow-sm transition-shadow hover:shadow-md card-hover">
                 <div
                   className={`absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b ${card.gradient}`}
                 />
@@ -539,7 +539,7 @@ export default function Reports() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        <Card className="shadow-sm">
+        <Card className="shadow-sm card-hover">
           <CardHeader>
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-emerald-500" />
@@ -638,7 +638,7 @@ export default function Reports() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Card className="shadow-sm">
+          <Card className="shadow-sm card-hover">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-emerald-500" />
@@ -722,7 +722,7 @@ export default function Reports() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <Card className="shadow-sm">
+          <Card className="shadow-sm card-hover">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <PieChartIcon className="h-4 w-4 text-emerald-500" />
@@ -804,7 +804,7 @@ export default function Reports() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
       >
-        <Card className="shadow-sm">
+        <Card className="shadow-sm card-hover">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -844,7 +844,7 @@ export default function Reports() {
                   </TableRow>
                 ) : (
                   topMerchants.map((merchant, idx) => (
-                    <TableRow key={merchant.id} className="hover:bg-muted/50 cursor-pointer">
+                    <TableRow key={merchant.id} className="hover:bg-muted/50 cursor-pointer table-row-hover">
                       <TableCell className="pl-4">
                         <div
                           className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
