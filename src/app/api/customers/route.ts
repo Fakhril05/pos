@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
         include: {
+          tenant: { select: { id: true, name: true } },
           _count: { select: { transactions: true } },
         },
       }),
@@ -53,32 +54,54 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone } = body as {
+    const { name, email, phone, tenantId } = body as {
       name: string;
-      email: string;
+      email?: string;
       phone?: string;
+      tenantId?: string;
     };
 
-    if (!name || !email) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Nama dan email wajib diisi' },
+        { error: 'Nama wajib diisi' },
         { status: 400 },
       );
     }
 
-    // Check if email already exists
-    const existing = await db.customer.findUnique({ where: { email } });
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Email sudah terdaftar' },
-        { status: 409 },
-      );
+    // Resolve tenant — use provided or fall back to first active
+    let resolvedTenantId = tenantId;
+    if (!resolvedTenantId) {
+      const defaultTenant = await db.tenant.findFirst({
+        where: { status: 'active' },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!defaultTenant) {
+        return NextResponse.json(
+          { error: 'No active tenant found. Please provide a tenantId.' },
+          { status: 400 },
+        );
+      }
+      resolvedTenantId = defaultTenant.id;
+    }
+
+    // Check uniqueness by [tenantId, phone] if phone provided
+    if (phone) {
+      const existing = await db.customer.findUnique({
+        where: { tenantId_phone: { tenantId: resolvedTenantId, phone } },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Nomor telepon sudah terdaftar di tenant ini' },
+          { status: 409 },
+        );
+      }
     }
 
     const customer = await db.customer.create({
       data: {
         name,
-        email,
+        tenantId: resolvedTenantId,
+        email: email || null,
         phone: phone || null,
       },
     });

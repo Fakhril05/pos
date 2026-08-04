@@ -1,60 +1,100 @@
-// Receipt HTML generator — isolated to avoid TSX parser issues with HTML tags in template literals
+// POS Receipt HTML generator — 38mm thermal printer style
 
 export function generateReceiptHtml(data: {
-  invoiceNo: string;
-  amount: number;
-  fee: number;
-  netAmount: number;
-  merchantName: string;
-  customerName: string;
-  paymentMethod: string;
-  paymentChannel: string;
-  status: string;
-  createdAt: string;
-  paidAt: string | null;
-  description: string | null;
-  formattedAmount: string;
-  formattedFee: string;
-  formattedNetAmount: string;
-  formattedCreatedAt: string;
-  formattedPaidAt: string | null;
-  statusLabel: string;
+  invoiceNo: string
+  tenantName: string
+  outletName: string
+  outletAddress?: string | null
+  outletCity?: string | null
+  tenantPhone?: string | null
+  cashierName: string
+  items: Array<{
+    name: string
+    quantity: number
+    price: number
+    subtotal: number
+  }>
+  subtotalAmount: number
+  discountAmount: number
+  taxAmount: number
+  serviceCharge: number
+  totalAmount: number
+  paymentMethod: string
+  paymentChannel: string | null
+  tendered?: number
+  change?: number
+  createdAt: string
 }): string {
-  const d = data;
+  const d = data
 
   const css = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; max-width: 480px; margin: 0 auto; color: #1a1a1a; }
-    .header { text-align: center; margin-bottom: 32px; }
-    .header h1 { font-size: 24px; font-weight: 700; color: #059669; }
-    .header p { font-size: 12px; color: #666; margin-top: 4px; }
-    .divider { border: none; border-top: 2px dashed #e5e5e5; margin: 20px 0; }
-    .amount-section { text-align: center; margin: 24px 0; }
-    .amount { font-size: 32px; font-weight: 800; color: #059669; }
-    .status { display: inline-block; margin-top: 8px; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-    .status.success { background: #d1fae5; color: #065f46; }
-    .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
-    .row .label { color: #888; }
-    .row .value { font-weight: 600; text-align: right; }
-    .footer { text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e5e5; }
-    .footer p { font-size: 11px; color: #aaa; }
-  `;
+    body { font-family: 'Courier New', monospace; padding: 8px; max-width: 320px; margin: 0 auto; color: #111; font-size: 12px; line-height: 1.5; }
+    .center { text-align: center; }
+    .bold { font-weight: 700; }
+    .lg { font-size: 16px; }
+    .xl { font-size: 20px; }
+    .muted { color: #666; font-size: 11px; }
+    .divider { border: none; border-top: 1px dashed #333; margin: 8px 0; }
+    .divider-double { border: none; border-top: 3px double #333; margin: 8px 0; }
+    .row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; }
+    .item-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 4px 0; font-weight: 700; font-size: 11px; }
+    .item { padding: 4px 0; border-bottom: 1px dotted #ccc; }
+    .item-name { font-weight: 600; }
+    .item-detail { display: flex; justify-content: space-between; font-size: 11px; color: #444; }
+    .total-section { margin-top: 8px; }
+    .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
+    .grand-total { font-size: 16px; font-weight: 800; }
+    .footer { text-align: center; margin-top: 12px; padding-top: 8px; }
+    .footer p { font-size: 10px; color: #888; margin: 2px 0; }
+    @media print { body { padding: 0; } }
+  `
 
-  const paidRow = d.paidAt && d.formattedPaidAt
-    ? `<div class="row"><span class="label">Dibayar</span><span class="value">${d.formattedPaidAt}</span></div>`
-    : '';
+  const itemRows = d.items
+    .map(
+      (item) => `
+    <div class="item">
+      <div class="item-name">${item.name}</div>
+      <div class="item-detail">
+        <span>${item.quantity} x ${formatRp(item.price)}</span>
+        <span>${formatRp(item.subtotal)}</span>
+      </div>
+    </div>`,
+    )
+    .join('')
 
-  const descRow = d.description
-    ? `<div class="row"><span class="label">Deskripsi</span><span class="value">${d.description}</span></div>`
-    : '';
+  const discountRow =
+    d.discountAmount > 0
+      ? `<div class="total-row"><span>Diskon</span><span>-${formatRp(d.discountAmount)}</span></div>`
+      : ''
 
-  const timestamp = new Date().toLocaleDateString('id-ID', {
+  const serviceRow =
+    d.serviceCharge > 0
+      ? `<div class="total-row"><span>Service Charge</span><span>${formatRp(d.serviceCharge)}</span></div>`
+      : ''
+
+  const tenderedRow =
+    d.tendered !== undefined && d.tendered > 0
+      ? `<div class="total-row"><span>Dibayar</span><span>${formatRp(d.tendered)}</span></div>`
+      : ''
+
+  const changeRow =
+    d.change !== undefined && d.change > 0
+      ? `<div class="total-row"><span>Kembalian</span><span>${formatRp(d.change)}</span></div>`
+      : ''
+
+  const paymentLabel = d.paymentChannel
+    ? `${d.paymentMethod} - ${d.paymentChannel}`
+    : d.paymentMethod
+
+  const formattedDate = new Date(d.createdAt).toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+    second: '2-digit',
+  })
 
   return [
     '<!DOCTYPE html>',
@@ -65,31 +105,46 @@ export function generateReceiptHtml(data: {
     '<style>' + css + '</style>',
     '</head>',
     '<body>',
-    '<div class="header">',
-    '<h1>Pos Ril</h1>',
-    '<p>Payment Gateway Indonesia</p>',
+    '<div class="center bold lg">' + d.tenantName + '</div>',
+    '<div class="center">' + d.outletName + '</div>',
+    d.outletAddress ? '<div class="center muted">' + d.outletAddress + (d.outletCity ? ', ' + d.outletCity : '') + '</div>' : '',
+    d.tenantPhone ? '<div class="center muted">' + d.tenantPhone + '</div>' : '',
+    '<hr class="divider-double">',
+    '<div class="row"><span>No. Invoice</span><span class="bold">' + d.invoiceNo + '</span></div>',
+    '<div class="row"><span>Kasir</span><span>' + d.cashierName + '</span></div>',
+    '<div class="row"><span>Tanggal</span><span>' + formattedDate + '</span></div>',
+    '<hr class="divider">',
+    '<div class="item-header"><span>Item</span><span>Total</span></div>',
+    itemRows,
+    '<hr class="divider">',
+    '<div class="total-section">',
+    '<div class="total-row"><span>Subtotal</span><span>' + formatRp(d.subtotalAmount) + '</span></div>',
+    discountRow,
+    '<div class="total-row"><span>PPN (11%)</span><span>' + formatRp(d.taxAmount) + '</span></div>',
+    serviceRow,
+    '<hr class="divider">',
+    '<div class="total-row grand-total"><span>TOTAL</span><span>' + formatRp(d.totalAmount) + '</span></div>',
+    '<hr class="divider">',
+    '<div class="total-row"><span>Metode Bayar</span><span>' + paymentLabel + '</span></div>',
+    tenderedRow,
+    changeRow,
     '</div>',
-    '<hr class="divider">',
-    '<div class="amount-section">',
-    '<div class="amount">' + d.formattedAmount + '</div>',
-    '<span class="status success">' + d.statusLabel + '</span>',
-    '</div>',
-    '<hr class="divider">',
-    '<div class="row"><span class="label">Invoice</span><span class="value">' + d.invoiceNo + '</span></div>',
-    '<div class="row"><span class="label">Merchant</span><span class="value">' + d.merchantName + '</span></div>',
-    '<div class="row"><span class="label">Pelanggan</span><span class="value">' + d.customerName + '</span></div>',
-    '<div class="row"><span class="label">Metode</span><span class="value">' + d.paymentMethod + ' - ' + d.paymentChannel + '</span></div>',
-    '<div class="row"><span class="label">Biaya Admin</span><span class="value">' + d.formattedFee + '</span></div>',
-    '<div class="row"><span class="label">Jumlah Bersih</span><span class="value">' + d.formattedNetAmount + '</span></div>',
-    '<div class="row"><span class="label">Tanggal</span><span class="value">' + d.formattedCreatedAt + '</span></div>',
-    paidRow,
-    descRow,
-    '<hr class="divider">',
     '<div class="footer">',
-    '<p>Struk ini dibuat secara otomatis oleh Pos Ril</p>',
-    '<p>' + timestamp + '</p>',
+    '<hr class="divider">',
+    '<p>Terima kasih atas kunjungan Anda!</p>',
+    '<p>Struk ini bukan bukti pembayaran yang sah</p>',
+    '<p>tanpa tanda tangan atau cap toko.</p>',
+    '<p style="margin-top: 8px; color: #aaa;">Powered by Pos Ril</p>',
     '</div>',
     '</body>',
     '</html>',
-  ].join('\n');
+  ].join('\n')
+}
+
+function formatRp(amount: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount)
 }

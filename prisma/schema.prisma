@@ -1,3 +1,15 @@
+// ============================================================
+// Pos Ril - Multi-Tenant SaaS POS System
+// Prisma Schema v2.0 (Complete Redesign)
+// ============================================================
+// Roles: super_admin | business_owner | manager | cashier
+//
+// super_admin    -> Platform-level admin. No tenantId. Manages all businesses.
+// business_owner -> Owns a Tenant. Full access within their business.
+// manager        -> Manages outlet(s). Reports, inventory, staff within tenant.
+// cashier        -> Processes transactions at assigned outlet.
+// ============================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,113 +19,679 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Merchant {
+// ============================================================
+// TENANT (Business) - The core multi-tenancy entity
+// ============================================================
+
+model Tenant {
   id          String   @id @default(cuid())
-  name        String
+  name        String   // Business legal name
+  slug        String   @unique // URL-friendly identifier e.g. "toko-makmur-jaya"
   email       String   @unique
   phone       String?
   address     String?
+  city        String?
+  province    String?
+  postalCode  String?  @map("postal_code")
   logo        String?
-  status      String   @default("active")
-  apiKey      String   @unique
-  totalSales  Float    @default(0)
- totalTx     Int      @default(0)
+  website     String?
+  taxId       String?  @map("tax_id") // NPWP / Tax registration number
+
+  // Computed / Aggregate fields
+  totalSales     Float  @default(0)
+  totalTx        Int    @default(0)
+  totalCustomers Int    @default(0)
+
+  // Lifecycle
+  status      String   @default("active") // active | suspended | trial | closed
+  trialEndsAt DateTime? @map("trial_ends_at")
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // --- Relations ---
+  users         User[]
+  outlets       Outlet[]
+  categories    Category[]
+  products      Product[]
   transactions  Transaction[]
+  customers     Customer[]
   paymentLinks  PaymentLink[]
-  payouts      Payout[]
+  payouts       Payout[]
+  shifts        Shift[]
+  discounts     Discount[]
+  taxes         Tax[]
+  inventoryLogs InventoryLog[]
+  settings      TenantSettings?
+  subscription  Subscription?
+  auditLogs     AuditLog[]
+  apiKeys       ApiKey[]
+
+  @@map("tenants")
 }
 
-model Customer {
+// ============================================================
+// USER - Authentication & Authorization
+// ============================================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash") // bcrypt hash
+  name          String
+  phone         String?
+  avatar        String?
+  pin           String?  // 6-digit PIN for cashier quick-login
+
+  // Role-Based Access Control
+  role          String   @default("cashier") // super_admin | business_owner | manager | cashier
+  isActive      Boolean  @default(true) @map("is_active")
+
+  // Tenant membership (NULL for super_admin)
+  tenantId      String?  @map("tenant_id")
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id])
+
+  // Outlet assignment (for cashier/manager assignment to specific outlet)
+  assignedOutletId String? @map("assigned_outlet_id")
+  assignedOutlet   Outlet? @relation("OutletAssignment", fields: [assignedOutletId], references: [id])
+
+  // Last activity
+  lastLoginAt   DateTime? @map("last_login_at")
+  lastLoginIp   String?  @map("last_login_ip")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  cashierTransactions Transaction[] @relation("CashierTransactions")
+  createdShifts      Shift[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+
+  @@unique([tenantId, email]) // Email uniqueness per tenant
+
+  @@map("users")
+}
+
+// ============================================================
+// OUTLET - Physical store / branch location
+// ============================================================
+
+model Outlet {
   id          String   @id @default(cuid())
-  name        String
-  email       String   @unique
-  phone       String?
+  tenantId    String   @map("tenant_id")
+  name        String   // e.g. "Cabang Sudirman"
+  code        String   // e.g. "OUT-001"
   address     String?
-  totalSpent  Float    @default(0)
-  totalTx     Int      @default(0)
+  city        String?
+  province    String?
+  phone       String?
+  isOpen      Boolean  @default(true) @map("is_open") // outlet open/closed status
+  printerIp   String?  @map("printer_ip") // network printer IP for receipts
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  transactions Transaction[]
+
+  // --- Relations ---
+  tenant         Tenant  @relation(fields: [tenantId], references: [id])
+  transactions   Transaction[]
+  shifts         Shift[]
+  assignedStaff  User[]  @relation("OutletAssignment")
+
+  @@unique([tenantId, code]) // Outlet code unique within tenant
+
+  @@map("outlets")
 }
+
+// ============================================================
+// CATEGORY - Product categories (scoped to tenant)
+// ============================================================
+
+model Category {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  description String?
+  icon        String?  // icon name or emoji
+  color       String?  // hex color code for UI
+  sortOrder   Int      @default(0) @map("sort_order") // display order
+  isActive    Boolean  @default(true) @map("is_active")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // --- Relations ---
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  products Product[]
+
+  @@unique([tenantId, name]) // Category name unique within tenant
+
+  @@map("categories")
+}
+
+// ============================================================
+// PRODUCT - Items for sale (scoped to tenant)
+// ============================================================
+
+model Product {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  categoryId    String?  @map("category_id")
+  sku           String?  @unique // Stock Keeping Unit
+  barcode       String?  @unique // EAN-13 / UPC barcode
+  name          String
+  description   String?
+  image         String?
+
+  // Pricing
+  buyPrice      Float    @default(0) @map("buy_price") // Cost price
+  sellPrice     Float                     // Selling price
+  wholesalePrice Float?  @map("wholesale_price") // Bulk price
+
+  // Inventory
+  stock         Int      @default(0)
+  minStock      Int      @default(5) @map("min_stock") // Low-stock threshold
+  unit          String   @default("pcs") // pcs, kg, ltr, pack, etc.
+
+  // POS Behavior
+  isTrackStock  Boolean  @default(true) @map("is_track_stock")
+  isAvailable   Boolean  @default(true) @map("is_available") // Can be sold
+  isFavorite    Boolean  @default(false) @map("is_favorite") // POS quick-access
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  category        Category?       @relation(fields: [categoryId], references: [id])
+  transactionItems TransactionItem[]
+  inventoryLogs   InventoryLog[]
+
+  @@map("products")
+}
+
+// ============================================================
+// TRANSACTION - Sales order header (POS receipt)
+// ============================================================
 
 model Transaction {
-  id              String   @id @default(cuid())
-  invoiceNo       String   @unique
-  merchantId      String
-  customerId      String?
-  amount          Float
-  fee             Float    @default(0)
-  netAmount       Float
-  paymentMethod   String
-  paymentChannel  String
-  status          String   @default("pending")
-  description     String?
-  customerName    String?
-  customerEmail   String?
-  customerPhone   String?
-  paidAt          DateTime?
-  expiredAt       DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  merchant        Merchant @relation(fields: [merchantId], references: [id])
-  customer        Customer? @relation(fields: [customerId], references: [id])
-  paymentLink     PaymentLink? @relation(fields: [paymentLinkId], references: [id])
-  paymentLinkId   String?
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  outletId      String   @map("outlet_id")
+  cashierId     String   @map("cashier_id")
+
+  invoiceNo     String   @unique // e.g. "INV-20250115-00001"
+  receiptNo     String?  @unique // Short receipt number for display
+
+  // Customer (optional walk-in)
+  customerId    String?  @map("customer_id")
+
+  // Totals
+  subtotalAmount  Float  @default(0) @map("subtotal_amount") // Before discount & tax
+  discountAmount  Float  @default(0) @map("discount_amount")
+  taxAmount       Float  @default(0) @map("tax_amount")
+  serviceCharge    Float  @default(0) @map("service_charge")
+  totalAmount     Float  // Final amount to pay
+
+  // Status
+  status        String   @default("pending") // pending | paid | cancelled | refunded | void
+  paymentStatus String   @default("unpaid")  // unpaid | partial | fully_paid
+
+  // Metadata
+  note          String?
+  customerName  String?  // Denormalized from customer for quick display
+  customerPhone String?
+
+  // Timestamps
+  paidAt        DateTime? @map("paid_at")
+  voidedAt      DateTime? @map("voided_at")
+  voidReason    String?   @map("void_reason")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // --- Relations ---
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  outlet          Outlet           @relation(fields: [outletId], references: [id])
+  cashier         User             @relation("CashierTransactions", fields: [cashierId], references: [id])
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  items           TransactionItem[]
+  payments        Payment[]
   refund          Refund?
+
+  @@map("transactions")
 }
+
+// ============================================================
+// TRANSACTION ITEM - Line items within a transaction
+// ============================================================
+
+model TransactionItem {
+  id            String   @id @default(cuid())
+  transactionId String   @map("transaction_id")
+  productId     String   @map("product_id")
+
+  name          String   // Product name snapshot (denormalized)
+  sku           String?
+  buyPrice      Float    @map("buy_price") // Cost at time of sale (for profit calc)
+  sellPrice     Float    @map("sell_price") // Price at time of sale
+  quantity      Int
+  unit          String   @default("pcs")
+  discount      Float    @default(0) // Per-item discount amount
+  taxRate       Float    @default(0) // Per-item tax rate percentage
+  totalPrice    Float    // sellPrice * quantity - discount
+
+  createdAt     DateTime @default(now())
+
+  // --- Relations ---
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product       Product    @relation(fields: [productId], references: [id])
+
+  @@map("transaction_items")
+}
+
+// ============================================================
+// PAYMENT - Payment records (supports split payments per tx)
+// ============================================================
+
+model Payment {
+  id              String   @id @default(cuid())
+  transactionId   String   @map("transaction_id")
+  paymentMethod   String   // cash | qris | bank_transfer | e_wallet | virtual_account | credit_card | debit_card | mixed
+  paymentChannel  String?  // GoPay, OVO, BCA, BNI, QRIS, Visa, etc.
+  amount          Float
+  fee             Float    @default(0) // Processing fee
+  netAmount       Float    // amount - fee
+  referenceNo     String?  @map("reference_no") // Bank / gateway reference
+  cardLast4       String?  @map("card_last4") // For card payments
+  status          String   @default("pending") // pending | success | failed | refunded
+
+  paidAt          DateTime? @map("paid_at")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // --- Relations ---
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ============================================================
+// CUSTOMER - End customers (scoped to tenant)
+// ============================================================
+
+model Customer {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  email         String?
+  phone         String?
+  address       String?
+  membershipNo  String?  @unique @map("membership_no") // Loyalty membership number
+
+  // Loyalty / Points
+  loyaltyPoints Int      @default(0) @map("loyalty_points")
+  totalSpent    Float    @default(0)
+  totalTx       Int      @default(0)
+
+  isActive      Boolean  @default(true) @map("is_active")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  transactions  Transaction[]
+
+  @@unique([tenantId, phone]) // Phone unique within tenant
+
+  @@map("customers")
+}
+
+// ============================================================
+// PAYMENT LINK - Shareable payment links (scoped to tenant)
+// ============================================================
 
 model PaymentLink {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  amount      Float
-  merchantId  String
-  status      String        @default("active")
-  type        String        @default("single")
-  maxQty      Int           @default(1)
-  soldQty     Int           @default(0)
-  expiresAt   DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  merchant    Merchant      @relation(fields: [merchantId], references: [id])
-  transactions Transaction[]
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+
+  title         String
+  description   String?
+  amount        Float
+  status        String   @default("active") // active | expired | disabled
+  linkType      String   @default("single") @map("link_type") // single | multi
+  maxQty        Int      @default(1) @map("max_qty")
+  soldQty       Int      @default(0) @map("sold_qty")
+  expiresAt     DateTime? @map("expires_at")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("payment_links")
 }
 
+// ============================================================
+// PAYOUT - Business payouts
+// ============================================================
+
 model Payout {
-  id          String   @id @default(cuid())
-  merchantId  String
-  amount      Float
-  fee         Float    @default(0)
-  status      String   @default("pending")
-  bankName    String
-  accountNo   String
-  accountName String
-  notes       String?
-  processedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  merchant    Merchant @relation(fields: [merchantId], references: [id])
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+
+  amount        Float
+  fee           Float    @default(0)
+  status        String   @default("pending") // pending | processing | completed | failed
+  bankName      String   @map("bank_name")
+  accountNo     String   @map("account_no")
+  accountName   String   @map("account_name")
+  notes         String?
+
+  requestedAt   DateTime @default(now()) @map("requested_at")
+  processedAt   DateTime? @map("processed_at")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("payouts")
 }
+
+// ============================================================
+// REFUND - Refund records (one per transaction max)
+// ============================================================
 
 model Refund {
   id             String   @id @default(cuid())
-  transactionId  String   @unique
+  transactionId  String   @unique @map("transaction_id")
   amount         Float
   reason         String?
-  status         String   @default("pending")
-  processedAt    DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  status         String   @default("pending") // pending | approved | rejected | completed
+  processedBy    String?  @map("processed_by") // userId who approved
+  processedAt    DateTime? @map("processed_at")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // --- Relations ---
   transaction    Transaction @relation(fields: [transactionId], references: [id])
+
+  @@map("refunds")
 }
 
+// ============================================================
+// SHIFT - Cashier shift management
+// ============================================================
+
+model Shift {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  outletId      String   @map("outlet_id")
+  cashierId     String   @map("cashier_id") // User who opened the shift
+
+  status        String   @default("open") // open | closed
+  openedAt      DateTime @default(now()) @map("opened_at")
+  closedAt      DateTime? @map("closed_at")
+
+  // Cash drawer tracking
+  openingCash   Float    @default(0) @map("opening_cash")
+  closingCash   Float?   @map("closing_cash")
+  expectedCash  Float?   @map("expected_cash")
+  cashDifference Float?  @map("cash_difference") // closingCash - expectedCash
+
+  // Aggregate for shift
+  totalSales    Float    @default(0) @map("total_sales")
+  totalTx       Int      @default(0) @map("total_tx")
+  totalRefunds  Float    @default(0) @map("total_refunds")
+
+  note          String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  outlet        Outlet   @relation(fields: [outletId], references: [id])
+  cashier      User     @relation(fields: [cashierId], references: [id])
+
+  @@map("shifts")
+}
+
+// ============================================================
+// DISCOUNT - Discount rules (scoped to tenant)
+// ============================================================
+
+model Discount {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  name          String
+  description   String?
+  discountType  String   @map("discount_type") // percentage | fixed_amount
+  discountValue Float    @map("discount_value") // percentage rate or fixed amount
+  minPurchase   Float?   @map("min_purchase") // Minimum purchase to qualify
+  maxDiscount   Float?   @map("max_discount") // Cap for percentage discounts
+
+  // Applicability
+  appliesTo     String   @default("all") @map("applies_to") // all | specific_category | specific_product
+  categoryIds   String?  @map("category_ids") // JSON array of category IDs
+  productIds    String?  @map("product_ids") // JSON array of product IDs
+
+  // Validity
+  isActive      Boolean  @default(true) @map("is_active")
+  startsAt      DateTime? @map("starts_at")
+  expiresAt     DateTime? @map("expires_at")
+
+  // Usage tracking
+  usageCount    Int      @default(0) @map("usage_count")
+  maxUsage      Int?     @map("max_usage")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("discounts")
+}
+
+// ============================================================
+// TAX - Tax configurations (scoped to tenant)
+// ============================================================
+
+model Tax {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  name          String   // e.g. "PPN 11%", "Pajak Daerah"
+  rate          Float    // e.g. 11.0 for 11%
+  type          String   @default("percentage") // percentage | fixed_amount
+
+  isActive      Boolean  @default(true) @map("is_active")
+  isDefault     Boolean  @default(false) @map("is_default") // Auto-applied to transactions
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("taxes")
+}
+
+// ============================================================
+// INVENTORY LOG - Stock adjustment history
+// ============================================================
+
+model InventoryLog {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  productId     String   @map("product_id")
+  outletId      String?  @map("outlet_id") // If outlet-specific stock
+
+  type          String   // in | out | adjustment | initial
+  quantity      Int      // Positive for in, negative for out
+  previousStock Int      @map("previous_stock")
+  newStock      Int      @map("new_stock")
+  reason        String?  // Purchase, sale, return, damaged, expired, etc.
+  referenceNo   String?  @map("reference_no") // PO number, TX number, etc.
+  performedBy   String?  @map("performed_by") // userId
+
+  createdAt     DateTime @default(now())
+
+  // --- Relations ---
+  tenant        Tenant  @relation(fields: [tenantId], references: [id])
+  product       Product @relation(fields: [productId], references: [id])
+
+  @@map("inventory_logs")
+}
+
+// ============================================================
+// SUBSCRIPTION - SaaS billing / plan management
+// ============================================================
+
+model Subscription {
+  id            String   @id @default(cuid())
+  tenantId      String   @unique @map("tenant_id")
+
+  plan          String   @default("free") // free | starter | professional | enterprise
+  status        String   @default("active") // active | past_due | cancelled | trial
+
+  // Limits
+  maxOutlets    Int      @default(1) @map("max_outlets")
+  maxUsers      Int      @default(5) @map("max_users")
+  maxProducts   Int      @default(100) @map("max_products")
+
+  // Billing
+  monthlyPrice  Float    @default(0) @map("monthly_price")
+  billingCycle  String   @default("monthly") @map("billing_cycle") // monthly | yearly
+
+  // Period
+  currentPeriodStart DateTime @map("current_period_start")
+  currentPeriodEnd   DateTime @map("current_period_end")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("subscriptions")
+}
+
+// ============================================================
+// TENANT SETTINGS - Per-tenant configuration
+// ============================================================
+
+model TenantSettings {
+  id            String   @id @default(cuid())
+  tenantId      String   @unique @map("tenant_id")
+
+  // Receipt settings
+  receiptHeader     String?  @map("receipt_header") // Custom receipt header text
+  receiptFooter     String?  @map("receipt_footer") // Custom receipt footer text
+  showReceiptLogo   Boolean  @default(true) @map("show_receipt_logo")
+
+  // POS settings
+  autoPrintReceipt Boolean  @default(true) @map("auto_print_receipt")
+  requireCustomer  Boolean  @default(false) @map("require_customer") // Require customer selection
+  allowVoid        Boolean  @default(false) @map("allow_void") // Cashier can void
+  allowDiscount    Boolean  @default(true) @map("allow_discount") // Cashier can apply discount
+
+  // Payment settings
+  enabledPaymentMethods String? @map("enabled_payment_methods") // JSON array of allowed methods
+
+  // Currency
+  currency       String   @default("IDR")
+  currencySymbol String   @default("Rp") @map("currency_symbol")
+  locale         String   @default("id-ID")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_settings")
+}
+
+// ============================================================
+// NOTIFICATION - User notifications
+// ============================================================
+
 model Notification {
-  id        String   @id @default(cuid())
-  title     String
-  message   String
-  type      String   @default("info")
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+
+  title         String
+  message       String
+  type          String   @default("info") // info | success | warning | error
+  category      String?  // transaction | payout | refund | system | shift
+  link          String?  // Deep link to related resource
+  isRead        Boolean  @default(false) @map("is_read")
+  readAt        DateTime? @map("read_at")
+
+  createdAt     DateTime @default(now())
+
+  // --- Relations ---
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOG - System audit trail for compliance
+// ============================================================
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  tenantId      String?  @map("tenant_id") // NULL for platform-level actions
+  userId        String?  @map("user_id")   // User who performed the action
+
+  action        String   // create | update | delete | login | logout | void | refund | etc.
+  entity        String   // Model name: Transaction, Product, User, etc.
+  entityId      String?  @map("entity_id")
+
+  // Change details (JSON snapshot)
+  previousData  String?  @map("previous_data") // JSON of old values
+  newData       String?  @map("new_data") // JSON of new values
+
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now())
+
+  // --- Relations ---
+  tenant        Tenant? @relation(fields: [tenantId], references: [id])
+  user          User?   @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ============================================================
+// API KEY - External API key management per tenant
+// ============================================================
+
+model ApiKey {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+
+  name          String   // Descriptive name e.g. "Production Key"
+  key           String   @unique // The actual API key e.g. "pkrl_xxxxx"
+  prefix        String   // e.g. "pkrl" for display masking
+
+  // Permissions
+  permissions   String   @default("read_write") // read_only | read_write | full
+
+  // Status
+  isActive      Boolean  @default(true) @map("is_active")
+  lastUsedAt    DateTime? @map("last_used_at")
+  expiresAt     DateTime? @map("expires_at")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // --- Relations ---
+  tenant        Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("api_keys")
 }

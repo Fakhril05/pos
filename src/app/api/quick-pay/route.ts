@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import crypto from 'node:crypto';
 
 const FEE_MAP: Record<string, number> = {
-  ewallet: 0.02,
+  e_wallet: 0.02,
   qris: 0.007,
   bank_transfer: 0.015,
   credit_card: 0.029,
@@ -22,30 +22,32 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      merchantId,
+      tenantId,
+      outletId,
+      cashierId,
+      customerId,
       amount,
       paymentMethod,
       paymentChannel,
       customerName,
-      customerEmail,
       customerPhone,
-      description,
       items,
     } = body as {
-      merchantId: string;
+      tenantId: string;
+      outletId?: string;
+      cashierId?: string;
+      customerId?: string;
       amount: number;
       paymentMethod: string;
       paymentChannel: string;
       customerName?: string;
-      customerEmail?: string;
       customerPhone?: string;
-      description?: string;
       items?: { name: string; qty: number; price: number }[];
     };
 
-    if (!merchantId || typeof merchantId !== 'string') {
+    if (!tenantId || typeof tenantId !== 'string') {
       return NextResponse.json(
-        { error: 'Merchant wajib dipilih' },
+        { error: 'Tenant wajib dipilih' },
         { status: 400 },
       );
     }
@@ -69,32 +71,81 @@ export async function POST(request: NextRequest) {
     const netAmount = amount - fee;
     const invoiceNo = generateInvoiceNo();
 
-    const desc = description || (items?.length ? `Pembayaran POS: ${items.map((i) => i.name).join(', ')}` : null);
+    // Resolve outlet if not provided
+    let resolvedOutletId = outletId;
+    if (!resolvedOutletId) {
+      const firstOutlet = await db.outlet.findFirst({
+        where: { tenantId },
+        orderBy: { createdAt: 'asc' },
+      });
+      resolvedOutletId = firstOutlet?.id ?? '';
+      if (!resolvedOutletId) {
+        return NextResponse.json(
+          { error: 'No outlet found for this tenant' },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Resolve cashier if not provided
+    let resolvedCashierId = cashierId;
+    if (!resolvedCashierId) {
+      const firstCashier = await db.user.findFirst({
+        where: { tenantId, role: 'cashier', isActive: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      resolvedCashierId = firstCashier?.id ?? '';
+    }
 
     const transaction = await db.transaction.create({
       data: {
         invoiceNo,
-        merchantId,
-        amount,
-        fee,
-        netAmount,
-        paymentMethod,
-        paymentChannel,
-        status: 'success',
+        tenantId,
+        outletId: resolvedOutletId,
+        cashierId: resolvedCashierId,
+        customerId: customerId || null,
+        subtotalAmount: amount,
+        totalAmount: amount,
+        status: 'paid',
+        paymentStatus: 'fully_paid',
         customerName: customerName || null,
-        customerEmail: customerEmail || null,
         customerPhone: customerPhone || null,
-        description: desc,
         paidAt: new Date(),
+        items: items
+          ? {
+              create: items.map((item, idx) => ({
+                productId: `temp-${idx}`,
+                name: item.name,
+                sellPrice: item.price,
+                buyPrice: 0,
+                quantity: item.qty,
+                totalPrice: item.price * item.qty,
+              })),
+            }
+          : undefined,
+        payments: {
+          create: {
+            paymentMethod,
+            paymentChannel,
+            amount,
+            fee,
+            netAmount,
+            status: 'success',
+            paidAt: new Date(),
+          },
+        },
       },
       include: {
-        merchant: { select: { id: true, name: true, logo: true } },
+        tenant: { select: { id: true, name: true, logo: true } },
+        outlet: { select: { id: true, name: true } },
+        items: true,
+        payments: true,
       },
     });
 
-    // Update merchant totals
-    await db.merchant.update({
-      where: { id: merchantId },
+    // Update tenant totals
+    await db.tenant.update({
+      where: { id: tenantId },
       data: {
         totalSales: { increment: netAmount },
         totalTx: { increment: 1 },

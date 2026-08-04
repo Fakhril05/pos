@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-// GET single payout with merchant info and status timeline
+// GET single payout with tenant info and status timeline
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -11,7 +11,7 @@ export async function GET(
     const payout = await db.payout.findUnique({
       where: { id },
       include: {
-        merchant: {
+        tenant: {
           select: { id: true, name: true, email: true, logo: true },
         },
       },
@@ -113,7 +113,7 @@ export async function PUT(
       where: { id },
       data: updateData,
       include: {
-        merchant: { select: { id: true, name: true, logo: true } },
+        tenant: { select: { id: true, name: true, logo: true } },
       },
     });
 

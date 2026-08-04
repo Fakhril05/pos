@@ -1,0 +1,1212 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+     4→import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+     5→import { motion, AnimatePresence } from 'framer-motion'
+     6→import { toast } from 'sonner'
+     7→import {
+     8→  Search,
+     9→  Plus,
+    10→  Minus,
+    11→  Trash2,
+    12→  X,
+    13→  Check,
+    14→  Printer,
+    15→  Clock,
+    16→  Wallet,
+    17→  CreditCard,
+    18→  Building2,
+    19→  QrCode,
+    20→  Smartphone,
+    21→  Banknote,
+    22→  ShoppingCart,
+    23→  Loader2,
+    24→  History,
+    25→  CircleDollarSign,
+    26→  ChevronRight,
+    27→  Package,
+    28→  ArrowRight,
+    29→} from 'lucide-react'
+    30→import { Button } from '@/components/ui/button'
+    31→import { Input } from '@/components/ui/input'
+    32→import { Label } from '@/components/ui/label'
+    33→import { Badge } from '@/components/ui/badge'
+    34→import { Separator } from '@/components/ui/separator'
+    35→import { Skeleton } from '@/components/ui/skeleton'
+    36→import {
+    37→  Dialog,
+    38→  DialogContent,
+    39→  DialogHeader,
+    40→  DialogTitle,
+    41→  DialogDescription,
+    42→} from '@/components/ui/dialog'
+    43→import { ScrollArea } from '@/components/ui/scroll-area'
+    44→import { cn } from '@/lib/utils'
+    45→import { generateReceiptHtml } from '@/lib/receipt-generator'
+    46→import { useAppStore } from '@/stores/app-store'
+    47→
+    48→// ── Types ──────────────────────────────────────────────────────────────
+    49→
+    50→interface Product {
+    51→  id: string
+    52→  name: string
+    53→  sellPrice: number
+    54→  buyPrice: number
+    55→  stock: number
+    56→  unit: string
+    57→  sku: string | null
+    58→  category: { id: string; name: string; icon: string | null; color: string | null } | null
+    59→  isFavorite: boolean
+    60→}
+    61→
+    62→interface Category {
+    63→  id: string
+    64→  name: string
+    65→  icon: string | null
+    66→  color: string | null
+    67→}
+    68→
+    69→interface CartItem {
+    70→  productId: string
+    71→  name: string
+    72→  price: number
+    73→  buyPrice: number
+    74→  quantity: number
+    75→  unit: string
+    76→  sku: string | null
+    77→}
+    78→
+    79→interface ShiftData {
+    80→  id: string
+    81→  openingCash: number
+    82→  openedAt: string
+    83→  totalSales: number
+    84→  totalTx: number
+    85→  cashier: { name: string }
+    86→  outlet: { name: string; code: string }
+    87→  cashSales: number
+    88→}
+    89→
+    90→interface TxResult {
+    91→  transaction: { id: string; invoiceNo: string; createdAt: string; totalAmount: number }
+    92→  payment: { paymentMethod: string; paymentChannel: string | null }
+    93→  invoiceNo: string
+    94→  outletName: string
+    95→  outletAddress: string | null
+    96→  outletCity: string | null
+    97→  tenantName: string
+    98→  tenantAddress: string | null
+    99→  tenantCity: string | null
+   100→  tenantPhone: string | null
+   101→  cashierName: string
+   102→  items: CartItem[]
+   103→}
+   104→
+   105→interface TxHistoryItem {
+   106→  id: string
+   107→  invoiceNo: string
+   108→  createdAt: string
+   109→  totalAmount: number
+   110→  paymentMethod: string
+   111→  paymentChannel: string | null
+   112→  status: string
+   113→  _count: { items: number }
+   114→}
+   115→
+   116→// ── Helpers ──────────────────────────────────────────────────────────────
+   117→
+   118→const formatRp = (amount: number) =>
+   119→  new Intl.NumberFormat('id-ID', {
+   120→    style: 'currency',
+   121→    currency: 'IDR',
+   122→    minimumFractionDigits: 0,
+   123→  }).format(amount)
+   124→
+   125→const formatTime = (dateStr: string) => {
+   126→  const d = new Date(dateStr)
+   127→  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+   128→}
+   129→
+   130→const TAX_RATE = 0.11
+   131→const SERVICE_CHARGE_RATE = 0
+   132→
+   133→const PAYMENT_METHODS = [
+   134→  { method: 'qris', channel: 'QRIS', label: 'QRIS', icon: QrCode, color: 'text-blue-600 dark:text-blue-400' },
+   135→  { method: 'e_wallet', channel: 'GoPay', label: 'GoPay', icon: Smartphone, color: 'text-blue-500 dark:text-blue-300' },
+   136→  { method: 'e_wallet', channel: 'OVO', label: 'OVO', icon: Smartphone, color: 'text-purple-600 dark:text-purple-400' },
+   137→  { method: 'e_wallet', channel: 'DANA', label: 'DANA', icon: Smartphone, color: 'text-sky-600 dark:text-sky-400' },
+   138→  { method: 'e_wallet', channel: 'ShopeePay', label: 'ShopeePay', icon: Smartphone, color: 'text-orange-600 dark:text-orange-400' },
+   139→  { method: 'bank_transfer', channel: 'Transfer Bank', label: 'Transfer Bank', icon: Building2, color: 'text-slate-600 dark:text-slate-400' },
+   140→  { method: 'credit_card', channel: 'Kartu Kredit', label: 'Kartu Kredit', icon: CreditCard, color: 'text-amber-600 dark:text-amber-400' },
+   141→  { method: 'cash', channel: 'Tunai', label: 'Tunai', icon: Banknote, color: 'text-emerald-600 dark:text-emerald-400' },
+   142→]
+   143→
+   144→// ── Component ──────────────────────────────────────────────────────────
+   145→
+   146→export function Kasir() {
+   147→  const user = useAppStore((s) => s.user)
+   148→  const queryClient = useQueryClient()
+   149→
+   150→  const [search, setSearch] = useState('')
+   151→  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+   152→  const [cart, setCart] = useState<CartItem[]>([])
+   153→  const [selectedPayment, setSelectedPayment] = useState<(typeof PAYMENT_METHODS)[number] | null>(null)
+   154→  const [tendered, setTendered] = useState('')
+   155→  const [showSuccess, setShowSuccess] = useState(false)
+   156→  const [lastTx, setLastTx] = useState<TxResult | null>(null)
+   157→  const [showShiftDialog, setShowShiftDialog] = useState<'open' | 'close' | null>(null)
+   158→  const [shiftOpeningCash, setShiftOpeningCash] = useState('')
+   159→  const [shiftClosingCash, setShiftClosingCash] = useState('')
+   160→  const [shiftNote, setShiftNote] = useState('')
+   161→  const [activeTab, setActiveTab] = useState<'pos' | 'history'>('pos')
+   162→  const [historyFilter, setHistoryFilter] = useState<'shift' | 'today' | 'all'>('shift')
+   163→  const [showTxDetail, setShowTxDetail] = useState<TxHistoryItem | null>(null)
+   164→  const searchRef = useRef<HTMLInputElement>(null)
+   165→
+   166→  // ── Queries ──────────────────────────────────────────────────────
+   167→
+   168→  const { data: productsData, isLoading: productsLoading } = useQuery({
+   169→    queryKey: ['cashier-products', user?.tenantId, search, activeCategory],
+   170→    queryFn: async () => {
+   171→      const params = new URLSearchParams({ tenantId: user!.tenantId! })
+   172→      if (search) params.set('search', search)
+   173→      if (activeCategory) params.set('categoryId', activeCategory)
+   174→      const res = await fetch(`/api/cashier/products?${params}`)
+   175→      if (!res.ok) throw new Error('Gagal memuat produk')
+   176→      return res.json() as Promise<{ products: Product[]; categories: Category[] }>
+   177→    },
+   178→    enabled: !!user?.tenantId,
+   179→    refetchInterval: 30000,
+   180→  })
+   181→
+   182→  const { data: shiftData, isLoading: shiftLoading } = useQuery({
+   183→    queryKey: ['cashier-shift', user?.outletId, user?.id],
+   184→    queryFn: async () => {
+   185→      const params = new URLSearchParams({
+   186→        outletId: user!.outletId!,
+   187→        cashierId: user!.id,
+   188→      })
+   189→      const res = await fetch(`/api/cashier/shifts?${params}`)
+   190→      if (!res.ok) throw new Error('Gagal memuat shift')
+   191→      return res.json() as Promise<{ shift: ShiftData | null }>
+   192→    },
+   193→    enabled: !!user?.outletId && !!user?.id,
+   194→  })
+   195→
+   196→  const { data: historyData, isLoading: historyLoading } = useQuery({
+   197→    queryKey: ['cashier-history', user?.id, historyFilter],
+   198→    queryFn: async () => {
+   199→      const params = new URLSearchParams({
+   200→        cashierId: user!.id,
+   201→        filter: historyFilter,
+   202→      })
+   203→      const res = await fetch(`/api/cashier/history?${params}`)
+   204→      if (!res.ok) throw new Error('Gagal memuat riwayat')
+   205→      return res.json() as Promise<{ transactions: TxHistoryItem[] }>
+   206→    },
+   207→    enabled: activeTab === 'history' && !!user?.id,
+   208→  })
+   209→
+   210→  // ── Mutations ──────────────────────────────────────────────────
+   211→
+   212→  const createTransaction = useMutation({
+   213→    mutationFn: async () => {
+   214→      if (!user || !shiftData?.shift || !selectedPayment) return null
+   215→
+   216→      const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0)
+   217→      const discountAmount = 0
+   218→      const taxAmount = Math.round(subtotal * TAX_RATE)
+   219→      const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_RATE)
+   220→      const totalAmount = subtotal - discountAmount + taxAmount + serviceCharge
+   221→
+   222→      const res = await fetch('/api/cashier/transaction', {
+   223→        method: 'POST',
+   224→        headers: { 'Content-Type': 'application/json' },
+   225→        body: JSON.stringify({
+   226→          tenantId: user.tenantId,
+   227→          outletId: user.outletId,
+   228→          cashierId: user.id,
+   229→          items: cart.map((c) => ({
+   230→            productId: c.productId,
+   231→            name: c.name,
+   232→            price: c.price,
+   233→            buyPrice: c.buyPrice,
+   234→            quantity: c.quantity,
+   235→            unit: c.unit,
+   236→            sku: c.sku,
+   237→          })),
+   238→          subtotalAmount: subtotal,
+   239→          discountAmount,
+   240→          taxAmount,
+   241→          serviceCharge,
+   242→          totalAmount,
+   243→          paymentMethod: selectedPayment.method,
+   244→          paymentChannel: selectedPayment.channel,
+   245→          tendered: selectedPayment.method === 'cash' ? parseFloat(tendered) || 0 : undefined,
+   246→        }),
+   247→      })
+   248→      if (!res.ok) {
+   249→        const err = await res.json()
+   250→        throw new Error(err.error || 'Gagal membuat transaksi')
+   251→      }
+   252→      return res.json() as Promise<TxResult>
+   253→    },
+   254→    onSuccess: (data) => {
+   255→      if (data) {
+   256→        setLastTx(data)
+   257→        setShowSuccess(true)
+   258→        setCart([])
+   259→        setSelectedPayment(null)
+   260→        setTendered('')
+   261→        queryClient.invalidateQueries({ queryKey: ['cashier-products'] })
+   262→        queryClient.invalidateQueries({ queryKey: ['cashier-shift'] })
+   263→        queryClient.invalidateQueries({ queryKey: ['cashier-history'] })
+   264→      }
+   265→    },
+   266→    onError: (err) => {
+   267→      toast.error(err.message)
+   268→    },
+   269→  })
+   270→
+   271→  const shiftMutation = useMutation({
+   272→    mutationFn: async (action: 'open' | 'close') => {
+   273→      if (!user) return null
+   274→      const body: Record<string, unknown> = {
+   275→        action,
+   276→        tenantId: user.tenantId,
+   277→        outletId: user.outletId,
+   278→        cashierId: user.id,
+   279→      }
+   280→      if (action === 'open') body.openingCash = parseFloat(shiftOpeningCash) || 0
+   281→      if (action === 'close') {
+   282→        body.closingCash = parseFloat(shiftClosingCash) || 0
+   283→        body.note = shiftNote
+   284→      }
+   285→      const res = await fetch('/api/cashier/shifts', {
+   286→        method: 'POST',
+   287→        headers: { 'Content-Type': 'application/json' },
+   288→        body: JSON.stringify(body),
+   289→      })
+   290→      if (!res.ok) {
+   291→        const err = await res.json()
+   292→        throw new Error(err.error || 'Gagal')
+   293→      }
+   294→      return res.json()
+   295→    },
+   296→    onSuccess: () => {
+   297→      queryClient.invalidateQueries({ queryKey: ['cashier-shift'] })
+   298→      queryClient.invalidateQueries({ queryKey: ['cashier-history'] })
+   299→      setShowShiftDialog(null)
+   300→      setShiftOpeningCash('')
+   301→      setShiftClosingCash('')
+   302→      setShiftNote('')
+   303→      toast.success(
+   304→        shiftMutation.variables === 'open' ? 'Shift berhasil dibuka' : 'Shift berhasil ditutup',
+   305→      )
+   306→    },
+   307→    onError: (err) => {
+   308→      toast.error(err.message)
+   309→    },
+   310→  })
+   311→
+   312→  // ── Cart Logic ──────────────────────────────────────────────────
+   313→
+   314→  const addToCart = useCallback(
+   315→    (product: Product) => {
+   316→      setCart((prev) => {
+   317→        const existing = prev.find((c) => c.productId === product.id)
+   318→        if (existing) {
+   319→          if (existing.quantity >= product.stock) {
+   320→            toast.warning(`Stok ${product.name} tidak cukup`)
+   321→            return prev
+   322→          }
+   323→          return prev.map((c) =>
+   324→            c.productId === product.id
+   325→              ? { ...c, quantity: c.quantity + 1 }
+   326→              : c,
+   327→          )
+   328→        }
+   329→        if (product.stock <= 0) {
+   330→          toast.warning(`${product.name} habis`)
+   331→          return prev
+   332→        }
+   333→        return [
+   334→          ...prev,
+   335→          {
+   336→            productId: product.id,
+   337→            name: product.name,
+   338→            price: product.sellPrice,
+   339→            buyPrice: product.buyPrice,
+   340→            quantity: 1,
+   341→            unit: product.unit,
+   342→            sku: product.sku,
+   343→          },
+   344→        ]
+   345→      })
+   346→    },
+   347→    [],
+   348→  )
+   349→
+   350→  const updateQty = useCallback((productId: string, delta: number) => {
+   351→    setCart((prev) => {
+   352→      return prev
+   353→        .map((c) => {
+   354→          if (c.productId !== productId) return c
+   355→          const newQty = c.quantity + delta
+   356→          if (newQty <= 0) return null
+   357→          return { ...c, quantity: newQty }
+   358→        })
+   359→        .filter(Boolean) as CartItem[]
+   360→    })
+   361→  }, [])
+   362→
+   363→  const removeFromCart = useCallback((productId: string) => {
+   364→    setCart((prev) => prev.filter((c) => c.productId !== productId))
+   365→  }, [])
+   366→
+   367→  const clearCart = useCallback(() => {
+   368→    setCart([])
+   369→    setSelectedPayment(null)
+   370→    setTendered('')
+   371→  }, [])
+   372→
+   373→  // ── Computed ──────────────────────────────────────────────────
+   374→
+   375→  const cartSubtotal = useMemo(() => cart.reduce((s, c) => s + c.price * c.quantity, 0), [cart])
+   376→  const cartTax = Math.round(cartSubtotal * TAX_RATE)
+   377→  const cartServiceCharge = Math.round(cartSubtotal * SERVICE_CHARGE_RATE)
+   378→  const cartTotal = cartSubtotal + cartTax + cartServiceCharge
+   379→  const cartItemCount = cart.reduce((s, c) => s + c.quantity, 0)
+   380→  const tenderedNum = parseFloat(tendered) || 0
+   381→  const change = tenderedNum - cartTotal
+   382→
+   383→  const filteredProducts = useMemo(() => {
+   384→    const prods = productsData?.products || []
+   385→    if (!activeCategory) return prods
+   386→    return prods.filter((p) => p.category?.id === activeCategory)
+   387→  }, [productsData, activeCategory])
+   388→
+   389→  const categories = productsData?.categories || []
+   390→  const activeShift = shiftData?.shift || null
+   391→  const isProcessing = createTransaction.isPending || shiftMutation.isPending
+   392→
+   393→  // ── Keyboard shortcuts ──────────────────────────────────────────
+   394→
+   395→  useEffect(() => {
+   396→    const handleKey = (e: KeyboardEvent) => {
+   397→      const tag = (e.target as HTMLElement)?.tagName
+   398→      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+   399→      if (e.key === 'F2') {
+   400→        e.preventDefault()
+   401→        searchRef.current?.focus()
+   402→      }
+   403→      if (e.key === 'Escape') {
+   404→        setShowSuccess(false)
+   405→        setShowShiftDialog(null)
+   406→        setShowTxDetail(null)
+   407→      }
+   408→    }
+   409→    document.addEventListener('keydown', handleKey)
+   410→    return () => document.removeEventListener('keydown', handleKey)
+   411→  }, [])
+   412→
+   413→  // ── Print Receipt ──────────────────────────────────────────
+   414→
+   415→  const printReceipt = useCallback(() => {
+   416→    if (!lastTx) return
+   417→    const txSubtotal = lastTx.items.reduce((s, i) => s + i.price * i.quantity, 0)
+   418→    const txTax = Math.round(txSubtotal * TAX_RATE)
+   419→    const txServiceCharge = Math.round(txSubtotal * SERVICE_CHARGE_RATE)
+   420→
+   421→    const html = generateReceiptHtml({
+   422→      invoiceNo: lastTx.invoiceNo,
+   423→      tenantName: lastTx.tenantName,
+   424→      outletName: lastTx.outletName,
+   425→      outletAddress: lastTx.outletAddress,
+   426→      outletCity: lastTx.outletCity,
+   427→      tenantPhone: lastTx.tenantPhone,
+   428→      cashierName: lastTx.cashierName,
+   429→      items: lastTx.items.map((i) => ({
+   430→        name: i.name,
+   431→        quantity: i.quantity,
+   432→        price: i.price,
+   433→        subtotal: i.price * i.quantity,
+   434→      })),
+   435→      subtotalAmount: txSubtotal,
+   436→      discountAmount: 0,
+   437→      taxAmount: txTax,
+   438→      serviceCharge: txServiceCharge,
+   439→      totalAmount: lastTx.transaction.totalAmount,
+   440→      paymentMethod: lastTx.payment.paymentMethod,
+   441→      paymentChannel: lastTx.payment.paymentChannel,
+   442→      tendered: lastTx.payment.paymentMethod === 'cash' ? parseFloat(tendered) || 0 : undefined,
+   443→      change: lastTx.payment.paymentMethod === 'cash' ? change : undefined,
+   444→      createdAt: lastTx.transaction.createdAt,
+   445→    })
+   446→
+   447→    const w = window.open('', '_blank', 'width=400,height=700')
+   448→    if (w) {
+   449→      w.document.write(html)
+   450→      w.document.close()
+   451→      setTimeout(() => w.print(), 300)
+   452→    }
+   453→  }, [lastTx, tendered, change, cart])
+   454→
+   455→  // ── Mobile cart sheet trigger state ─────────────────────────────
+   456→  const [showMobileCart, setShowMobileCart] = useState(false)
+   457→
+   458→  // ── Render ──────────────────────────────────────────────────
+   459→
+   460→  return (
+   461→    <div className="flex h-[calc(100vh-8.5rem)] flex-col gap-4 md:gap-6">
+   462→      {/* Tab Switcher */}
+   463→      <div className="flex items-center gap-1">
+   464→        <button
+   465→          onClick={() => setActiveTab('pos')}
+   466→          className={cn(
+   467→            'rounded-lg px-4 py-2 text-sm font-semibold transition-all btn-press',
+   468→            activeTab === 'pos'
+   469→              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+   470→              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+   471→          )}
+   472→        >
+   473→          <span className="flex items-center gap-2">
+   474→            <ShoppingCart className="h-4 w-4" />
+   475→            Kasir POS
+   476→          </span>
+   477→        </button>
+   478→        <button
+   479→          onClick={() => setActiveTab('history')}
+   480→          className={cn(
+   481→            'rounded-lg px-4 py-2 text-sm font-semibold transition-all btn-press',
+   482→            activeTab === 'history'
+   483→              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+   484→              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+   485→          )}
+   486→        >
+   487→          <span className="flex items-center gap-2">
+   488→            <History className="h-4 w-4" />
+   489→            Riwayat
+   490→          </span>
+   491→        </button>
+   492→      </div>
+   493→
+   494→      {activeTab === 'pos' ? (
+   495→        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+   496→          {/* ─── LEFT PANEL: Products ─── */}
+   497→          <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-[3]">
+   498→            {/* Search */}
+   499→            <div className="relative">
+   500→              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+   501→              <Input
+   502→                ref={searchRef}
+   503→                value={search}
+   504→                onChange={(e) => setSearch(e.target.value)}
+   505→                placeholder="Cari produk... (F2)"
+   506→                className="pl-10"
+   507→              />
+   508→            </div>
+   509→
+   510→            {/* Category Tabs */}
+   511→            <div className="relative">
+   512→              <ScrollArea className="w-full">
+   513→                <div className="flex gap-2 pb-1">
+   514→                  <button
+   515→                    onClick={() => setActiveCategory(null)}
+   516→                    className={cn(
+   517→                      'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all btn-press',
+   518→                      !activeCategory
+   519→                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+   520→                        : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+   521→                    )}
+   522→                  >
+   523→                    Semua
+   524→                  </button>
+   525→                  {categories.map((cat) => (
+   526→                    <button
+   527→                      key={cat.id}
+   528→                      onClick={() => setActiveCategory(cat.id)}
+   529→                      className={cn(
+   530→                        'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all btn-press',
+   531→                        activeCategory === cat.id
+   532→                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+   533→                          : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+   534→                      )}
+   535→                    >
+   536→                      {cat.icon || ''} {cat.name}
+   537→                    </button>
+   538→                  ))}
+   539→                </div>
+   540→              </ScrollArea>
+   541→            </div>
+   542→
+   543→            {/* Product Grid */}
+   544→            <div className="min-h-0 flex-1">
+   545→              {productsLoading ? (
+   546→                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+   547→                  {Array.from({ length: 8 }).map((_, i) => (
+   548→                    <div key={i} className="space-y-2">
+   549→                      <Skeleton className="h-28 w-full rounded-xl" />
+   550→                      <Skeleton className="h-4 w-3/4" />
+   551→                      <Skeleton className="h-4 w-1/2" />
+   552→                    </div>
+   553→                  ))}
+   554→                </div>
+   555→              ) : (
+   556→                <ScrollArea className="h-full">
+   557→                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 pb-4">
+   558→                    <AnimatePresence mode="popLayout">
+   559→                      {filteredProducts.map((product) => {
+   560→                        const isOutOfStock = product.stock <= 0
+   561→                        const inCart = cart.find((c) => c.productId === product.id)
+   562→                        return (
+   563→                          <motion.button
+   564→                            key={product.id}
+   565→                            layout
+   566→                            initial={{ opacity: 0, scale: 0.9 }}
+   567→                            animate={{ opacity: 1, scale: 1 }}
+   568→                            exit={{ opacity: 0, scale: 0.9 }}
+   569→                            transition={{ duration: 0.15 }}
+   570→                            disabled={isOutOfStock}
+   571→                            onClick={() => addToCart(product)}
+   572→                            className={cn(
+   573→                              'glass-card relative flex flex-col items-center gap-1.5 rounded-xl p-3 text-left transition-all hover-scale hover-lift-surface',
+   574→                              isOutOfStock && 'opacity-50 grayscale',
+   575→                              inCart && 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-background',
+   576→                            )}
+   577→                          >
+   578→                            {inCart && (
+   579→                              <Badge className="badge-gradient-emerald absolute -top-2 -right-2 h-5 w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+   580→                                {inCart.quantity}
+   581→                              </Badge>
+   582→                            )}
+   583→                            <div
+   584→                              className={cn(
+   585→                                'flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold',
+   586→                                product.category?.color
+   587→                                  ? ''
+   588→                                  : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
+   589→                              )}
+   590→                              style={
+   591→                                product.category?.color
+   592→                                  ? { backgroundColor: product.category.color + '18', color: product.category.color }
+   593→                                  : undefined
+   594→                              }
+   595→                            >
+   596→                              {product.category?.icon || product.name.charAt(0)}
+   597→                            </div>
+   598→                            <p className="line-clamp-2 w-full text-xs font-medium leading-tight">
+   599→                              {product.name}
+   600→                            </p>
+   601→                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+   602→                              {formatRp(product.sellPrice)}
+   603→                            </p>
+   604→                            <p
+   605→                              className={cn(
+   606→                                'text-[10px] tabular-nums',
+   607→                                product.stock <= product.minStock * 0.5
+   608→                                  ? 'font-semibold text-red-500'
+   609→                                  : 'text-muted-foreground',
+   610→                              )}
+   611→                            >
+   612→                              Stok: {product.stock} {product.unit}
+   613→                            </p>
+   614→                            {isOutOfStock && (
+   615→                              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
+   616→                                <span className="rounded-full bg-destructive px-3 py-1 text-xs font-bold text-white">
+   617→                                  Habis
+   618→                                </span>
+   619→                              </div>
+   620→                            )}
+   621→                          </motion.button>
+   622→                        )
+   623→                      })}
+   624→                    </AnimatePresence>
+   625→                    {filteredProducts.length === 0 && (
+   626→                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
+   627→                        <Package className="mb-3 h-12 w-12 opacity-30" />
+   628→                        <p className="text-sm">Tidak ada produk ditemukan</p>
+   629→                      </div>
+   630→                    )}
+   631→                  </div>
+   632→                </ScrollArea>
+   633→              )}
+   634→            </div>
+   635→          </div>
+   636→
+   637→          {/* ─── RIGHT PANEL: Cart ─── */}
+   638→          <div className="glass-card flex min-h-[400px] w-full flex-col rounded-2xl lg:min-h-0 lg:w-[420px] xl:w-[460px]">
+   639→            {/* Shift Status Bar */}
+   640→            <div className="p-3">
+   641→              {shiftLoading ? (
+   642→                <Skeleton className="h-10 w-full rounded-lg" />
+   643→              ) : !activeShift ? (
+   644→                <button
+   645→                  onClick={() => setShowShiftDialog('open')}
+   646→                  className="flex w-full items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950 btn-press"
+   647→                >
+   648→                  <span className="flex items-center gap-2">
+   649→                    <Clock className="h-4 w-4" />
+   650→                    Shift belum dibuka
+   651→                  </span>
+   652→                  <Badge className="badge-gradient-amber text-white">Buka Shift</Badge>
+   653→                </button>
+   654→              ) : (
+   655→                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-2.5 dark:bg-emerald-950/30">
+   656→                  <div className="flex items-center gap-2">
+   657→                    <div className="relative">
+   658→                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+   659→                      <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+   660→                    </div>
+   661→                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+   662→                      Shift Aktif
+   663→                    </span>
+   664→                    <span className="text-xs text-muted-foreground">
+   665→                      • {formatTime(activeShift.openedAt)}
+   666→                    </span>
+   667→                  </div>
+   668→                  <div className="flex items-center gap-2">
+   669→                    <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+   670→                      {formatRp(activeShift.totalSales)}
+   671→                    </span>
+   672→                    <button
+   673→                      onClick={() => setShowShiftDialog('close')}
+   674→                      className="rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900 btn-press"
+   675→                    >
+   676→                      Tutup Shift
+   677→                    </button>
+   678→                  </div>
+   679→                </div>
+   680→              )}
+   681→            </div>
+   682→
+   683→            <Separator />
+   684→
+   685→            {/* Cart Header */}
+   686→            <div className="flex items-center justify-between px-4 py-2">
+   687→              <h3 className="text-sm font-semibold">
+   688→                Keranjang{' '}
+   689→                {cartItemCount > 0 && (
+   690→                  <span className="text-muted-foreground">({cartItemCount} item)</span>
+   691→                )}
+   692→              </h3>
+   693→              {cart.length > 0 && (
+   694→                <button
+   695→                  onClick={clearCart}
+   696→                  className="text-xs text-muted-foreground hover:text-destructive btn-press"
+   697→                >
+   698→                  Hapus Semua
+   699→                </button>
+   700→              )}
+   701→            </div>
+   702→
+   703→            {/* Cart Items */}
+   704→            <div className="flex-1 overflow-y-auto px-3">
+   705→              {cart.length === 0 ? (
+   706→                <div className="flex h-full flex-col items-center justify-center py-12 text-muted-foreground">
+   707→                  <ShoppingCart className="mb-2 h-10 w-10 opacity-20" />
+   708→                  <p className="text-sm">Keranjang kosong</p>
+   709→                  <p className="text-xs">Klik produk untuk menambahkan</p>
+   710→                </div>
+   711→              ) : (
+   712→                <AnimatePresence initial={false}>
+   713→                  {cart.map((item) => (
+   714→                    <motion.div
+   715→                      key={item.productId}
+   716→                      initial={{ opacity: 0, x: 20 }}
+   717→                      animate={{ opacity: 1, x: 0 }}
+   718→                      exit={{ opacity: 0, x: -20, height: 0 }}
+   719→                      className="mb-2 rounded-lg border border-border/50 bg-card/50 p-2.5"
+   720→                    >
+   721→                      <div className="flex items-start justify-between gap-2">
+   722→                        <div className="min-w-0 flex-1">
+   723→                          <p className="truncate text-sm font-medium">{item.name}</p>
+   724→                          <p className="text-xs text-muted-foreground tabular-nums">
+   725→                            {formatRp(item.price)} × {item.quantity}
+   726→                          </p>
+   727→                        </div>
+   728→                        <button
+   729→                          onClick={() => removeFromCart(item.productId)}
+   730→                          className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive btn-press"
+   731→                        >
+   732→                          <Trash2 className="h-3.5 w-3.5" />
+   733→                        </button>
+   734→                      </div>
+   735→                      <div className="mt-2 flex items-center justify-between">
+   736→                        <div className="flex items-center gap-1">
+   737→                          <button
+   738→                            onClick={() => updateQty(item.productId, -1)}
+   739→                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+   740→                          >
+   741→                            <Minus className="h-3 w-3" />
+   742→                          </button>
+   743→                          <span className="w-8 text-center text-sm font-bold tabular-nums">
+   744→                            {item.quantity}
+   745→                          </span>
+   746→                          <button
+   747→                            onClick={() => updateQty(item.productId, 1)}
+   748→                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+   749→                          >
+   750→                            <Plus className="h-3 w-3" />
+   751→                          </button>
+   752→                        </div>
+   753→                        <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+   754→                          {formatRp(item.price * item.quantity)}
+   755→                        </p>
+   756→                      </div>
+   757→                    </motion.div>
+   758→                  ))}
+   759→                </AnimatePresence>
+   760→              )}
+   761→            </div>
+   762→
+   763→            {/* Cart Summary & Payment */}
+   764→            {cart.length > 0 && (
+   765→              <div className="border-t border-border bg-card/50 p-3">
+   766→                <div className="space-y-1.5 text-xs">
+   767→                  <div className="flex justify-between text-muted-foreground">
+   768→                    <span>Subtotal</span>
+   769→                    <span className="tabular-nums">{formatRp(cartSubtotal)}</span>
+   770→                  </div>
+   771→                  <div className="flex justify-between text-muted-foreground">
+   772→                    <span>PPN (11%)</span>
+   773→                    <span className="tabular-nums">{formatRp(cartTax)}</span>
+   774→                  </div>
+   775→                  {cartServiceCharge > 0 && (
+   776→                    <div className="flex justify-between text-muted-foreground">
+   777→                      <span>Service Charge</span>
+   778→                      <span className="tabular-nums">{formatRp(cartServiceCharge)}</span>
+   779→                    </div>
+   780→                  )}
+   781→                  <Separator />
+   782→                  <div className="flex justify-between">
+   783→                    <span className="text-sm font-bold">TOTAL</span>
+   784→                    <span className="text-lg font-extrabold text-gradient-emerald tabular-nums">
+   785→                      {formatRp(cartTotal)}
+   786→                    </span>
+   787→                  </div>
+   788→                </div>
+   789→
+   790→                {/* Payment Method Selection */}
+   791→                <div className="mt-3">
+   792→                  <p className="mb-2 text-xs font-semibold text-muted-foreground">Metode Pembayaran</p>
+   793→                  <div className="grid grid-cols-4 gap-1.5">
+   794→                    {PAYMENT_METHODS.map((pm) => {
+   795→                      const Icon = pm.icon
+   796→                      return (
+   797→                        <button
+   798→                          key={pm.label}
+   799→                          onClick={() => setSelectedPayment(pm)}
+   800→                          className={cn(
+   801→                            'flex flex-col items-center gap-0.5 rounded-lg border p-2 text-[10px] font-medium transition-all btn-press',
+   802→                            selectedPayment?.label === pm.label
+   803→                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400'
+   804→                              : 'border-border hover:border-emerald-300 hover:bg-muted dark:hover:border-emerald-700',
+   805→                          )}
+   806→                        >
+   807→                          <Icon className={cn('h-4 w-4', pm.color)} />
+   808→                          {pm.label}
+   809→                        </button>
+   810→                      )
+   811→                    })}
+   812→                  </div>
+   813→                </div>
+   814→
+   815→                {/* Cash Input */}
+   816→                {selectedPayment?.method === 'cash' && (
+   817→                  <motion.div
+   818→                    initial={{ opacity: 0, height: 0 }}
+   819→                    animate={{ opacity: 1, height: 'auto' }}
+   820→                    className="mt-3 space-y-2"
+   821→                  >
+   822→                    <div>
+   823→                      <Label className="text-xs text-muted-foreground">Uang Diterima</Label>
+   824→                      <Input
+   825→                        type="number"
+   826→                        value={tendered}
+   827→                        onChange={(e) => setTendered(e.target.value)}
+   828→                        placeholder="0"
+   829→                        className="mt-1 text-right text-lg font-bold tabular-nums"
+   830→                      />
+   831→                    </div>
+   832→                    <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+   833→                      <span className="text-xs font-medium text-muted-foreground">Kembalian</span>
+   834→                      <span
+   835→                        className={cn(
+   836→                          'text-sm font-bold tabular-nums',
+   837→                          change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+   838→                        )}
+   839→                      >
+   840→                        {formatRp(Math.max(0, change))}
+   841→                      </span>
+   842→                    </div>
+   843→                  </motion.div>
+   844→                )}
+   845→
+   846→                {/* Pay Button */}
+   847→                <Button
+   848→                  onClick={() => createTransaction.mutate()}
+   849→                  disabled={
+   850→                    cart.length === 0 ||
+   851→                    !selectedPayment ||
+   852→                    !activeShift ||
+   853→                    isProcessing ||
+   854→                    (selectedPayment.method === 'cash' && tenderedNum < cartTotal)
+   855→                  }
+   856→                  className="btn-press mt-3 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 py-5 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50"
+   857→                >
+   858→                  {isProcessing ? (
+   859→                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+   860→                  ) : (
+   861→                    <Wallet className="mr-2 h-4 w-4" />
+   862→                  )}
+   863→                  Bayar {formatRp(cartTotal)}
+   864→                </Button>
+   865→              </div>
+   866→            )}
+   867→          </div>
+   868→
+   869→          {/* Mobile floating cart button */}
+   870→          {cart.length > 0 && (
+   871→            <button
+   872→              onClick={() => setShowMobileCart(true)}
+   873→              className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xl shadow-emerald-500/40 lg:hidden"
+   874→            >
+   875→              <ShoppingCart className="h-6 w-6" />
+   876→              <Badge className="badge-gradient-emerald absolute -top-1 -right-1 h-5 min-w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+   877→                {cartItemCount}
+   878→              </Badge>
+   879→            </button>
+   880→          )}
+   881→        </div>
+   882→      ) : (
+   883→        /* ─── HISTORY TAB ─── */
+   884→        <div className="glass-card flex-1 rounded-2xl p-4">
+   885→          <div className="mb-4 flex items-center justify-between">
+   886→            <h3 className="text-base font-semibold">Riwayat Transaksi</h3>
+   887→            <div className="flex gap-1">
+   888→              {(['shift', 'today', 'all'] as const).map((f) => (
+   889→                <button
+   890→                  key={f}
+   891→                  onClick={() => setHistoryFilter(f)}
+   892→                  className={cn(
+   893→                    'rounded-lg px-3 py-1.5 text-xs font-medium transition-all btn-press',
+   894→                    historyFilter === f
+   895→                      ? 'bg-emerald-500 text-white'
+   896→                      : 'bg-muted text-muted-foreground hover:text-foreground',
+   897→                  )}
+   898→                >
+   899→                  {f === 'shift' ? 'Shift Ini' : f === 'today' ? 'Hari Ini' : 'Semua'}
+   900→                </button>
+   901→              ))}
+   902→            </div>
+   903→          </div>
+   904→
+   905→          {historyLoading ? (
+   906→            <div className="space-y-3">
+   907→              {Array.from({ length: 5 }).map((_, i) => (
+   908→                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+   909→              ))}
+   910→            </div>
+   911→          ) : !historyData?.transactions.length ? (
+   912→            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+   913→              <History className="mb-3 h-10 w-10 opacity-20" />
+   914→              <p className="text-sm">Belum ada transaksi</p>
+   915→            </div>
+   916→          ) : (
+   917→            <ScrollArea className="max-h-[60vh]">
+   918→              <div className="space-y-2">
+   919→                {historyData.transactions.map((tx) => (
+   920→                  <button
+   921→                    key={tx.id}
+   922→                    onClick={() => setShowTxDetail(tx)}
+   923→                    className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3 text-left transition-all hover-lift-surface btn-press"
+   924→                  >
+   925→                    <div>
+   926→                      <p className="text-sm font-semibold tabular-nums">{tx.invoiceNo}</p>
+   927→                      <p className="text-xs text-muted-foreground">
+   928→                        {new Date(tx.createdAt).toLocaleString('id-ID', {
+   929→                          day: 'numeric',
+   930→                          month: 'short',
+   931→                          hour: '2-digit',
+   932→                          minute: '2-digit',
+   933→                        })}
+   934→                      </p>
+   935→                    </div>
+   936→                    <div className="flex items-center gap-3">
+   937→                      <div className="text-right">
+   938→                        <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+   939→                          {formatRp(tx.totalAmount)}
+   940→                        </p>
+   941→                        <p className="text-[10px] text-muted-foreground">
+   942→                          {tx._count.items} item • {tx.paymentChannel || tx.paymentMethod}
+   943→                        </p>
+   944→                      </div>
+   945→                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   946→                    </div>
+   947→                  </button>
+   948→                ))}
+   949→              </div>
+   950→            </ScrollArea>
+   951→          )}
+   952→        </div>
+   953→      )}
+   954→
+   955→      {/* ─── SHIFT OPEN DIALOG ─── */}
+   956→      <Dialog open={showShiftDialog === 'open'} onOpenChange={() => setShowShiftDialog(null)}>
+   957→        <DialogContent className="sm:max-w-md">
+   958→          <DialogHeader>
+   959→            <DialogTitle className="flex items-center gap-2">
+   960→              <CircleDollarSign className="h-5 w-5 text-emerald-500" />
+   961→              Buka Shift
+   962→            </DialogTitle>
+   963→            <DialogDescription>Masukkan jumlah modal awal kas kasir</DialogDescription>
+   964→          </DialogHeader>
+   965→          <div className="space-y-4 py-4">
+   966→            <div>
+   967→              <Label>Modal Awal (Rp)</Label>
+   968→              <Input
+   969→                type="number"
+   970→                value={shiftOpeningCash}
+   971→                onChange={(e) => setShiftOpeningCash(e.target.value)}
+   972→                placeholder="contoh: 500000"
+   973→                className="mt-1.5 text-right text-lg font-bold tabular-nums"
+   974→                autoFocus
+   975→              />
+   976→              <div className="mt-2 flex flex-wrap gap-2">
+   977→                {[0, 100000, 200000, 500000, 1000000].map((v) => (
+   978→                  <button
+   979→                    key={v}
+   980→                    onClick={() => setShiftOpeningCash(String(v))}
+   981→                    className={cn(
+   982→                      'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all btn-press',
+   983→                      shiftOpeningCash === String(v)
+   984→                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+   985→                        : 'border-border hover:border-emerald-300',
+   986→                    )}
+   987→                  >
+   988→                    {v === 0 ? 'Rp 0' : formatRp(v)}
+   989→                  </button>
+   990→                ))}
+   991→              </div>
+   992→            </div>
+   993→          </div>
+   994→          <div className="flex justify-end gap-2">
+   995→            <Button variant="outline" onClick={() => setShowShiftDialog(null)}>
+   996→              Batal
+   997→            </Button>
+   998→            <Button
+   999→              onClick={() => shiftMutation.mutate('open')}
+  1000→              disabled={shiftMutation.isPending}
+  1001→              className="bg-emerald-500 text-white hover:bg-emerald-600"
+  1002→            >
+  1003→              {shiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+  1004→              Buka Shift
+  1005→            </Button>
+  1006→          </div>
+  1007→        </DialogContent>
+  1008→      </Dialog>
+  1009→
+  1010→      {/* ─── SHIFT CLOSE DIALOG ─── */}
+  1011→      <Dialog open={showShiftDialog === 'close'} onOpenChange={() => setShowShiftDialog(null)}>
+  1012→        <DialogContent className="sm:max-w-md">
+  1013→          <DialogHeader>
+  1014→            <DialogTitle className="flex items-center gap-2">
+  1015→              <CircleDollarSign className="h-5 w-5 text-amber-500" />
+  1016→              Tutup Shift
+  1017→            </DialogTitle>
+  1018→            <DialogDescription>Ringkasan shift dan penutupan kas</DialogDescription>
+  1019→          </DialogHeader>
+  1020→          {activeShift && (
+  1021→            <div className="space-y-3 py-4">
+  1022→              <div className="rounded-lg bg-muted p-3 space-y-1.5 text-sm">
+  1023→                <div className="flex justify-between">
+  1024→                  <span className="text-muted-foreground">Modal Awal</span>
+  1025→                  <span className="tabular-nums font-medium">{formatRp(activeShift.openingCash)}</span>
+  1026→                </div>
+  1027→                <div className="flex justify-between">
+  1028→                  <span className="text-muted-foreground">Total Penjualan</span>
+  1029→                  <span className="tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+  1030→                    {formatRp(activeShift.totalSales)}
+  1031→                  </div>
+  1032→                </div>
+  1033→                <div className="flex justify-between">
+  1034→                  <span className="text-muted-foreground">Penjualan Tunai</span>
+  1035→                  <span className="tabular-nums font-medium">{formatRp(activeShift.cashSales)}</span>
+  1036→                </div>
+  1037→                <Separator />
+  1038→                <div className="flex justify-between font-semibold">
+  1039→                  <span>Uang yang Diharapkan</span>
+  1040→                  <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+  1041→                    {formatRp(activeShift.openingCash + activeShift.cashSales)}
+  1042→                  </span>
+  1043→                </div>
+  1044→                <div className="flex justify-between text-muted-foreground">
+  1045→                  <span>Total Transaksi</span>
+  1046→                  <span className="tabular-nums">{activeShift.totalTx}</span>
+  1047→                </div>
+  1048→              </div>
+  1049→              <div>
+  1050→                <Label>Jumlah Kas Akhir (Rp)</Label>
+  1051→                <Input
+  1052→                  type="number"
+  1053→                  value={shiftClosingCash}
+  1054→                  onChange={(e) => setShiftClosingCash(e.target.value)}
+  1055→                  placeholder="Hitung fisik uang di kas"
+  1056→                  className="mt-1.5 text-right text-lg font-bold tabular-nums"
+  1057→                  autoFocus
+  1058→                />
+  1059→              </div>
+  1060→              {shiftClosingCash && (
+  1061→                <div className={cn(
+  1062→                  'rounded-lg p-3 text-center text-sm font-semibold',
+  1063→                  parseFloat(shiftClosingCash) - (activeShift.openingCash + activeShift.cashSales) >= 0
+  1064→                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+  1065→                    : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+  1066→                )}>
+  1067→                  Selisih: {formatRp(parseFloat(shiftClosingCash) - (activeShift.openingCash + activeShift.cashSales))}
+  1068→                </div>
+  1069→              )}
+  1070→              <div>
+  1071→                <Label>Catatan (opsional)</Label>
+  1072→                <Input
+  1073→                  value={shiftNote}
+  1074→                  onChange={(e) => setShiftNote(e.target.value)}
+  1075→                  placeholder="Catatan penutupan shift..."
+  1076→                  className="mt-1.5"
+  1077→                />
+  1078→              </div>
+  1079→            </div>
+  1080→          )}
+  1081→          <div className="flex justify-end gap-2">
+  1082→            <Button variant="outline" onClick={() => setShowShiftDialog(null)}>
+  1083→              Batal
+  1084→            </Button>
+  1085→            <Button
+  1086→              onClick={() => shiftMutation.mutate('close')}
+  1087→              disabled={shiftMutation.isPending || !shiftClosingCash}
+  1088→              className="bg-amber-500 text-white hover:bg-amber-600"
+  1089→            >
+  1090→              {shiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+  1091→              Tutup Shift
+  1092→            </Button>
+  1093→          </div>
+  1094→        </DialogContent>
+  1095→      </Dialog>
+  1096→
+  1097→      {/* ─── PAYMENT SUCCESS MODAL ─── */}
+  1098→      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+  1099→        <DialogContent className="sm:max-w-md">
+  1100→          <div className="flex flex-col items-center py-6">
+  1101→            {/* Success Animation */}
+  1102→            <motion.div
+  1103→              initial={{ scale: 0 }}
+  1104→              animate={{ scale: 1 }}
+  1105→              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+  1106→              className="relative mb-6"
+  1107→            >
+  1108→              <div className="pulse-ring absolute inset-0 rounded-full bg-emerald-400/30" />
+  1109→              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-500/40">
+  1110→                <Check className="h-10 w-10 text-white" strokeWidth={3} />
+  1111→              </div>
+  1112→            </motion.div>
+  1113→
+  1114→            <h2 className="mb-1 text-xl font-bold">Pembayaran Berhasil!</h2>
+  1115→            {lastTx && (
+  1116→              <>
+  1117→                <p className="mb-4 text-sm text-muted-foreground">{lastTx.invoiceNo}</p>
+  1118→                <div className="w-full space-y-2 rounded-xl bg-muted/50 p-4 text-sm">
+  1119→                  <div className="flex justify-between">
+  1120→                    <span className="text-muted-foreground">Total</span>
+  1121→                    <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+  1122→                      {formatRp(lastTx.transaction.totalAmount)}
+  1123→                    </span>
+  1124→                  </div>
+  1125→                  <div className="flex justify-between">
+  1126→                    <span className="text-muted-foreground">Metode</span>
+  1127→                    <span className="font-medium">
+  1128→                      {lastTx.payment.paymentChannel || lastTx.payment.paymentMethod}
+  1129→                    </span>
+  1130→                  </div>
+  1131→                  <Separator />
+  1132→                  <div className="space-y-1">
+  1133→                    {lastTx.items.map((item, i) => (
+  1134→                      <div key={i} className="flex justify-between text-xs text-muted-foreground">
+  1135→                        <span>{item.quantity}× {item.name}</span>
+  1136→                        <span className="tabular-nums">{formatRp(item.price * item.quantity)}</span>
+  1137→                      </div>
+  1138→                    ))}
+  1139→                  </div>
+  1140→                </div>
+  1141→                <div className="mt-6 flex w-full gap-3">
+  1142→                  <Button
+  1143→                    onClick={printReceipt}
+  1144→                    variant="outline"
+  1145→                    className="flex-1 btn-press"
+  1146→                  >
+  1147→                    <Printer className="mr-2 h-4 w-4" />
+  1148→                    Cetak Struk
+  1149→                  </Button>
+  1150→                  <Button
+  1151→                    onClick={() => {
+  1152→                      setShowSuccess(false)
+  1153→                      setLastTx(null)
+  1154→                    }}
+  1155→                    className="flex-1 bg-emerald-500 text-white hover:bg-emerald-600 btn-press"
+  1156→                  >
+  1157→                    Transaksi Baru
+  1158→                    <ArrowRight className="ml-2 h-4 w-4" />
+  1159→                  </Button>
+  1160→                </div>
+  1161→              </>
+  1162→            )}
+  1163→          </div>
+  1164→        </DialogContent>
+  1165→      </Dialog>
+  1166→
+  1167→      {/* ─── TX DETAIL DIALOG ─── */}
+  1168→      <Dialog open={!!showTxDetail} onOpenChange={() => setShowTxDetail(null)}>
+  1169→        <DialogContent className="sm:max-w-md">
+  1170→          <DialogHeader>
+  1171→            <DialogTitle className="tabular-nums">{showTxDetail?.invoiceNo}</DialogTitle>
+  1172→            <DialogDescription>
+  1173→              {showTxDetail &&
+  1174→                new Date(showTxDetail.createdAt).toLocaleString('id-ID')}
+  1175→            </DialogDescription>
+  1176→          </DialogHeader>
+  1177→          {showTxDetail && (
+  1178→            <div className="space-y-3 py-2">
+  1179→              <div className="grid grid-cols-2 gap-2 text-sm">
+  1180→                <div className="rounded-lg bg-muted p-3">
+  1181→                  <p className="text-xs text-muted-foreground">Total</p>
+  1182→                  <p className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+  1183→                    {formatRp(showTxDetail.totalAmount)}
+  1184→                  </p>
+  1185→                </div>
+  1186→                <div className="rounded-lg bg-muted p-3">
+  1187→                  <p className="text-xs text-muted-foreground">Metode</p>
+  1188→                  <p className="font-medium">{showTxDetail.paymentChannel || showTxDetail.paymentMethod}</p>
+  1189→                </div>
+  1190→                <div className="rounded-lg bg-muted p-3">
+  1191→                  <p className="text-xs text-muted-foreground">Jumlah Item</p>
+  1192→                  <p className="font-medium tabular-nums">{showTxDetail._count.items}</p>
+  1193→                </div>
+  1194→                <div className="rounded-lg bg-muted p-3">
+  1195→                  <p className="text-xs text-muted-foreground">Status</p>
+  1196→                  <Badge
+  1197→                    className={cn(
+  1198→                      showTxDetail.status === 'paid' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+  1199→                    )}
+  1200→                  >
+  1201→                    {showTxDetail.status === 'paid' ? 'Lunas' : showTxDetail.status}
+  1202→                  </Badge>
+  1203→                </div>
+  1204→              </div>
+  1205→            </div>
+  1206→          )}
+  1207→        </DialogContent>
+  1208→      </Dialog>
+  1209→    </div>
+  1210→  )
+  1211→}
+  1212→

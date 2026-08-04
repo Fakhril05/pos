@@ -12,11 +12,13 @@ export async function GET(
     const customer = await db.customer.findUnique({
       where: { id },
       include: {
+        tenant: { select: { id: true, name: true, logo: true } },
         transactions: {
           orderBy: { createdAt: 'desc' },
           take: 10,
           include: {
-            merchant: { select: { id: true, name: true, logo: true } },
+            tenant: { select: { id: true, name: true, logo: true } },
+            payments: { select: { paymentMethod: true, paymentChannel: true } },
           },
         },
       },
@@ -32,16 +34,16 @@ export async function GET(
     // Compute stats from all transactions (not just the 10 returned)
     const allTransactions = await db.transaction.findMany({
       where: { customerId: id },
-      select: { amount: true, status: true, createdAt: true },
+      select: { totalAmount: true, status: true, createdAt: true },
     });
 
     const totalSpent = allTransactions.reduce(
-      (sum, tx) => (tx.status === 'success' ? sum + tx.amount : sum),
+      (sum, tx) => (tx.status === 'paid' ? sum + tx.totalAmount : sum),
       0,
     );
     const totalTx = allTransactions.length;
     const successTx = allTransactions.filter(
-      (tx) => tx.status === 'success',
+      (tx) => tx.status === 'paid',
     ).length;
     const successRate =
       totalTx > 0 ? Number(((successTx / totalTx) * 100).toFixed(1)) : 0;
@@ -65,7 +67,7 @@ export async function GET(
         customerId: id,
         createdAt: { gte: sixMonthsAgo },
       },
-      select: { amount: true, status: true, createdAt: true },
+      select: { totalAmount: true, status: true, createdAt: true },
     });
 
     const monthlyMap = new Map<string, { count: number; amount: number }>();
@@ -79,9 +81,9 @@ export async function GET(
     for (const tx of recentTx) {
       const key = `${tx.createdAt.getFullYear()}-${String(tx.createdAt.getMonth() + 1).padStart(2, '0')}`;
       const entry = monthlyMap.get(key);
-      if (entry && tx.status === 'success') {
+      if (entry && tx.status === 'paid') {
         entry.count += 1;
-        entry.amount += tx.amount;
+        entry.amount += tx.totalAmount;
       }
     }
 

@@ -1,56 +1,117 @@
-'use client';
+'use client'
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   Search,
-  ShoppingBag,
   Plus,
   Minus,
   Trash2,
-  X,
   Check,
   Printer,
-  ChevronUp,
-  ChevronDown,
-  QrCode,
+  Clock,
   Wallet,
   CreditCard,
   Building2,
-  Calculator,
-  ArrowLeft,
+  QrCode,
+  Smartphone,
+  Banknote,
+  ShoppingCart,
   Loader2,
-  RefreshCw,
-  Delete,
-  Percent,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+  History,
+  CircleDollarSign,
+  ChevronRight,
+  Package,
+  ArrowRight,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { PageHeader } from '@/components/app/page-header';
-import { cn } from '@/lib/utils';
-import { generateReceiptHtml } from '@/lib/receipt-generator';
-import { QRCodeSVG } from 'qrcode.react';
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
+import { generateReceiptHtml } from '@/lib/receipt-generator'
+import { useAppStore } from '@/stores/app-store'
+
+// ── Types ──────────────────────────────────────────────────────────────
+
+interface Product {
+  id: string
+  name: string
+  sellPrice: number
+  buyPrice: number
+  stock: number
+  minStock: number
+  unit: string
+  sku: string | null
+  category: { id: string; name: string; icon: string | null; color: string | null } | null
+  isFavorite: boolean
+}
+
+interface Category {
+  id: string
+  name: string
+  icon: string | null
+  color: string | null
+}
+
+interface CartItem {
+  productId: string
+  name: string
+  price: number
+  buyPrice: number
+  quantity: number
+  unit: string
+  sku: string | null
+}
+
+interface ShiftData {
+  id: string
+  openingCash: number
+  openedAt: string
+  totalSales: number
+  totalTx: number
+  cashier: { name: string }
+  outlet: { name: string; code: string }
+  cashSales: number
+}
+
+interface TxResult {
+  transaction: { id: string; invoiceNo: string; createdAt: string; totalAmount: number }
+  payment: { paymentMethod: string; paymentChannel: string | null }
+  invoiceNo: string
+  outletName: string
+  outletAddress: string | null
+  outletCity: string | null
+  tenantName: string
+  tenantAddress: string | null
+  tenantCity: string | null
+  tenantPhone: string | null
+  cashierName: string
+  items: CartItem[]
+}
+
+interface TxHistoryItem {
+  id: string
+  invoiceNo: string
+  createdAt: string
+  totalAmount: number
+  paymentMethod: string
+  paymentChannel: string | null
+  status: string
+  _count: { items: number }
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -59,1248 +120,1091 @@ const formatRp = (amount: number) =>
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
-  }).format(amount);
+  }).format(amount)
 
-// ── Product Data ─────────────────────────────────────────────────────────
-
-type Category = 'Semua' | 'Makanan' | 'Minuman' | 'Snack' | 'Lainnya';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: Exclude<Category, 'Semua'>;
-  emoji: string;
+const formatTime = (dateStr: string) => {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 }
 
-const PRODUCTS: Product[] = [
-  { id: 'p1', name: 'Nasi Goreng Spesial', price: 25000, category: 'Makanan', emoji: '🍛' },
-  { id: 'p2', name: 'Mie Ayam Bakso', price: 20000, category: 'Makanan', emoji: '🍜' },
-  { id: 'p3', name: 'Sate Ayam', price: 30000, category: 'Makanan', emoji: '🍢' },
-  { id: 'p4', name: 'Es Teh Manis', price: 8000, category: 'Minuman', emoji: '🧊' },
-  { id: 'p5', name: 'Es Jeruk', price: 10000, category: 'Minuman', emoji: '🍊' },
-  { id: 'p6', name: 'Kopi Susu', price: 15000, category: 'Minuman', emoji: '☕' },
-  { id: 'p7', name: 'Keripik Singkong', price: 12000, category: 'Snack', emoji: '🥔' },
-  { id: 'p8', name: 'Pisang Goreng', price: 10000, category: 'Snack', emoji: '🍌' },
-  { id: 'p9', name: 'Tahu Crispy', price: 8000, category: 'Snack', emoji: '🧈' },
-  { id: 'p10', name: 'Paket Hemat A', price: 35000, category: 'Lainnya', emoji: '🍱' },
-  { id: 'p11', name: 'Paket Hemat B', price: 45000, category: 'Lainnya', emoji: '🥘' },
-  { id: 'p12', name: 'Menu Premium', price: 55000, category: 'Lainnya', emoji: '🥩' },
-  { id: 'p13', name: 'Ayam Geprek', price: 22000, category: 'Makanan', emoji: '🍗' },
-  { id: 'p14', name: 'Jus Alpukat', price: 18000, category: 'Minuman', emoji: '🥑' },
-  { id: 'p15', name: 'Cireng Isi', price: 10000, category: 'Snack', emoji: '🫓' },
-];
+const TAX_RATE = 0.11
+const SERVICE_CHARGE_RATE = 0
 
-const CATEGORIES: Category[] = ['Semua', 'Makanan', 'Minuman', 'Snack', 'Lainnya'];
+const PAYMENT_METHODS = [
+  { method: 'qris', channel: 'QRIS', label: 'QRIS', icon: QrCode, color: 'text-blue-600 dark:text-blue-400' },
+  { method: 'e_wallet', channel: 'GoPay', label: 'GoPay', icon: Smartphone, color: 'text-blue-500 dark:text-blue-300' },
+  { method: 'e_wallet', channel: 'OVO', label: 'OVO', icon: Smartphone, color: 'text-purple-600 dark:text-purple-400' },
+  { method: 'e_wallet', channel: 'DANA', label: 'DANA', icon: Smartphone, color: 'text-sky-600 dark:text-sky-400' },
+  { method: 'e_wallet', channel: 'ShopeePay', label: 'ShopeePay', icon: Smartphone, color: 'text-orange-600 dark:text-orange-400' },
+  { method: 'bank_transfer', channel: 'Transfer Bank', label: 'Transfer Bank', icon: Building2, color: 'text-slate-600 dark:text-slate-400' },
+  { method: 'credit_card', channel: 'Kartu Kredit', label: 'Kartu Kredit', icon: CreditCard, color: 'text-amber-600 dark:text-amber-400' },
+  { method: 'cash', channel: 'Tunai', label: 'Tunai', icon: Banknote, color: 'text-emerald-600 dark:text-emerald-400' },
+]
 
-// ── Payment Methods ───────────────────────────────────────────────────────
-
-interface PaymentMethod {
-  id: string;
-  method: string;
-  channel: string;
-  label: string;
-  icon: React.ReactNode;
-  feePercent: number;
-}
-
-const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'qris', method: 'qris', channel: 'QRIS', label: 'QRIS', icon: <QrCode className="h-5 w-5" />, feePercent: 0.7 },
-  { id: 'gopay', method: 'ewallet', channel: 'GoPay', label: 'GoPay', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
-  { id: 'ovo', method: 'ewallet', channel: 'OVO', label: 'OVO', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
-  { id: 'dana', method: 'ewallet', channel: 'Dana', label: 'Dana', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
-  { id: 'shopeepay', method: 'ewallet', channel: 'ShopeePay', label: 'ShopeePay', icon: <Wallet className="h-5 w-5" />, feePercent: 2.0 },
-  { id: 'bank_transfer', method: 'bank_transfer', channel: 'Bank Transfer', label: 'Bank Transfer', icon: <Building2 className="h-5 w-5" />, feePercent: 1.5 },
-  { id: 'credit_card', method: 'credit_card', channel: 'Kartu Kredit', label: 'Kartu Kredit', icon: <CreditCard className="h-5 w-5" />, feePercent: 2.9 },
-];
-
-// ── Cart Types ────────────────────────────────────────────────────────────
-
-interface CartItem {
-  product: Product;
-  qty: number;
-}
-
-// ── Component ─────────────────────────────────────────────────────────────
+// ── Component ──────────────────────────────────────────────────────────
 
 export function Kasir() {
-  const queryClient = useQueryClient();
+  const user = useAppStore((s) => s.user)
+  const queryClient = useQueryClient()
 
-  // State
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<Category>('Semua');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [payDialogOpen, setPayDialogOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [notes, setNotes] = useState('');
-  const [selectedMerchant, setSelectedMerchant] = useState('');
-  const [cartExpanded, setCartExpanded] = useState(false);
-  const [numpadOpen, setNumpadOpen] = useState(false);
-  const [discount, setDiscount] = useState(0);
-  const [paymentStep, setPaymentStep] = useState<'select' | 'qris' | 'processing' | 'success'>('select');
-  const [qrisExpiry, setQrisExpiry] = useState(300); // 5 minutes
-  const [qrisInvoice, setQrisInvoice] = useState('');
-  const autoCompleteRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [lastTx, setLastTx] = useState<{
-    invoiceNo: string;
-    amount: number;
-    fee: number;
-    netAmount: number;
-    paymentMethod: string;
-    paymentChannel: string;
-    createdAt: string;
-    paidAt: string;
-    customerName: string | null;
-    merchantName: string;
-    items: CartItem[];
-    subtotal: number;
-    tax: number;
-    discount: number;
-  } | null>(null);
+  const [search, setSearch] = useState('')
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [selectedPayment, setSelectedPayment] = useState<(typeof PAYMENT_METHODS)[number] | null>(null)
+  const [tendered, setTendered] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [lastTx, setLastTx] = useState<TxResult | null>(null)
+  const [showShiftDialog, setShowShiftDialog] = useState<'open' | 'close' | null>(null)
+  const [shiftOpeningCash, setShiftOpeningCash] = useState('')
+  const [shiftClosingCash, setShiftClosingCash] = useState('')
+  const [shiftNote, setShiftNote] = useState('')
+  const [activeTab, setActiveTab] = useState<'pos' | 'history'>('pos')
+  const [historyFilter, setHistoryFilter] = useState<'shift' | 'today' | 'all'>('shift')
+  const [showTxDetail, setShowTxDetail] = useState<TxHistoryItem | null>(null)
+  const [showMobileCart, setShowMobileCart] = useState(false)
+  const searchRef = useRef<HTMLInputElement>(null)
 
-  // Fetch merchants for dropdown
-  const { data: merchantsData } = useQuery({
-    queryKey: ['merchants-list-pos'],
+  // ── Queries ──────────────────────────────────────────────────────
+
+  const { data: productsData, isLoading: productsLoading } = useQuery({
+    queryKey: ['cashier-products', user?.tenantId, search, activeCategory],
     queryFn: async () => {
-      const res = await fetch('/api/merchants?limit=100');
-      const json = await res.json();
-      return json.data as { id: string; name: string; status: string }[];
+      const params = new URLSearchParams({ tenantId: user!.tenantId! })
+      if (search) params.set('search', search)
+      if (activeCategory) params.set('categoryId', activeCategory)
+      const res = await fetch(`/api/cashier/products?${params}`)
+      if (!res.ok) throw new Error('Gagal memuat produk')
+      return res.json() as Promise<{ products: Product[]; categories: Category[] }>
     },
-  });
+    enabled: !!user?.tenantId,
+    refetchInterval: 30000,
+  })
 
-  const merchants = merchantsData ?? [];
-
-  // Filtered products
-  const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((p) => {
-      const matchCategory = category === 'Semua' || p.category === category;
-      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-      return matchCategory && matchSearch;
-    });
-  }, [category, search]);
-
-  // Cart calculations
-  const cartTotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.product.price * item.qty, 0);
-  }, [cart]);
-
-  const cartCount = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.qty, 0);
-  }, [cart]);
-
-  const discountAmount = Math.round(cartTotal * (discount / 100));
-  const afterDiscount = cartTotal - discountAmount;
-  const tax = Math.round(afterDiscount * 0.11);
-  const totalWithTax = afterDiscount + tax;
-
-  // Add to cart
-  const addToCart = useCallback(
-    (product: Product) => {
-      setCart((prev) => {
-        const existing = prev.find((item) => item.product.id === product.id);
-        if (existing) {
-          return prev.map((item) =>
-            item.product.id === product.id ? { ...item, qty: item.qty + 1 } : item,
-          );
-        }
-        return [...prev, { product, qty: 1 }];
-      });
-      toast.success(`${product.name} ditambahkan ke keranjang`);
+  const { data: shiftData, isLoading: shiftLoading } = useQuery({
+    queryKey: ['cashier-shift', user?.outletId, user?.id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        outletId: user!.outletId!,
+        cashierId: user!.id,
+      })
+      const res = await fetch(`/api/cashier/shifts?${params}`)
+      if (!res.ok) throw new Error('Gagal memuat shift')
+      return res.json() as Promise<{ shift: ShiftData | null }>
     },
-    [],
-  );
+    enabled: !!user?.outletId && !!user?.id,
+  })
 
-  // Update quantity
-  const updateQty = useCallback((productId: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) =>
-          item.product.id === productId ? { ...item, qty: Math.max(0, item.qty + delta) } : item,
-        )
-        .filter((item) => item.qty > 0),
-    );
-  }, []);
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ['cashier-history', user?.id, historyFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        cashierId: user!.id,
+        filter: historyFilter,
+      })
+      const res = await fetch(`/api/cashier/history?${params}`)
+      if (!res.ok) throw new Error('Gagal memuat riwayat')
+      return res.json() as Promise<{ transactions: TxHistoryItem[] }>
+    },
+    enabled: activeTab === 'history' && !!user?.id,
+  })
 
-  // Remove from cart
-  const removeFromCart = useCallback((productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
-  }, []);
+  // ── Mutations ──────────────────────────────────────────────────
 
-  // Clear cart
-  const clearCart = useCallback(() => {
-    setCart([]);
-    setLastTx(null);
-  }, []);
-
-  // Payment mutation
-  const payMutation = useMutation({
+  const createTransaction = useMutation({
     mutationFn: async () => {
-      if (!selectedMerchant) throw new Error('Pilih merchant terlebih dahulu');
-      if (!selectedPayment) throw new Error('Pilih metode pembayaran');
+      if (!user || !shiftData?.shift || !selectedPayment) return null
 
-      const res = await fetch('/api/quick-pay', {
+      const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0)
+      const discountAmount = 0
+      const taxAmount = Math.round(subtotal * TAX_RATE)
+      const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_RATE)
+      const totalAmount = subtotal - discountAmount + taxAmount + serviceCharge
+
+      const res = await fetch('/api/cashier/transaction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          merchantId: selectedMerchant,
-          amount: totalWithTax,
+          tenantId: user.tenantId,
+          outletId: user.outletId,
+          cashierId: user.id,
+          items: cart.map((c) => ({
+            productId: c.productId,
+            name: c.name,
+            price: c.price,
+            buyPrice: c.buyPrice,
+            quantity: c.quantity,
+            unit: c.unit,
+            sku: c.sku,
+          })),
+          subtotalAmount: subtotal,
+          discountAmount,
+          taxAmount,
+          serviceCharge,
+          totalAmount,
           paymentMethod: selectedPayment.method,
           paymentChannel: selectedPayment.channel,
-          customerName: customerName || undefined,
-          customerEmail: customerEmail || undefined,
-          customerPhone: customerPhone || undefined,
-          description: notes || undefined,
-          items: cart.map((item) => ({
-            name: item.product.name,
-            qty: item.qty,
-            price: item.product.price,
-          })),
+          tendered: selectedPayment.method === 'cash' ? parseFloat(tendered) || 0 : undefined,
         }),
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Gagal memproses pembayaran');
-      return json.data;
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Gagal membuat transaksi')
+      }
+      return res.json() as Promise<TxResult>
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['quick-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast.success('Pembayaran berhasil!');
-      setLastTx({
-        invoiceNo: data.invoiceNo,
-        amount: data.amount,
-        fee: data.fee,
-        netAmount: data.netAmount,
-        paymentMethod: data.paymentMethod,
-        paymentChannel: data.paymentChannel,
-        createdAt: data.createdAt,
-        paidAt: data.paidAt,
-        customerName: data.customerName,
-        merchantName: merchants.find(m => m.id === selectedMerchant)?.name ?? 'Pos Ril Kasir',
-        items: [...cart],
-        subtotal: cartTotal,
-        tax,
-        discount: discountAmount,
-      });
+      if (data) {
+        setLastTx(data)
+        setShowSuccess(true)
+        setCart([])
+        setSelectedPayment(null)
+        setTendered('')
+        queryClient.invalidateQueries({ queryKey: ['cashier-products'] })
+        queryClient.invalidateQueries({ queryKey: ['cashier-shift'] })
+        queryClient.invalidateQueries({ queryKey: ['cashier-history'] })
+      }
     },
-    onError: (err: Error) => {
-      toast.error(err.message);
+    onError: (err) => {
+      toast.error(err.message)
     },
-  });
+  })
 
-  // Print receipt
+  const shiftMutation = useMutation({
+    mutationFn: async (action: 'open' | 'close') => {
+      if (!user) return null
+      const body: Record<string, unknown> = {
+        action,
+        tenantId: user.tenantId,
+        outletId: user.outletId,
+        cashierId: user.id,
+      }
+      if (action === 'open') body.openingCash = parseFloat(shiftOpeningCash) || 0
+      if (action === 'close') {
+        body.closingCash = parseFloat(shiftClosingCash) || 0
+        body.note = shiftNote
+      }
+      const res = await fetch('/api/cashier/shifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Gagal')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cashier-shift'] })
+      queryClient.invalidateQueries({ queryKey: ['cashier-history'] })
+      setShowShiftDialog(null)
+      setShiftOpeningCash('')
+      setShiftClosingCash('')
+      setShiftNote('')
+      toast.success(
+        shiftMutation.variables === 'open' ? 'Shift berhasil dibuka' : 'Shift berhasil ditutup',
+      )
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
+
+  // ── Cart Logic ──────────────────────────────────────────────────
+
+  const addToCart = useCallback(
+    (product: Product) => {
+      setCart((prev) => {
+        const existing = prev.find((c) => c.productId === product.id)
+        if (existing) {
+          if (existing.quantity >= product.stock) {
+            toast.warning(`Stok ${product.name} tidak cukup`)
+            return prev
+          }
+          return prev.map((c) =>
+            c.productId === product.id
+              ? { ...c, quantity: c.quantity + 1 }
+              : c,
+          )
+        }
+        if (product.stock <= 0) {
+          toast.warning(`${product.name} habis`)
+          return prev
+        }
+        return [
+          ...prev,
+          {
+            productId: product.id,
+            name: product.name,
+            price: product.sellPrice,
+            buyPrice: product.buyPrice,
+            quantity: 1,
+            unit: product.unit,
+            sku: product.sku,
+          },
+        ]
+      })
+    },
+    [],
+  )
+
+  const updateQty = useCallback((productId: string, delta: number) => {
+    setCart((prev) => {
+      return prev
+        .map((c) => {
+          if (c.productId !== productId) return c
+          const newQty = c.quantity + delta
+          if (newQty <= 0) return null
+          return { ...c, quantity: newQty }
+        })
+        .filter(Boolean) as CartItem[]
+    })
+  }, [])
+
+  const removeFromCart = useCallback((productId: string) => {
+    setCart((prev) => prev.filter((c) => c.productId !== productId))
+  }, [])
+
+  const clearCart = useCallback(() => {
+    setCart([])
+    setSelectedPayment(null)
+    setTendered('')
+  }, [])
+
+  // ── Computed ──────────────────────────────────────────────────
+
+  const cartSubtotal = useMemo(() => cart.reduce((s, c) => s + c.price * c.quantity, 0), [cart])
+  const cartTax = Math.round(cartSubtotal * TAX_RATE)
+  const cartServiceCharge = Math.round(cartSubtotal * SERVICE_CHARGE_RATE)
+  const cartTotal = cartSubtotal + cartTax + cartServiceCharge
+  const cartItemCount = cart.reduce((s, c) => s + c.quantity, 0)
+  const tenderedNum = parseFloat(tendered) || 0
+  const change = tenderedNum - cartTotal
+
+  const filteredProducts = useMemo(() => {
+    const prods = productsData?.products || []
+    if (!activeCategory) return prods
+    return prods.filter((p) => p.category?.id === activeCategory)
+  }, [productsData, activeCategory])
+
+  const categories = productsData?.categories || []
+  const activeShift = shiftData?.shift || null
+  const isProcessing = createTransaction.isPending || shiftMutation.isPending
+
+  // ── Keyboard shortcuts ──────────────────────────────────────────
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === 'F2') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+      if (e.key === 'Escape') {
+        setShowSuccess(false)
+        setShowShiftDialog(null)
+        setShowTxDetail(null)
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [])
+
+  // ── Print Receipt ──────────────────────────────────────────
+
   const printReceipt = useCallback(() => {
-    if (!lastTx) return;
+    if (!lastTx) return
+    const txSubtotal = lastTx.items.reduce((s, i) => s + i.price * i.quantity, 0)
+    const txTax = Math.round(txSubtotal * TAX_RATE)
+    const txServiceCharge = Math.round(txSubtotal * SERVICE_CHARGE_RATE)
+
     const html = generateReceiptHtml({
       invoiceNo: lastTx.invoiceNo,
-      amount: lastTx.amount,
-      fee: lastTx.fee,
-      netAmount: lastTx.netAmount,
-      merchantName: lastTx.merchantName,
-      customerName: lastTx.customerName ?? 'Umum',
-      paymentMethod: lastTx.paymentMethod,
-      paymentChannel: lastTx.paymentChannel,
-      status: 'success',
-      createdAt: lastTx.createdAt,
-      paidAt: lastTx.paidAt,
-      description: `Kasir POS - ${lastTx.items.length} item`,
-      formattedAmount: formatRp(lastTx.amount),
-      formattedFee: formatRp(lastTx.fee),
-      formattedNetAmount: formatRp(lastTx.netAmount),
-      formattedCreatedAt: new Date(lastTx.createdAt).toLocaleString('id-ID'),
-      formattedPaidAt: lastTx.paidAt
-        ? new Date(lastTx.paidAt).toLocaleString('id-ID')
-        : null,
-      statusLabel: 'Berhasil',
-    });
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-      win.print();
+      tenantName: lastTx.tenantName,
+      outletName: lastTx.outletName,
+      outletAddress: lastTx.outletAddress,
+      outletCity: lastTx.outletCity,
+      tenantPhone: lastTx.tenantPhone,
+      cashierName: lastTx.cashierName,
+      items: lastTx.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        subtotal: i.price * i.quantity,
+      })),
+      subtotalAmount: txSubtotal,
+      discountAmount: 0,
+      taxAmount: txTax,
+      serviceCharge: txServiceCharge,
+      totalAmount: lastTx.transaction.totalAmount,
+      paymentMethod: lastTx.payment.paymentMethod,
+      paymentChannel: lastTx.payment.paymentChannel,
+      tendered: lastTx.payment.paymentMethod === 'cash' ? parseFloat(tendered) || 0 : undefined,
+      change: lastTx.payment.paymentMethod === 'cash' ? change : undefined,
+      createdAt: lastTx.transaction.createdAt,
+    })
+
+    const w = window.open('', '_blank', 'width=400,height=700')
+    if (w) {
+      w.document.write(html)
+      w.document.close()
+      setTimeout(() => w.print(), 300)
     }
-  }, [lastTx]);
+  }, [lastTx, tendered, change, cart])
 
-  // QRIS countdown timer
-  useEffect(() => {
-    if (paymentStep !== 'qris') return;
-    const timer = setInterval(() => {
-      setQrisExpiry((prev) => {
-        if (prev <= 1) {
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [paymentStep]);
 
-  // QRIS auto-complete simulation (5-8 seconds)
-  useEffect(() => {
-    if (paymentStep !== 'qris') return;
-    const delay = 5000 + Math.random() * 3000;
-    autoCompleteRef.current = setTimeout(() => {
-      setPaymentStep('processing');
-      // After 2s processing, actually submit
-      setTimeout(() => {
-        payMutation.mutate();
-      }, 2000);
-    }, delay);
-    return () => {
-      if (autoCompleteRef.current) {
-        clearTimeout(autoCompleteRef.current);
-      }
-    };
-  }, [paymentStep]);
-
-  // Open pay dialog
-  const handleOpenPay = () => {
-    if (cart.length === 0) return;
-    setPayDialogOpen(true);
-  };
-
-  // Process payment
-  const handlePay = () => {
-    if (selectedPayment?.method === 'qris') {
-      // Show QRIS screen instead of immediately submitting
-      setQrisInvoice(`PR-QR-${Date.now().toString(36).toUpperCase()}`);
-      setQrisExpiry(300);
-      setPaymentStep('qris');
-    } else {
-      payMutation.mutate();
-    }
-  };
-
-  // New transaction
-  const handleNewTx = () => {
-    setCart([]);
-    setLastTx(null);
-    setPayDialogOpen(false);
-    setSelectedPayment(null);
-    setCustomerName('');
-    setCustomerPhone('');
-    setCustomerEmail('');
-    setNotes('');
-    setPaymentStep('select');
-    setQrisExpiry(300);
-    setQrisInvoice('');
-    setDiscount(0);
-    setNumpadOpen(false);
-  };
-
-  // Close pay dialog resets payment state
-  const handleClosePayDialog = () => {
-    setPayDialogOpen(false);
-    if (!lastTx) {
-      setSelectedPayment(null);
-      setPaymentStep('select');
-      setQrisExpiry(300);
-      setQrisInvoice('');
-      if (autoCompleteRef.current) {
-        clearTimeout(autoCompleteRef.current);
-      }
-    }
-  };
+  // ── Render ──────────────────────────────────────────────────
 
   return (
-    <div className="bg-mesh animate-fade-in-up rounded-2xl p-4 md:p-6">
-      <PageHeader
-        title="Kasir"
-        description="Terminal pembayaran point-of-sale"
-        icon={Calculator}
-        iconGradient="emerald"
-      />
+    <div className="flex h-[calc(100vh-8.5rem)] flex-col gap-4 md:gap-6">
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setActiveTab('pos')}
+          className={cn(
+            'rounded-lg px-4 py-2 text-sm font-semibold transition-all btn-press',
+            activeTab === 'pos'
+              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <span className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Kasir POS
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={cn(
+            'rounded-lg px-4 py-2 text-sm font-semibold transition-all btn-press',
+            activeTab === 'history'
+              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <span className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Riwayat
+          </span>
+        </button>
+      </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
-        {/* ── Left Panel: Product Catalog ── */}
-        <div className="min-w-0 flex-1">
-          {/* Search & Categories */}
-          <div className="card-elevated mb-4 rounded-xl p-4">
-            <div className="relative mb-3">
+      {activeTab === 'pos' ? (
+        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+          {/* ─── LEFT PANEL: Products ─── */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-[3]">
+            {/* Search */}
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Cari produk..."
+                ref={searchRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 shadow-inner-soft"
+                placeholder="Cari produk... (F2)"
+                className="pl-10"
               />
             </div>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-              {CATEGORIES.map((cat) => (
+
+            {/* Category Tabs */}
+            <div className="relative">
+              <ScrollArea className="w-full">
+                <div className="flex gap-2 pb-1">
+                  <button
+                    onClick={() => setActiveCategory(null)}
+                    className={cn(
+                      'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all btn-press',
+                      !activeCategory
+                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                        : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+                    )}
+                  >
+                    Semua
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={cn(
+                        'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all btn-press',
+                        activeCategory === cat.id
+                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                          : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+                      )}
+                    >
+                      {cat.icon || ''} {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Product Grid */}
+            <div className="min-h-0 flex-1">
+              {productsLoading ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-28 w-full rounded-xl" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ScrollArea className="h-full">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 pb-4">
+                    <AnimatePresence mode="popLayout">
+                      {filteredProducts.map((product) => {
+                        const isOutOfStock = product.stock <= 0
+                        const inCart = cart.find((c) => c.productId === product.id)
+                        return (
+                          <motion.button
+                            key={product.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.15 }}
+                            disabled={isOutOfStock}
+                            onClick={() => addToCart(product)}
+                            className={cn(
+                              'glass-card relative flex flex-col items-center gap-1.5 rounded-xl p-3 text-left transition-all hover-scale hover-lift-surface',
+                              isOutOfStock && 'opacity-50 grayscale',
+                              inCart && 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-background',
+                            )}
+                          >
+                            {inCart && (
+                              <Badge className="badge-gradient-emerald absolute -top-2 -right-2 h-5 w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+                                {inCart.quantity}
+                              </Badge>
+                            )}
+                            <div
+                              className={cn(
+                                'flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold',
+                                product.category?.color
+                                  ? ''
+                                  : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
+                              )}
+                              style={
+                                product.category?.color
+                                  ? { backgroundColor: product.category.color + '18', color: product.category.color }
+                                  : undefined
+                              }
+                            >
+                              {product.category?.icon || product.name.charAt(0)}
+                            </div>
+                            <p className="line-clamp-2 w-full text-xs font-medium leading-tight">
+                              {product.name}
+                            </p>
+                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                              {formatRp(product.sellPrice)}
+                            </p>
+                            <p
+                              className={cn(
+                                'text-[10px] tabular-nums',
+                                product.stock <= product.minStock * 0.5
+                                  ? 'font-semibold text-red-500'
+                                  : 'text-muted-foreground',
+                              )}
+                            >
+                              Stok: {product.stock} {product.unit}
+                            </p>
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
+                                <span className="rounded-full bg-destructive px-3 py-1 text-xs font-bold text-white">
+                                  Habis
+                                </span>
+                              </div>
+                            )}
+                          </motion.button>
+                        )
+                      })}
+                    </AnimatePresence>
+                    {filteredProducts.length === 0 && (
+                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
+                        <Package className="mb-3 h-12 w-12 opacity-30" />
+                        <p className="text-sm">Tidak ada produk ditemukan</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          </div>
+
+          {/* ─── RIGHT PANEL: Cart ─── */}
+          <div className="glass-card flex min-h-[400px] w-full flex-col rounded-2xl lg:min-h-0 lg:w-[420px] xl:w-[460px]">
+            {/* Shift Status Bar */}
+            <div className="p-3">
+              {shiftLoading ? (
+                <Skeleton className="h-10 w-full rounded-lg" />
+              ) : !activeShift ? (
                 <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
+                  onClick={() => setShowShiftDialog('open')}
+                  className="flex w-full items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950 btn-press"
+                >
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Shift belum dibuka
+                  </span>
+                  <Badge className="badge-gradient-amber text-white">Buka Shift</Badge>
+                </button>
+              ) : (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-2.5 dark:bg-emerald-950/30">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                      <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    </div>
+                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                      Shift Aktif
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      • {formatTime(activeShift.openedAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+                      {formatRp(activeShift.totalSales)}
+                    </span>
+                    <button
+                      onClick={() => setShowShiftDialog('close')}
+                      className="rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900 btn-press"
+                    >
+                      Tutup Shift
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Cart Header */}
+            <div className="flex items-center justify-between px-4 py-2">
+              <h3 className="text-sm font-semibold">
+                Keranjang{' '}
+                {cartItemCount > 0 && (
+                  <span className="text-muted-foreground">({cartItemCount} item)</span>
+                )}
+              </h3>
+              {cart.length > 0 && (
+                <button
+                  onClick={clearCart}
+                  className="text-xs text-muted-foreground hover:text-destructive btn-press"
+                >
+                  Hapus Semua
+                </button>
+              )}
+            </div>
+
+            {/* Cart Items */}
+            <div className="flex-1 overflow-y-auto px-3">
+              {cart.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center py-12 text-muted-foreground">
+                  <ShoppingCart className="mb-2 h-10 w-10 opacity-20" />
+                  <p className="text-sm">Keranjang kosong</p>
+                  <p className="text-xs">Klik produk untuk menambahkan</p>
+                </div>
+              ) : (
+                <AnimatePresence initial={false}>
+                  {cart.map((item) => (
+                    <motion.div
+                      key={item.productId}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20, height: 0 }}
+                      className="mb-2 rounded-lg border border-border/50 bg-card/50 p-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{item.name}</p>
+                          <p className="text-xs text-muted-foreground tabular-nums">
+                            {formatRp(item.price)} × {item.quantity}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item.productId)}
+                          className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive btn-press"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => updateQty(item.productId, -1)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-8 text-center text-sm font-bold tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQty(item.productId, 1)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                          {formatRp(item.price * item.quantity)}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )}
+            </div>
+
+            {/* Cart Summary & Payment */}
+            {cart.length > 0 && (
+              <div className="border-t border-border bg-card/50 p-3">
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span className="tabular-nums">{formatRp(cartSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>PPN (11%)</span>
+                    <span className="tabular-nums">{formatRp(cartTax)}</span>
+                  </div>
+                  {cartServiceCharge > 0 && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Service Charge</span>
+                      <span className="tabular-nums">{formatRp(cartServiceCharge)}</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between">
+                    <span className="text-sm font-bold">TOTAL</span>
+                    <span className="text-lg font-extrabold text-gradient-emerald tabular-nums">
+                      {formatRp(cartTotal)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment Method Selection */}
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground">Metode Pembayaran</p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {PAYMENT_METHODS.map((pm) => {
+                      const Icon = pm.icon
+                      return (
+                        <button
+                          key={pm.label}
+                          onClick={() => setSelectedPayment(pm)}
+                          className={cn(
+                            'flex flex-col items-center gap-0.5 rounded-lg border p-2 text-[10px] font-medium transition-all btn-press',
+                            selectedPayment?.label === pm.label
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400'
+                              : 'border-border hover:border-emerald-300 hover:bg-muted dark:hover:border-emerald-700',
+                          )}
+                        >
+                          <Icon className={cn('h-4 w-4', pm.color)} />
+                          {pm.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Cash Input */}
+                {selectedPayment?.method === 'cash' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-3 space-y-2"
+                  >
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Uang Diterima</Label>
+                      <Input
+                        type="number"
+                        value={tendered}
+                        onChange={(e) => setTendered(e.target.value)}
+                        placeholder="0"
+                        className="mt-1 text-right text-lg font-bold tabular-nums"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                      <span className="text-xs font-medium text-muted-foreground">Kembalian</span>
+                      <span
+                        className={cn(
+                          'text-sm font-bold tabular-nums',
+                          change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+                        )}
+                      >
+                        {formatRp(Math.max(0, change))}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Pay Button */}
+                <Button
+                  onClick={() => createTransaction.mutate()}
+                  disabled={
+                    cart.length === 0 ||
+                    !selectedPayment ||
+                    !activeShift ||
+                    isProcessing ||
+                    (selectedPayment.method === 'cash' && tenderedNum < cartTotal)
+                  }
+                  className="btn-press mt-3 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 py-5 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wallet className="mr-2 h-4 w-4" />
+                  )}
+                  Bayar {formatRp(cartTotal)}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile floating cart button */}
+          {cart.length > 0 && (
+            <button
+              onClick={() => setShowMobileCart(true)}
+              className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xl shadow-emerald-500/40 lg:hidden"
+            >
+              <ShoppingCart className="h-6 w-6" />
+              <Badge className="badge-gradient-emerald absolute -top-1 -right-1 h-5 min-w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+                {cartItemCount}
+              </Badge>
+            </button>
+          )}
+        </div>
+      ) : (
+        /* ─── HISTORY TAB ─── */
+        <div className="glass-card flex-1 rounded-2xl p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-base font-semibold">Riwayat Transaksi</h3>
+            <div className="flex gap-1">
+              {(['shift', 'today', 'all'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setHistoryFilter(f)}
                   className={cn(
-                    'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200',
-                    category === cat
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                    'rounded-lg px-3 py-1.5 text-xs font-medium transition-all btn-press',
+                    historyFilter === f
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-muted text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {cat}
+                  {f === 'shift' ? 'Shift Ini' : f === 'today' ? 'Hari Ini' : 'Semua'}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Product Grid */}
-          <div className="card-elevated rounded-xl p-4">
-            <motion.div
-              className="grid grid-cols-2 gap-3 md:grid-cols-3"
-              initial="hidden"
-              animate="show"
-              variants={{
-                hidden: {},
-                show: { transition: { staggerChildren: 0.03 } },
-              }}
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredProducts.map((product) => (
-                  <motion.button
-                    key={product.id}
-                    layout
-                    variants={{
-                      hidden: { opacity: 0, y: 12, scale: 0.95 },
-                      show: { opacity: 1, y: 0, scale: 1 },
-                      exit: { opacity: 0, scale: 0.9, y: -8 },
-                    }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => addToCart(product)}
-                    className="card-hover flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-3 text-left"
+          {historyLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : !historyData?.transactions.length ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <History className="mb-3 h-10 w-10 opacity-20" />
+              <p className="text-sm">Belum ada transaksi</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-2">
+                {historyData.transactions.map((tx) => (
+                  <button
+                    key={tx.id}
+                    onClick={() => setShowTxDetail(tx)}
+                    className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3 text-left transition-all hover-lift-surface btn-press"
                   >
-                    <span className="text-2xl leading-none">{product.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium leading-tight">{product.name}</p>
-                      <p className="mt-1 text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatRp(product.price)}
+                    <div>
+                      <p className="text-sm font-semibold tabular-nums">{tx.invoiceNo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(tx.createdAt).toLocaleString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </p>
                     </div>
-                    <div className="flex w-full items-center justify-end">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                        <Plus className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
-                  </motion.button>
-                ))}
-              </AnimatePresence>
-            </motion.div>
-
-            {filteredProducts.length === 0 && (
-              <div className="empty-state flex flex-col items-center justify-center py-16 text-center">
-                <Search className="mb-3 h-10 w-10 text-muted-foreground/40" />
-                <p className="text-sm font-medium text-muted-foreground">Produk tidak ditemukan</p>
-                <p className="mt-1 text-xs text-muted-foreground/60">
-                  Coba kata kunci lain atau ubah kategori
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Right Panel: Cart + Numpad (Desktop) ── */}
-        <div className="hidden w-full lg:flex lg:flex-col lg:w-[380px] gap-3">
-          <div className="card-elevated sticky top-24 flex h-[calc(100vh-8rem)] flex-col rounded-xl">
-            <CartPanel
-              cart={cart}
-              cartCount={cartCount}
-              cartTotal={cartTotal}
-              tax={tax}
-              totalWithTax={totalWithTax}
-              discount={discount}
-              discountAmount={discountAmount}
-              onUpdateQty={updateQty}
-              onRemove={removeFromCart}
-              onClear={clearCart}
-              onPay={handleOpenPay}
-              onDiscountChange={setDiscount}
-            />
-          </div>
-
-          {/* Numpad Toggle */}
-          <button
-            onClick={() => setNumpadOpen(!numpadOpen)}
-            className={cn(
-              'btn-press flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all',
-              numpadOpen
-                ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-300'
-                : 'border-border bg-card hover:border-emerald-500/30 hover:bg-muted/50'
-            )}
-          >
-            <Calculator className="h-4 w-4" />
-            {numpadOpen ? 'Tutup Numpad' : 'Buka Numpad'}
-          </button>
-
-          {/* Numpad Panel */}
-          <AnimatePresence>
-            {numpadOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <NumpadPanel />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* ── Mobile Cart (Bottom Sheet) ── */}
-      <div className="fixed right-0 bottom-16 left-0 z-40 lg:hidden">
-        <AnimatePresence mode="wait">
-          {cart.length > 0 && (
-            <motion.div
-              key="cart-bar"
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="mx-3 overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl"
-            >
-              {/* Collapsed bar */}
-              {!cartExpanded && (
-                <button
-                  onClick={() => setCartExpanded(true)}
-                  className="flex w-full items-center justify-between px-4 py-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <ShoppingBag className="h-5 w-5 text-emerald-500" />
-                      <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
-                        {cartCount}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium">Keranjang</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                      {formatRp(totalWithTax)}
-                    </span>
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </button>
-              )}
-
-              {/* Expanded cart */}
-              <AnimatePresence>
-                {cartExpanded && (
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: 'auto' }}
-                    exit={{ height: 0 }}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
-                      <CartPanel
-                        cart={cart}
-                        cartCount={cartCount}
-                        cartTotal={cartTotal}
-                        tax={tax}
-                        totalWithTax={totalWithTax}
-                        discount={discount}
-                        discountAmount={discountAmount}
-                        onUpdateQty={updateQty}
-                        onRemove={removeFromCart}
-                        onClear={clearCart}
-                        onPay={handleOpenPay}
-                        onCollapse={() => setCartExpanded(false)}
-                        onDiscountChange={setDiscount}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* ── Payment Dialog ── */}
-      <Dialog open={payDialogOpen} onOpenChange={handleClosePayDialog}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-lg">
-          <AnimatePresence mode="wait">
-            {paymentStep === 'qris' ? (
-              <motion.div
-                key="qris"
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="flex flex-col items-center py-2"
-              >
-                <div className="mb-4 flex w-full items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setPaymentStep('select');
-                      setQrisExpiry(300);
-                      if (autoCompleteRef.current) {
-                        clearTimeout(autoCompleteRef.current);
-                      }
-                    }}
-                    className="btn-press flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-emerald-500" />
-                    <h2 className="text-lg font-semibold">Scan QRIS</h2>
-                  </div>
-                </div>
-                <span className="sr-only">Scan kode QRIS untuk menyelesaikan pembayaran</span>
-                <div className="relative mb-5">
-                  <div className="gradient-border rounded-2xl">
-                    <div className="rounded-2xl bg-white p-4 dark:bg-card">
-                      <div className="glow-emerald-sm rounded-xl bg-white p-3 dark:bg-card">
-                        <QRCodeSVG
-                          value={"https://pay.posril.id/qris/" + qrisInvoice}
-                          size={200}
-                          className="h-[180px] w-[180px] md:h-[200px] md:w-[200px]"
-                          level="M"
-                          bgColor="transparent"
-                          fgColor="#059669"
-                        />
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                          {formatRp(tx.totalAmount)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {tx._count.items} item • {tx.paymentChannel || tx.paymentMethod}
+                        </p>
                       </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
-                  </div>
-                  <div className="animate-float-slow pointer-events-none absolute -inset-2 rounded-2xl opacity-30 bg-gradient-to-t from-emerald-500/10 to-transparent" />
-                </div>
-                <p className="mb-1 text-2xl font-extrabold text-gradient-emerald tabular-nums">
-                  {formatRp(totalWithTax)}
-                </p>
-                <p className="mb-4 text-xs text-muted-foreground">
-                  {qrisInvoice}
-                </p>
-                <div className="mb-4 flex items-center gap-2">
-                  {qrisExpiry === 0 ? (
-                    <span className="text-sm font-semibold text-rose-500">Kadaluarsa</span>
-                  ) : (
-                    <span className={qrisExpiry < 60 ? 'text-sm tabular-nums font-semibold text-rose-500' : 'text-sm tabular-nums text-muted-foreground'}>
-                      Berlaku {String(Math.floor(qrisExpiry / 60)).padStart(2, '0')}:{String(qrisExpiry % 60).padStart(2, '0')}
-                    </span>
-                  )}
-                </div>
-                {qrisExpiry === 0 && (
-                  <Button
-                    variant="outline"
-                    className="btn-press mb-4"
-                    onClick={() => {
-                      setQrisInvoice("PR-QR-" + Date.now().toString(36).toUpperCase());
-                      setQrisExpiry(300);
-                    }}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      )}
+
+      {/* ─── SHIFT OPEN DIALOG ─── */}
+      <Dialog open={showShiftDialog === 'open'} onOpenChange={() => setShowShiftDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CircleDollarSign className="h-5 w-5 text-emerald-500" />
+              Buka Shift
+            </DialogTitle>
+            <DialogDescription>Masukkan jumlah modal awal kas kasir</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Modal Awal (Rp)</Label>
+              <Input
+                type="number"
+                value={shiftOpeningCash}
+                onChange={(e) => setShiftOpeningCash(e.target.value)}
+                placeholder="contoh: 500000"
+                className="mt-1.5 text-right text-lg font-bold tabular-nums"
+                autoFocus
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[0, 100000, 200000, 500000, 1000000].map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setShiftOpeningCash(String(v))}
+                    className={cn(
+                      'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all btn-press',
+                      shiftOpeningCash === String(v)
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+                        : 'border-border hover:border-emerald-300',
+                    )}
                   >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Buat Kode Baru
-                  </Button>
-                )}
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="status-dot animate-pulse-subtle absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
+                    {v === 0 ? 'Rp 0' : formatRp(v)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowShiftDialog(null)}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => shiftMutation.mutate('open')}
+              disabled={shiftMutation.isPending}
+              className="bg-emerald-500 text-white hover:bg-emerald-600"
+            >
+              {shiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Buka Shift
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── SHIFT CLOSE DIALOG ─── */}
+      <Dialog open={showShiftDialog === 'close'} onOpenChange={() => setShowShiftDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CircleDollarSign className="h-5 w-5 text-amber-500" />
+              Tutup Shift
+            </DialogTitle>
+            <DialogDescription>Ringkasan shift dan penutupan kas</DialogDescription>
+          </DialogHeader>
+          {activeShift && (
+            <div className="space-y-3 py-4">
+              <div className="rounded-lg bg-muted p-3 space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Modal Awal</span>
+                  <span className="tabular-nums font-medium">{formatRp(activeShift.openingCash)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Penjualan</span>
+                  <span className="tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+                    {formatRp(activeShift.totalSales)}
                   </span>
-                  <span className="text-sm text-muted-foreground">Menunggu pembayaran...</span>
                 </div>
-              </motion.div>
-            ) : paymentStep === 'processing' ? (
-              <motion.div
-                key="processing"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="flex flex-col items-center justify-center py-12"
-              >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  className="mb-6"
-                >
-                  <Loader2 className="h-14 w-14 text-emerald-500" strokeWidth={2} />
-                </motion.div>
-                <h3 className="mb-2 text-lg font-bold">Memproses pembayaran...</h3>
-                <p className="text-sm text-muted-foreground">Mohon tunggu sebentar</p>
-                <div className="mt-6 h-1 w-48 overflow-hidden rounded-full bg-muted">
-                  <div className="shimmer h-full w-full rounded-full" />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Penjualan Tunai</span>
+                  <span className="tabular-nums font-medium">{formatRp(activeShift.cashSales)}</span>
                 </div>
-              </motion.div>
-            ) : lastTx ? (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="flex flex-col items-center py-4"
-              >
-                {/* Animated checkmark */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 200,
-                    damping: 15,
-                    delay: 0.1,
-                  }}
-                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500 glow-emerald-md"
-                >
-                  <motion.div
-                    initial={{ scale: 0, rotate: -45 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 300,
-                      damping: 20,
-                      delay: 0.3,
-                    }}
-                  >
-                    <Check className="h-10 w-10 text-white" strokeWidth={3} />
-                  </motion.div>
-                </motion.div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Uang yang Diharapkan</span>
+                  <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+                    {formatRp(activeShift.openingCash + activeShift.cashSales)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Total Transaksi</span>
+                  <span className="tabular-nums">{activeShift.totalTx}</span>
+                </div>
+              </div>
+              <div>
+                <Label>Jumlah Kas Akhir (Rp)</Label>
+                <Input
+                  type="number"
+                  value={shiftClosingCash}
+                  onChange={(e) => setShiftClosingCash(e.target.value)}
+                  placeholder="Hitung fisik uang di kas"
+                  className="mt-1.5 text-right text-lg font-bold tabular-nums"
+                  autoFocus
+                />
+              </div>
+              {shiftClosingCash && (
+                <div className={cn(
+                  'rounded-lg p-3 text-center text-sm font-semibold',
+                  parseFloat(shiftClosingCash) - (activeShift.openingCash + activeShift.cashSales) >= 0
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                    : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+                )}>
+                  Selisih: {formatRp(parseFloat(shiftClosingCash) - (activeShift.openingCash + activeShift.cashSales))}
+                </div>
+              )}
+              <div>
+                <Label>Catatan (opsional)</Label>
+                <Input
+                  value={shiftNote}
+                  onChange={(e) => setShiftNote(e.target.value)}
+                  placeholder="Catatan penutupan shift..."
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowShiftDialog(null)}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => shiftMutation.mutate('close')}
+              disabled={shiftMutation.isPending || !shiftClosingCash}
+              className="bg-amber-500 text-white hover:bg-amber-600"
+            >
+              {shiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Tutup Shift
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                <h3 className="text-lg font-bold">Pembayaran Berhasil!</h3>
-                <p className="mb-6 text-sm text-muted-foreground">
-                  {lastTx.invoiceNo}
-                </p>
+      {/* ─── PAYMENT SUCCESS MODAL ─── */}
+      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center py-6">
+            {/* Success Animation */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+              className="relative mb-6"
+            >
+              <div className="pulse-ring absolute inset-0 rounded-full bg-emerald-400/30" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-500/40">
+                <Check className="h-10 w-10 text-white" strokeWidth={3} />
+              </div>
+            </motion.div>
 
-                {/* Receipt Summary */}
-                <div className="w-full rounded-xl border border-border bg-muted/30 p-4">
-                  <div className="mb-3 space-y-1.5">
-                    {lastTx.items.map((item) => (
-                      <div
-                        key={item.product.id}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="text-muted-foreground">
-                          {item.qty}x {item.product.name}
-                        </span>
-                        <span className="font-medium">
-                          {formatRp(item.product.price * item.qty)}
-                        </span>
+            <h2 className="mb-1 text-xl font-bold">Pembayaran Berhasil!</h2>
+            {lastTx && (
+              <>
+                <p className="mb-4 text-sm text-muted-foreground">{lastTx.invoiceNo}</p>
+                <div className="w-full space-y-2 rounded-xl bg-muted/50 p-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {formatRp(lastTx.transaction.totalAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Metode</span>
+                    <span className="font-medium">
+                      {lastTx.payment.paymentChannel || lastTx.payment.paymentMethod}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="space-y-1">
+                    {lastTx.items.map((item, i) => (
+                      <div key={i} className="flex justify-between text-xs text-muted-foreground">
+                        <span>{item.quantity}× {item.name}</span>
+                        <span className="tabular-nums">{formatRp(item.price * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
-                  <Separator className="my-3" />
-                  <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>{formatRp(lastTx.subtotal)}</span>
-                    </div>
-                    {lastTx.discount > 0 && (
-                      <div className="flex justify-between text-amber-600 dark:text-amber-400">
-                        <span className="flex items-center gap-1">
-                          <Percent className="h-3 w-3" />
-                          Diskon
-                        </span>
-                        <span>-{formatRp(lastTx.discount)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Pajak (PPN 11%)</span>
-                      <span>{formatRp(lastTx.tax)}</span>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between text-base font-bold">
-                      <span>Total</span>
-                      <span className="text-emerald-600 dark:text-emerald-400">
-                        {formatRp(lastTx.amount)}
-                      </span>
-                    </div>
-                  </div>
-                  <Separator className="my-3" />
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <div className="flex justify-between">
-                      <span>Metode</span>
-                      <span className="font-medium text-foreground">
-                        {lastTx.paymentChannel}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Merchant</span>
-                      <span className="font-medium text-foreground">
-                        {lastTx.merchantName}
-                      </span>
-                    </div>
-                    {lastTx.customerName && (
-                      <div className="flex justify-between">
-                        <span>Pelanggan</span>
-                        <span className="font-medium text-foreground">
-                          {lastTx.customerName}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>Waktu</span>
-                      <span className="font-medium text-foreground">
-                        {new Date(lastTx.paidAt).toLocaleString('id-ID')}
-                      </span>
-                    </div>
-                  </div>
                 </div>
-
-                {/* Action buttons */}
                 <div className="mt-6 flex w-full gap-3">
                   <Button
-                    variant="outline"
-                    className="btn-press flex-1"
                     onClick={printReceipt}
+                    variant="outline"
+                    className="flex-1 btn-press"
                   >
                     <Printer className="mr-2 h-4 w-4" />
                     Cetak Struk
                   </Button>
                   <Button
-                    className="btn-press flex-1 bg-emerald-500 hover:bg-emerald-600"
-                    onClick={handleNewTx}
+                    onClick={() => {
+                      setShowSuccess(false)
+                      setLastTx(null)
+                    }}
+                    className="flex-1 bg-emerald-500 text-white hover:bg-emerald-600 btn-press"
                   >
-                    <ShoppingBag className="mr-2 h-4 w-4" />
                     Transaksi Baru
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
-              >
-                <DialogHeader>
-                  <DialogTitle>Pembayaran</DialogTitle>
-                  <DialogDescription>
-                    Pilih metode pembayaran untuk melanjutkan
-                  </DialogDescription>
-                </DialogHeader>
-
-                {/* Total Amount */}
-                <div className="my-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-4 text-center dark:from-emerald-500/15 dark:to-teal-500/10">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Total Pembayaran
-                  </p>
-                  <p className="mt-1 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 glow-emerald-sm inline-block">
-                    {formatRp(totalWithTax)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {cartCount} item · Subtotal {formatRp(cartTotal)}{discountAmount > 0 ? ` · Diskon ${discount}% (-${formatRp(discountAmount)})` : ''} + PPN {formatRp(tax)}
-                  </p>
-                </div>
-
-                {/* Merchant Selector */}
-                <div className="mb-4 space-y-2">
-                  <Label className="text-sm font-medium">Merchant</Label>
-                  <Select value={selectedMerchant} onValueChange={setSelectedMerchant}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih merchant..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {merchants
-                        .filter((m) => m.status === 'active')
-                        .map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Payment Methods */}
-                <div className="mb-4 space-y-2">
-                  <Label className="text-sm font-medium">Metode Pembayaran</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {PAYMENT_METHODS.map((pm) => (
-                      <button
-                        key={pm.id}
-                        type="button"
-                        onClick={() => setSelectedPayment(pm)}
-                        className={cn(
-                          'flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all duration-200',
-                          selectedPayment?.id === pm.id
-                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-300'
-                            : 'border-border hover:border-emerald-500/30 hover:bg-muted/50',
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                            selectedPayment?.id === pm.id
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-muted text-muted-foreground',
-                          )}
-                        >
-                          {pm.icon}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{pm.label}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            Admin {pm.feePercent}%
-                          </p>
-                        </div>
-                        {selectedPayment?.id === pm.id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500"
-                          >
-                            <Check className="h-3 w-3 text-white" />
-                          </motion.div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Customer Info (Optional) */}
-                <div className="mb-4 space-y-3">
-                  <Label className="text-sm font-medium">
-                    Info Pelanggan{' '}
-                    <span className="font-normal text-muted-foreground">(opsional)</span>
-                  </Label>
-                  <Input
-                    placeholder="Nama pelanggan"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      placeholder="No. Telepon"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      type="email"
-                    />
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div className="mb-4 space-y-2">
-                  <Label className="text-sm font-medium">
-                    Catatan{' '}
-                    <span className="font-normal text-muted-foreground">(opsional)</span>
-                  </Label>
-                  <Textarea
-                    placeholder="Tambahkan catatan..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-
-                {/* Pay Button */}
-                <Button
-                  className="btn-press w-full bg-emerald-500 py-6 text-base font-bold hover:bg-emerald-600"
-                  size="lg"
-                  disabled={
-                    !selectedMerchant ||
-                    !selectedPayment ||
-                    payMutation.isPending
-                  }
-                  onClick={handlePay}
-                >
-                  {payMutation.isPending ? (
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="mr-2 inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent"
-                    />
-                  ) : null}
-                  {payMutation.isPending
-                    ? 'Memproses Pembayaran...'
-                    : 'Proses Pembayaran'}
-                </Button>
-              </motion.div>
+              </>
             )}
-          </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── TX DETAIL DIALOG ─── */}
+      <Dialog open={!!showTxDetail} onOpenChange={() => setShowTxDetail(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="tabular-nums">{showTxDetail?.invoiceNo}</DialogTitle>
+            <DialogDescription>
+              {showTxDetail &&
+                new Date(showTxDetail.createdAt).toLocaleString('id-ID')}
+            </DialogDescription>
+          </DialogHeader>
+          {showTxDetail && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    {formatRp(showTxDetail.totalAmount)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground">Metode</p>
+                  <p className="font-medium">{showTxDetail.paymentChannel || showTxDetail.paymentMethod}</p>
+                </div>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground">Jumlah Item</p>
+                  <p className="font-medium tabular-nums">{showTxDetail._count.items}</p>
+                </div>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge
+                    className={cn(
+                      showTxDetail.status === 'paid' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+                    )}
+                  >
+                    {showTxDetail.status === 'paid' ? 'Lunas' : showTxDetail.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
-
-// ── Cart Panel (reused for desktop & mobile) ──────────────────────────────
-
-function CartPanel({
-  cart,
-  cartCount,
-  cartTotal,
-  tax,
-  totalWithTax,
-  discount,
-  discountAmount,
-  onUpdateQty,
-  onRemove,
-  onClear,
-  onPay,
-  onCollapse,
-  onDiscountChange,
-}: {
-  cart: CartItem[];
-  cartCount: number;
-  cartTotal: number;
-  tax: number;
-  totalWithTax: number;
-  discount: number;
-  discountAmount: number;
-  onUpdateQty: (productId: string, delta: number) => void;
-  onRemove: (productId: string) => void;
-  onClear: () => void;
-  onPay: () => void;
-  onCollapse?: () => void;
-  onDiscountChange?: (val: number) => void;
-}) {
-  return (
-    <>
-      {/* Cart Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <ShoppingBag className="h-4.5 w-4.5 text-emerald-500" />
-          <span className="text-sm font-semibold">Keranjang</span>
-          {cartCount > 0 && (
-            <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
-              {cartCount}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {cart.length > 0 && (
-            <button
-              onClick={onClear}
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              title="Kosongkan keranjang"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {onCollapse && (
-            <button
-              onClick={onCollapse}
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Cart Items */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {cart.length === 0 ? (
-          <div className="empty-state flex h-full min-h-[200px] flex-col items-center justify-center px-4 py-8 text-center">
-            <ShoppingBag className="mb-3 h-12 w-12 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-muted-foreground">
-              Keranjang kosong
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground/60">
-              Tap produk untuk menambahkan
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border p-2">
-            <AnimatePresence initial={false}>
-              {cart.map((item) => (
-                <motion.div
-                  key={item.product.id}
-                  initial={{ opacity: 0, x: 20, height: 0 }}
-                  animate={{ opacity: 1, x: 0, height: 'auto' }}
-                  exit={{ opacity: 0, x: -20, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2 py-2"
-                >
-                  <span className="text-lg">{item.product.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{item.product.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatRp(item.product.price)} / item
-                    </p>
-                  </div>
-
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => onUpdateQty(item.product.id, -1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="w-6 text-center text-sm font-semibold">
-                      {item.qty}
-                    </span>
-                    <button
-                      onClick={() => onUpdateQty(item.product.id, 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-
-                  {/* Subtotal & Remove */}
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-sm font-semibold">
-                      {formatRp(item.product.price * item.qty)}
-                    </span>
-                    <button
-                      onClick={() => onRemove(item.product.id)}
-                      className="text-muted-foreground/60 transition-colors hover:text-destructive"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
-
-      {/* Cart Summary & Pay */}
-      {cart.length > 0 && (
-        <div className="border-t border-border p-4">
-          {/* Discount Field */}
-          {onDiscountChange && (
-            <div className="mb-3 flex items-center gap-2">
-              <div className="relative flex-1">
-                <Percent className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={discount || ''}
-                  onChange={(e) => {
-                    const val = Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                    onDiscountChange(val)
-                  }}
-                  placeholder="0"
-                  className="h-8 pl-8 pr-2 text-sm tabular-nums shadow-inner-soft"
-                />
-              </div>
-              <span className="shrink-0 text-xs text-muted-foreground">Diskon %</span>
-            </div>
-          )}
-          <div className="mb-3 space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatRp(cartTotal)}</span>
-            </div>
-            {discountAmount > 0 && (
-              <div className="flex justify-between text-amber-600 dark:text-amber-400">
-                <span className="flex items-center gap-1">
-                  <Percent className="h-3 w-3" />
-                  Diskon ({discount}%)   
-                </span>
-                <span>-{formatRp(discountAmount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Pajak (11% PPN)</span>
-              <span>{formatRp(tax)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between text-base font-bold">
-              <span>Total</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {formatRp(totalWithTax)}
-              </span>
-            </div>
-          </div>
-          <Button
-            className="btn-press w-full bg-emerald-500 py-5 font-bold hover:bg-emerald-600"
-            size="lg"
-            onClick={onPay}
-          >
-            Bayar Sekarang
-          </Button>
-        </div>
-      )}
-    </>
-  );
-}
-// ── Numpad Panel ──────────────────────────────────────────────────────────
-
-const NUMPAD_KEYS = [
-  ['7', '8', '9'],
-  ['4', '5', '6'],
-  ['1', '2', '3'],
-  ['00', '0', 'C'],
-] as const;
-
-function NumpadPanel() {
-  const dispatchInputEvent = useCallback(() => {
-    const active = document.activeElement as HTMLInputElement | null;
-    if (active) {
-      active.dispatchEvent(new Event('input', { bubbles: true }));
-      active.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  }, []);
-
-  const handleKey = useCallback(
-    (key: string) => {
-      const active = document.activeElement as HTMLInputElement | null;
-      if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
-      active.focus();
-
-      if (key === 'C') {
-        // Select all then delete
-        active.select();
-        document.execCommand('delete', false);
-        dispatchInputEvent();
-        return;
-      }
-
-      if (key === 'backspace') {
-        document.execCommand('delete', false);
-        dispatchInputEvent();
-        return;
-      }
-
-      // Insert digit
-      document.execCommand('insertText', false, key);
-      dispatchInputEvent();
-    },
-    [dispatchInputEvent],
-  );
-
-  return (
-    <div className="card-elevated rounded-xl p-3">
-      <div className="mb-2 flex items-center gap-2 px-1">
-        <Calculator className="h-3.5 w-3.5 text-emerald-500" />
-        <span className="text-xs font-semibold text-muted-foreground">Numpad</span>
-        <span className="ml-auto text-[10px] text-muted-foreground/60">
-          Ketik ke input aktif
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {NUMPAD_KEYS.flat().map((key) => (
-          <button
-            key={key}
-            onClick={() => handleKey(key)}
-            className={cn(
-              'btn-press flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all',
-              key === 'C'
-                ? 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:bg-rose-500/15 dark:text-rose-400'
-                : 'bg-muted text-foreground hover:bg-muted/80'
-            )}
-          >
-            {key === 'C' ? 'C' : key}
-          </button>
-        ))}
-        <button
-          onClick={() => handleKey('backspace')}
-          className="btn-press flex h-10 items-center justify-center rounded-lg bg-muted text-foreground transition-all hover:bg-muted/80"
-        >
-          <Delete className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-

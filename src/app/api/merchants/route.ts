@@ -1,11 +1,6 @@
-import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-
-function generateApiKey(): string {
-  return 'pk_ril_' + crypto.randomBytes(5).toString('hex');
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +9,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.max(1, Math.min(100, Number(searchParams.get('limit')) || 10));
     const search = searchParams.get('search') || '';
 
-    const where: Prisma.MerchantWhereInput = {};
+    const where: Prisma.TenantWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -25,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [data, total] = await Promise.all([
-      db.merchant.findMany({
+      db.tenant.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -36,7 +31,7 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      db.merchant.count({ where }),
+      db.tenant.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -60,7 +55,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, address } = body;
+    const { name, email, phone, address, slug } = body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
@@ -76,13 +71,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const merchant = await db.merchant.create({
+    // Generate slug from name if not provided
+    const tenantSlug = slug || name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    const merchant = await db.tenant.create({
       data: {
         name: name.trim(),
+        slug: tenantSlug,
         email: email.trim().toLowerCase(),
         phone: phone?.trim() || null,
         address: address?.trim() || null,
-        apiKey: generateApiKey(),
         status: 'active',
         totalSales: 0,
         totalTx: 0,

@@ -11,9 +11,12 @@ export async function GET(
     const transaction = await db.transaction.findUnique({
       where: { id },
       include: {
-        merchant: true,
+        tenant: true,
+        outlet: true,
+        cashier: { select: { id: true, name: true } },
         customer: true,
-        paymentLink: true,
+        items: { include: { product: { select: { name: true, sku: true } } } },
+        payments: true,
         refund: true,
       },
     });
@@ -25,7 +28,19 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ data: transaction });
+    // Flatten payment info for backward compatibility
+    const firstPayment = transaction.payments[0];
+    const flattened = {
+      ...transaction,
+      amount: transaction.totalAmount,
+      fee: firstPayment?.fee ?? 0,
+      netAmount: firstPayment?.netAmount ?? transaction.totalAmount,
+      paymentMethod: firstPayment?.paymentMethod ?? '',
+      paymentChannel: firstPayment?.paymentChannel ?? '',
+      merchant: transaction.tenant,
+    };
+
+    return NextResponse.json({ data: flattened });
   } catch (error) {
     console.error('[Transaction GET]', error);
     return NextResponse.json(
@@ -52,7 +67,7 @@ export async function PUT(
       );
     }
 
-    const validStatuses = ['pending', 'success', 'failed', 'expired', 'refunded'];
+    const validStatuses = ['pending', 'paid', 'cancelled', 'refunded', 'void'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
@@ -69,7 +84,7 @@ export async function PUT(
     }
 
     const updateData: Record<string, unknown> = { status };
-    if (status === 'success' && !existing.paidAt) {
+    if (status === 'paid' && !existing.paidAt) {
       updateData.paidAt = new Date();
     }
 
@@ -77,13 +92,28 @@ export async function PUT(
       where: { id },
       data: updateData,
       include: {
-        merchant: true,
+        tenant: true,
+        outlet: true,
+        cashier: { select: { id: true, name: true } },
         customer: true,
+        items: true,
+        payments: true,
         refund: true,
       },
     });
 
-    return NextResponse.json({ data: transaction });
+    const firstPayment = transaction.payments[0];
+    const flattened = {
+      ...transaction,
+      amount: transaction.totalAmount,
+      fee: firstPayment?.fee ?? 0,
+      netAmount: firstPayment?.netAmount ?? transaction.totalAmount,
+      paymentMethod: firstPayment?.paymentMethod ?? '',
+      paymentChannel: firstPayment?.paymentChannel ?? '',
+      merchant: transaction.tenant,
+    };
+
+    return NextResponse.json({ data: flattened });
   } catch (error) {
     console.error('[Transaction PUT]', error);
     return NextResponse.json(
@@ -105,7 +135,7 @@ export async function POST(
 
     const transaction = await db.transaction.findUnique({
       where: { id },
-      include: { refund: true },
+      include: { refund: true, payments: true },
     });
 
     if (!transaction) {
@@ -115,9 +145,9 @@ export async function POST(
       );
     }
 
-    if (transaction.status !== 'success') {
+    if (transaction.status !== 'paid') {
       return NextResponse.json(
-        { error: 'Only successful transactions can be refunded' },
+        { error: 'Only paid transactions can be refunded' },
         { status: 400 },
       );
     }
@@ -129,9 +159,9 @@ export async function POST(
       );
     }
 
-    const refundAmount = amount ?? transaction.amount;
+    const refundAmount = amount ?? transaction.totalAmount;
 
-    if (refundAmount <= 0 || refundAmount > transaction.amount) {
+    if (refundAmount <= 0 || refundAmount > transaction.totalAmount) {
       return NextResponse.json(
         { error: 'Invalid refund amount' },
         { status: 400 },
@@ -151,13 +181,28 @@ export async function POST(
       where: { id },
       data: { status: 'refunded' },
       include: {
-        merchant: true,
+        tenant: true,
+        outlet: true,
+        cashier: { select: { id: true, name: true } },
         customer: true,
+        items: true,
+        payments: true,
         refund: true,
       },
     });
 
-    return NextResponse.json({ data: { refund, transaction: updatedTransaction } }, { status: 201 });
+    const firstPayment = updatedTransaction.payments[0];
+    const flattened = {
+      ...updatedTransaction,
+      amount: updatedTransaction.totalAmount,
+      fee: firstPayment?.fee ?? 0,
+      netAmount: firstPayment?.netAmount ?? updatedTransaction.totalAmount,
+      paymentMethod: firstPayment?.paymentMethod ?? '',
+      paymentChannel: firstPayment?.paymentChannel ?? '',
+      merchant: updatedTransaction.tenant,
+    };
+
+    return NextResponse.json({ data: { refund, transaction: flattened } }, { status: 201 });
   } catch (error) {
     console.error('[Transaction POST (refund)]', error);
     return NextResponse.json(

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { title: { contains: search } },
-        { merchant: { name: { contains: search } } },
+        { tenant: { name: { contains: search } } },
       ];
     }
 
@@ -36,8 +36,7 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          merchant: { select: { id: true, name: true, logo: true } },
-          _count: { select: { transactions: true } },
+          tenant: { select: { id: true, name: true, logo: true } },
         },
       }),
       db.paymentLink.count({ where }),
@@ -69,8 +68,8 @@ export async function POST(request: NextRequest) {
       title,
       description,
       amount,
-      merchantId,
-      type,
+      tenantId,
+      linkType,
       maxQty,
       expiresAt,
     } = body as {
@@ -78,8 +77,8 @@ export async function POST(request: NextRequest) {
       title?: string;
       description?: string;
       amount: number;
-      merchantId?: string;
-      type?: 'single' | 'recurring' | string;
+      tenantId?: string;
+      linkType?: 'single' | 'multi' | string;
       maxQty?: number;
       expiresAt?: string;
     };
@@ -93,25 +92,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use provided merchantId or fall back to first active merchant
-    let resolvedMerchantId = merchantId;
-    if (!resolvedMerchantId) {
-      const defaultMerchant = await db.merchant.findFirst({
+    // Use provided tenantId or fall back to first active tenant
+    let resolvedTenantId = tenantId;
+    if (!resolvedTenantId) {
+      const defaultTenant = await db.tenant.findFirst({
         where: { status: 'active' },
         orderBy: { createdAt: 'asc' },
       });
-      if (!defaultMerchant) {
+      if (!defaultTenant) {
         return NextResponse.json(
-          { error: 'No active merchant found. Please provide a merchantId.' },
+          { error: 'No active tenant found. Please provide a tenantId.' },
           { status: 400 },
         );
       }
-      resolvedMerchantId = defaultMerchant.id;
+      resolvedTenantId = defaultTenant.id;
     } else {
-      const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
-      if (!merchant) {
+      const tenant = await db.tenant.findUnique({ where: { id: tenantId } });
+      if (!tenant) {
         return NextResponse.json(
-          { error: 'Merchant not found' },
+          { error: 'Tenant not found' },
           { status: 404 },
         );
       }
@@ -122,13 +121,13 @@ export async function POST(request: NextRequest) {
         title: linkName,
         description: description || null,
         amount: Number(amount),
-        merchantId: resolvedMerchantId,
-        type: type || 'single',
+        tenantId: resolvedTenantId,
+        linkType: linkType || 'single',
         maxQty: maxQty ?? 1,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
       include: {
-        merchant: { select: { id: true, name: true, logo: true } },
+        tenant: { select: { id: true, name: true, logo: true } },
       },
     });
 

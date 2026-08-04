@@ -11,15 +11,7 @@ export async function GET(
     const paymentLink = await db.paymentLink.findUnique({
       where: { id },
       include: {
-        merchant: true,
-        transactions: {
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            merchant: { select: { id: true, name: true, logo: true } },
-          },
-        },
-        _count: { select: { transactions: true } },
+        tenant: true,
       },
     });
 
@@ -30,35 +22,15 @@ export async function GET(
       );
     }
 
-    // Calculate total revenue from successful transactions
-    const allSuccessfulTx = await db.transaction.findMany({
-      where: {
-        paymentLinkId: id,
-        status: 'success',
-      },
-      select: { netAmount: true },
-    });
-    const totalRevenue = allSuccessfulTx.reduce(
-      (sum, tx) => sum + tx.netAmount,
-      0,
-    );
-
     // Calculate conversion rate (soldQty / maxQty * 100)
     const conversionRate =
       paymentLink.maxQty > 0
         ? (paymentLink.soldQty / paymentLink.maxQty) * 100
         : 0;
 
-    // Calculate success rate of transactions
-    const totalTxCount = paymentLink._count.transactions;
-    const successTxCount = allSuccessfulTx.length;
-    const successRate = totalTxCount > 0 ? (successTxCount / totalTxCount) * 100 : 0;
-
     return NextResponse.json({
       data: paymentLink,
-      totalRevenue,
       conversionRate: Math.round(conversionRate * 10) / 10,
-      successRate: Math.round(successRate * 10) / 10,
     });
   } catch (error) {
     console.error('[PaymentLink GET]', error);
@@ -77,12 +49,12 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, description, amount, status, type, maxQty, expiresAt } = body as {
+    const { title, description, amount, status, linkType, maxQty, expiresAt } = body as {
       title?: string;
       description?: string;
       amount?: number;
       status?: string;
-      type?: string;
+      linkType?: string;
       maxQty?: number;
       expiresAt?: string | null;
     };
@@ -100,7 +72,7 @@ export async function PUT(
     if (description !== undefined) updateData.description = description;
     if (amount !== undefined) updateData.amount = Number(amount);
     if (status !== undefined) updateData.status = status;
-    if (type !== undefined) updateData.type = type;
+    if (linkType !== undefined) updateData.linkType = linkType;
     if (maxQty !== undefined) updateData.maxQty = maxQty;
     if (expiresAt !== undefined) updateData.expiresAt = expiresAt ? new Date(expiresAt) : null;
 
@@ -108,7 +80,7 @@ export async function PUT(
       where: { id },
       data: updateData,
       include: {
-        merchant: { select: { id: true, name: true, logo: true } },
+        tenant: { select: { id: true, name: true, logo: true } },
       },
     });
 

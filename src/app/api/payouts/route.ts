@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          merchant: { select: { id: true, name: true, logo: true } },
+          tenant: { select: { id: true, name: true, logo: true } },
         },
       }),
       db.payout.count({ where }),
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      merchantId,
+      tenantId,
       amount,
       fee,
       bankName,
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       accountName,
       notes,
     } = body as {
-      merchantId: string;
+      tenantId: string;
       amount: number;
       fee?: number;
       bankName: string;
@@ -67,25 +67,25 @@ export async function POST(request: NextRequest) {
       notes?: string;
     };
 
-    if (!merchantId || !amount || !bankName || !accountNo || !accountName) {
+    if (!tenantId || !amount || !bankName || !accountNo || !accountName) {
       return NextResponse.json(
-        { error: 'merchantId, amount, bankName, accountNo, and accountName are required' },
+        { error: 'tenantId, amount, bankName, accountNo, and accountName are required' },
         { status: 400 },
       );
     }
 
-    // Verify merchant exists
-    const merchant = await db.merchant.findUnique({ where: { id: merchantId } });
-    if (!merchant) {
+    // Verify tenant exists
+    const tenant = await db.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) {
       return NextResponse.json(
-        { error: 'Merchant not found' },
+        { error: 'Tenant not found' },
         { status: 404 },
       );
     }
 
     const payout = await db.payout.create({
       data: {
-        merchantId,
+        tenantId,
         amount: Number(amount),
         fee: fee ? Number(fee) : 0,
         bankName,
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
       },
       include: {
-        merchant: { select: { id: true, name: true, logo: true } },
+        tenant: { select: { id: true, name: true, logo: true } },
       },
     });
 

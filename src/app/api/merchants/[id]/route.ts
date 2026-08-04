@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { Prisma } from '@prisma/client';
 
-// GET single merchant with enhanced data
+// GET single merchant (tenant) with enhanced data
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    const merchant = await db.merchant.findUnique({
+    const merchant = await db.tenant.findUnique({
       where: { id },
       include: {
         _count: {
@@ -20,6 +19,7 @@ export async function GET(
           orderBy: { createdAt: 'desc' },
           include: {
             customer: { select: { id: true, name: true, email: true } },
+            payments: { select: { paymentMethod: true, paymentChannel: true } },
           },
         },
         paymentLinks: {
@@ -28,7 +28,7 @@ export async function GET(
             title: true,
             amount: true,
             status: true,
-            type: true,
+            linkType: true,
             soldQty: true,
             maxQty: true,
             createdAt: true,
@@ -47,32 +47,32 @@ export async function GET(
 
     // Compute success rate from ALL transactions (not just the 10 returned)
     const totalTxCount = await db.transaction.count({
-      where: { merchantId: id },
+      where: { tenantId: id },
     });
     const successTxCount = await db.transaction.count({
-      where: { merchantId: id, status: 'success' },
+      where: { tenantId: id, status: 'paid' },
     });
     const successRate = totalTxCount > 0 ? Math.round((successTxCount / totalTxCount) * 100) : 0;
 
     // Compute average transaction amount from all transactions
     const txAgg = await db.transaction.aggregate({
-      where: { merchantId: id },
-      _avg: { amount: true },
+      where: { tenantId: id },
+      _avg: { totalAmount: true },
     });
-    const avgAmount = txAgg._avg.amount ?? 0;
+    const avgAmount = txAgg._avg.totalAmount ?? 0;
 
-    // Monthly revenue: last 6 months of successful transactions
+    // Monthly revenue: last 6 months of paid transactions
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
     const monthlyRevenue = await db.transaction.groupBy({
       by: ['createdAt'],
       where: {
-        merchantId: id,
-        status: 'success',
+        tenantId: id,
+        status: 'paid',
         createdAt: { gte: sixMonthsAgo },
       },
-      _sum: { amount: true },
+      _sum: { totalAmount: true },
       _count: true,
     });
 
@@ -83,7 +83,7 @@ export async function GET(
     for (const tx of monthlyRevenue) {
       const d = tx.createdAt as Date;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      monthMap.set(key, (monthMap.get(key) ?? 0) + (tx._sum.amount ?? 0));
+      monthMap.set(key, (monthMap.get(key) ?? 0) + (tx._sum.totalAmount ?? 0));
     }
 
     // Build ordered array of last 6 months
@@ -113,7 +113,7 @@ export async function GET(
   }
 }
 
-// PUT update merchant
+// PUT update merchant (tenant)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -130,7 +130,7 @@ export async function PUT(
       status?: string;
     };
 
-    const existing = await db.merchant.findUnique({ where: { id } });
+    const existing = await db.tenant.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json(
         { error: 'Merchant not found' },
@@ -146,7 +146,7 @@ export async function PUT(
     if (logo !== undefined) updateData.logo = logo;
     if (status !== undefined) updateData.status = status;
 
-    const merchant = await db.merchant.update({
+    const merchant = await db.tenant.update({
       where: { id },
       data: updateData,
       include: {

@@ -11,26 +11,26 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // --- Stats ---
-    const [totalResult, successResult, totalTxResult, activeMerchantsResult, todayResult, pendingResult] =
+    const [totalResult, successResult, totalTxResult, activeTenantsResult, todayResult, pendingResult] =
       await Promise.all([
         db.transaction.aggregate({
-          _sum: { amount: true },
+          _sum: { totalAmount: true },
           _count: true,
         }),
-        db.transaction.count({ where: { status: 'success' } }),
+        db.transaction.count({ where: { status: 'paid' } }),
         db.transaction.count(),
-        db.merchant.count({ where: { status: 'active' } }),
+        db.tenant.count({ where: { status: 'active' } }),
         db.transaction.aggregate({
-          _sum: { amount: true },
+          _sum: { totalAmount: true },
           where: {
-            status: 'success',
+            status: 'paid',
             paidAt: { gte: todayStart },
           },
         }),
         db.transaction.count({ where: { status: 'pending' } }),
       ]);
 
-    const totalRevenue = totalResult._sum.amount ?? 0;
+    const totalRevenue = totalResult._sum.totalAmount ?? 0;
     const totalTransactions = totalResult._count;
     const successRate =
       totalTransactions > 0
@@ -40,15 +40,15 @@ export async function GET(request: NextRequest) {
       totalTransactions > 0
         ? Number((totalRevenue / totalTransactions).toFixed(2))
         : 0;
-    const activeMerchants = activeMerchantsResult;
-    const todayRevenue = todayResult._sum.amount ?? 0;
+    const activeTenants = activeTenantsResult;
+    const todayRevenue = todayResult._sum.totalAmount ?? 0;
 
     const stats = {
       totalRevenue,
       totalTransactions,
       successRate,
       avgTransaction,
-      activeMerchants,
+      activeTenants,
       todayRevenue,
       pendingTransactions: pendingResult,
     };
@@ -61,11 +61,11 @@ export async function GET(request: NextRequest) {
 
     const monthlyTransactions = await db.transaction.findMany({
       where: {
-        status: 'success',
+        status: 'paid',
         paidAt: { gte: twelveMonthsAgo },
       },
       select: {
-        amount: true,
+        totalAmount: true,
         paidAt: true,
       },
     });
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       const key = `${tx.paidAt.getFullYear()}-${String(tx.paidAt.getMonth() + 1).padStart(2, '0')}`;
       const entry = monthlyMap.get(key);
       if (entry) {
-        entry.revenue += tx.amount;
+        entry.revenue += tx.totalAmount;
         entry.count += 1;
       }
     }
@@ -102,18 +102,18 @@ export async function GET(request: NextRequest) {
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        merchant: { select: { id: true, name: true, logo: true } },
+        tenant: { select: { id: true, name: true, logo: true } },
       },
     });
 
-    // --- Top merchants (top 5 by totalSales) ---
-    const topMerchants = await db.merchant.findMany({
+    // --- Top tenants (top 5 by totalSales) ---
+    const topTenants = await db.tenant.findMany({
       take: 5,
       orderBy: { totalSales: 'desc' },
     });
 
-    // --- Payment method distribution (successful transactions) ---
-    const methodDistribution = await db.transaction.groupBy({
+    // --- Payment method distribution (from Payment model) ---
+    const methodDistribution = await db.payment.groupBy({
       by: ['paymentMethod'],
       where: { status: 'success' },
       _count: true,
@@ -143,9 +143,9 @@ export async function GET(request: NextRequest) {
       const rangeTransactions = await db.transaction.findMany({
         where: {
           paidAt: { gte: fromDate, lte: toDate },
-          status: 'success',
+          status: 'paid',
         },
-        select: { amount: true, paidAt: true },
+        select: { totalAmount: true, paidAt: true },
       });
 
       // Build daily map
@@ -167,10 +167,10 @@ export async function GET(request: NextRequest) {
         const key = tx.paidAt.toISOString().split('T')[0];
         const entry = dailyMap.get(key);
         if (entry) {
-          entry.revenue += tx.amount;
+          entry.revenue += tx.totalAmount;
           entry.count += 1;
         }
-        totalRangeRevenue += tx.amount;
+        totalRangeRevenue += tx.totalAmount;
         totalRangeTx += 1;
       }
 
@@ -190,8 +190,8 @@ export async function GET(request: NextRequest) {
         }),
       );
 
-      // Payment method breakdown in range
-      const rangeMethodDist = await db.transaction.groupBy({
+      // Payment method breakdown in range (from Payment model)
+      const rangeMethodDist = await db.payment.groupBy({
         by: ['paymentMethod'],
         where: {
           paidAt: { gte: fromDate, lte: toDate },
@@ -207,35 +207,35 @@ export async function GET(request: NextRequest) {
         revenue: m._sum.amount ?? 0,
       }));
 
-      // Top merchants in range
-      const rangeMerchantTx = await db.transaction.groupBy({
-        by: ['merchantId'],
+      // Top tenants in range
+      const rangeTenantTx = await db.transaction.groupBy({
+        by: ['tenantId'],
         where: {
           paidAt: { gte: fromDate, lte: toDate },
-          status: 'success',
+          status: 'paid',
         },
         _count: true,
-        _sum: { amount: true },
+        _sum: { totalAmount: true },
       });
 
-      // Fetch merchant names
-      const merchantIds = rangeMerchantTx.map((m) => m.merchantId);
-      const merchants = merchantIds.length > 0
-        ? await db.merchant.findMany({
-            where: { id: { in: merchantIds } },
+      // Fetch tenant names
+      const tenantIds = rangeTenantTx.map((m) => m.tenantId);
+      const tenants = tenantIds.length > 0
+        ? await db.tenant.findMany({
+            where: { id: { in: tenantIds } },
             select: { id: true, name: true },
           })
         : [];
 
-      const merchantMap = new Map(merchants.map((m) => [m.id, m.name]));
+      const tenantMap = new Map(tenants.map((m) => [m.id, m.name]));
 
-      const topMerchantsInRange = rangeMerchantTx
+      const topTenantsInRange = rangeTenantTx
         .map((m) => ({
-          id: m.merchantId,
-          name: merchantMap.get(m.merchantId) ?? 'Unknown',
+          id: m.tenantId,
+          name: tenantMap.get(m.tenantId) ?? 'Unknown',
           totalTx: m._count,
-          totalRevenue: m._sum.amount ?? 0,
-          avgTxSize: m._count > 0 ? (m._sum.amount ?? 0) / m._count : 0,
+          totalRevenue: m._sum.totalAmount ?? 0,
+          avgTxSize: m._count > 0 ? (m._sum.totalAmount ?? 0) / m._count : 0,
         }))
         .sort((a, b) => b.totalRevenue - a.totalRevenue)
         .slice(0, 10);
@@ -247,13 +247,13 @@ export async function GET(request: NextRequest) {
           createdAt: { gte: fromDate, lte: toDate },
         },
         _count: true,
-        _sum: { amount: true },
+        _sum: { totalAmount: true },
       });
 
       const statusDistribution = rangeStatusDist.map((s) => ({
         status: s.status,
         count: s._count,
-        revenue: s._sum.amount ?? 0,
+        revenue: s._sum.totalAmount ?? 0,
       }));
 
       const reportData = {
@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
         },
         dailyRevenue,
         paymentMethodBreakdown,
-        topMerchants: topMerchantsInRange,
+        topTenants: topTenantsInRange,
         statusDistribution,
       };
 
@@ -277,7 +277,7 @@ export async function GET(request: NextRequest) {
       stats,
       monthlyChartData,
       recentTransactions,
-      topMerchants,
+      topTenants,
       paymentMethodDistribution,
     });
   } catch (error) {

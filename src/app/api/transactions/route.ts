@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status');
     const paymentMethod = searchParams.get('paymentMethod');
-    const paymentChannel = searchParams.get('paymentChannel');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const exportCsv = searchParams.get('export') === 'csv';
@@ -22,7 +21,7 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { invoiceNo: { contains: search } },
         { customerName: { contains: search } },
-        { merchant: { name: { contains: search } } },
+        { tenant: { name: { contains: search } } },
       ];
     }
 
@@ -31,11 +30,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (paymentMethod) {
-      where.paymentMethod = paymentMethod;
-    }
-
-    if (paymentChannel) {
-      where.paymentChannel = paymentChannel;
+      where.payments = {
+        some: { paymentMethod },
+      };
     }
 
     if (dateFrom || dateTo) {
@@ -56,29 +53,28 @@ export async function GET(request: NextRequest) {
         where,
         orderBy: { createdAt: 'desc' },
         include: {
-          merchant: { select: { name: true } },
+          tenant: { select: { name: true } },
+          payments: { select: { paymentMethod: true, paymentChannel: true, amount: true, fee: true, netAmount: true } },
+          customer: { select: { name: true, phone: true } },
         },
       });
 
-      const header = 'Invoice No,Merchant,Customer Name,Customer Email,Amount,Fee,Net Amount,Payment Method,Payment Channel,Status,Description,Paid At,Created At';
+      const header = 'Invoice No,Tenant,Customer Name,Customer Phone,Total Amount,Payment Method,Payment Channel,Status,Created At';
       const rows = transactions.map((tx) => {
         const esc = (v: string | null | undefined) => {
           if (!v) return '';
           return `"${v.replace(/"/g, '""')}"`;
         };
+        const firstPayment = tx.payments[0];
         return [
           esc(tx.invoiceNo),
-          esc(tx.merchant.name),
-          esc(tx.customerName),
-          esc(tx.customerEmail),
-          tx.amount,
-          tx.fee,
-          tx.netAmount,
-          tx.paymentMethod,
-          tx.paymentChannel,
+          esc(tx.tenant.name),
+          esc(tx.customerName ?? tx.customer?.name),
+          esc(tx.customerPhone ?? tx.customer?.phone),
+          tx.totalAmount,
+          firstPayment?.paymentMethod ?? '',
+          firstPayment?.paymentChannel ?? '',
           tx.status,
-          esc(tx.description),
-          tx.paidAt?.toISOString() || '',
           tx.createdAt.toISOString(),
         ].join(',');
       });
@@ -100,15 +96,29 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          merchant: { select: { id: true, name: true, logo: true } },
-          customer: { select: { id: true, name: true, email: true } },
+          tenant: { select: { id: true, name: true, logo: true } },
+          customer: { select: { id: true, name: true, phone: true } },
+          payments: { select: { paymentMethod: true, paymentChannel: true, amount: true, fee: true, netAmount: true } },
         },
       }),
       db.transaction.count({ where }),
     ]);
 
+    // Flatten payment info onto each transaction for backward compatibility
+    const flattened = data.map((tx) => {
+      const firstPayment = tx.payments[0];
+      return {
+        ...tx,
+        amount: tx.totalAmount,
+        fee: firstPayment?.fee ?? 0,
+        netAmount: firstPayment?.netAmount ?? tx.totalAmount,
+        paymentMethod: firstPayment?.paymentMethod ?? '',
+        paymentChannel: firstPayment?.paymentChannel ?? '',
+      };
+    });
+
     return NextResponse.json({
-      data,
+      data: flattened,
       pagination: {
         page,
         limit,

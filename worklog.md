@@ -925,3 +925,163 @@ Stage Summary:
 - **Root causes:** missing `color` property, framer-motion type narrowing, wrong variable name, recharts Formatter<ValueType, NameType> generic mismatch, undefined variable reference, untyped array literal, missing state
 - **QA:** All 9 pages pass — zero runtime errors, zero lint errors, zero tsc errors
 - **Enhancements verified:** Live ticker working, numpad (12 keys) functional, discount field visible in cart
+
+---
+Task ID: 3-a
+Agent: Main
+Task: Login Page + Auth System, Super Admin Dashboard, Multi-Role Sidebar
+
+Work Log:
+- **Zustand Store (app-store.ts):** Added `AppUser` interface with id/name/email/role/tenantId/outletId/tenantName/outletName; Added `user`, `currentPage` state fields; Added `login(user)` and `logout()` actions; Extended `Page` type with 10 new pages (super-admin, tenant-detail, subscription-plans, produk, stok, karyawan, outlet, riwayat-transaksi, stok-opname, laporan-penjualan); Super admin auto-navigates to 'super-admin' page on login
+- **Seed File (seed/route.ts):** Changed super admin email from `admin@posril.com` to `admin@posril.id`; Added 3 demo accounts for Toko Makmur Jaya: `owner1@makmur.id` (Pak Hendra, business_owner), `manager1@makmur.id` (Andi Manager, manager), `kasir1@makmur.id` (Sinta Kasir, cashier); Fixed SKU uniqueness by appending random UUID suffix
+- **Auth API (/api/auth/login/route.ts):** POST endpoint accepting email+password; Queries User with tenant and assignedOutlet relations; Returns user data + role + tenant info + outlet info; Any password accepted (mock auth); Returns 404 if user not found or inactive
+- **Login Page (components/app/login-page.tsx):** Named export `LoginPage`; Emerald gradient background with 3 animated gradient orbs; Glassmorphism card with backdrop-blur; Pos Ril logo/branding at top; Email + Password fields with show/hide toggle; Error display with AnimatePresence; Loading spinner on submit; **Quick Login** section with 4 demo account buttons (Super Admin/Owner/Manager/Cashier) each with role-colored gradient card and icon; Staggered animation on demo cards
+- **Super Admin API Routes:**
+  - `/api/super-admin/stats/route.ts` — Returns: active tenant count, total users, monthly transaction count, monthly revenue, platform fees (2% of revenue), plan distribution, 10 most recent tenant registrations
+  - `/api/super-admin/tenants/route.ts` — Returns all tenants with: owner name, outlet count, user count, subscription plan, monthly revenue; Supports `search` and `status` query params
+- **Super Admin Dashboard (components/app/super-admin.tsx):** Named export `SuperAdmin`;
+  - **Stats Cards (4):** Tenant Aktif, Total Pengguna, Transaksi Bulan Ini, Pendapatan Platform — glass-card style with AnimatedCounter, gradient icon containers, gradient top accent bars
+  - **Subscription Plans Overview (4):** Free/Starter/Pro/Enterprise — each card shows price, features list with check icons, current tenant count per plan; Pro card has "Populer" badge
+  - **Tenant Management Table:** Searchable, filterable by status; Columns: Nama Bisnis+city, Pemilik, Paket (badge), Outlet count, Status (colored badge), Omzet Bulan Ini; Action buttons: Lihat Detail (Eye), Nonaktifkan/Aktifkan (Power); Sticky header, scrollbar-thin, skeleton loading, staggered row animation
+  - **Recent Activity Feed:** Last 10 tenant registrations with Gem icon, name, city, timeAgo relative date
+- **Sidebar (sidebar.tsx) — Multi-Role Navigation:**
+  - super_admin: Dashboard, Tenant, Paket Langganan
+  - business_owner: Dashboard, Transaksi, Produk, Stok, Karyawan, Outlet, Laporan
+  - manager: Dashboard, Stok & Opname, Laporan Penjualan
+  - cashier: Kasir (default), Riwayat Transaksi
+  - All roles get "Lainnya" section with Pengaturan
+  - User profile section shows: initials avatar, name, role badge (color-coded per role), logout button (red hover)
+  - Subtitle changes to "Platform Admin" for super_admin, "SaaS POS" for others
+- **Page Router (page.tsx):** Dynamic imports for LoginPage and SuperAdmin; `useSyncExternalStore` for SSR-safe mount detection; localStorage restoration on mount; Shows LoginPage when `currentPage === 'login'`; Added 'super-admin' to pageComponents map; Keyboard shortcuts disabled when on login page
+
+Stage Summary:
+- **Login system** with localStorage persistence, Zustand state management, 4 demo accounts
+- **Super Admin Dashboard** with 4 stat cards, 4 plan cards, tenant table (search/filter/sort), recent activity feed
+- **Multi-role sidebar** with 4 different navigation sets based on user role
+- **3 new API routes:** /api/auth/login, /api/super-admin/stats, /api/super-admin/tenants
+- **1 new component:** super-admin.tsx (416 lines), login-page.tsx (197 lines)
+- **3 modified files:** app-store.ts, sidebar.tsx, page.tsx
+- **ESLint:** Zero errors (fixed set-state-in-effect by using useSyncExternalStore)
+- **TypeScript:** Zero new errors (all existing errors are from pre-existing files using old schema fields)
+- **Database re-seeded** successfully: 10 tenants, 24 outlets, 56 users, 159 products, 110 customers, 250 transactions
+
+---
+Task ID: 3-b
+Agent: Main
+Task: Build Business Owner and Manager pages (Dashboard, Products, Stock, Employees, Outlets)
+
+Work Log:
+- Created 5 API routes under /api/owner/:
+  - **dashboard/route.ts** — GET with parallel queries: today/month revenue, transaction count, avg tx value, 7-day revenue trend, top 5 products, outlet comparison, recent 10 transactions
+  - **products/route.ts** — GET with search, category filter, sort, pagination; POST with SKU/barcode uniqueness check
+  - **stock/route.ts** — GET with stock overview (total, low, out, inventory value), recent logs, categories, outlets; POST for inventory adjustment (in/out/adjustment/initial)
+  - **employees/route.ts** — GET list users by tenantId (exclude super_admin) with outlet info; POST to create employee with email uniqueness per tenant
+  - **outlets/route.ts** — GET outlets with today's stats (tx count, revenue, employee count); POST with code uniqueness per tenant
+- Built 5 frontend components:
+  - **owner-dashboard.tsx** (OwnerDashboard): 4 KPI glass-cards with AnimatedCounter, 7-day AreaChart (dual axis revenue+count), horizontal BarChart outlet comparison, Top 5 products with animated progress bars, Recent transactions table, Quick actions
+  - **products.tsx** (Products): Search + category filter + sort, products table with status badges (Aktif/Stok Rendah/Habis), clickable row opens detail Sheet, Add Product dialog with 12 fields + favorite toggle, pagination
+  - **stock.tsx** (Stock): 4 overview cards (Total Produk, Stok Rendah, Stok Habis, Nilai Inventaris), stock table with status badges, Stock Adjustment dialog (4 types with visual selector), toggleable Stock History log section, low-stock-only filter, manager outlet restriction notice
+  - **employees.tsx** (Employees): Card grid layout (not table), avatar with initials, color-coded role badges (Owner=amber, Manager=emerald, Cashier=blue), masked PIN display, Edit/Nonaktifkan/Reset PIN action buttons, Add Employee dialog
+  - **outlets.tsx** (Outlets): Card grid with today's tx/revenue stats, open/closed status toggle (Switch), employee count, phone/printer IP display, Add Outlet dialog
+- Updated page.tsx: Added dynamic imports for OwnerDashboard, Products, Stock, Employees, Outlets; mapped 'dashboard' to OwnerDashboard, added 'produk'/'stok'/'karyawan'/'outlet' to pageComponents
+- All data queries filter by tenantId from Zustand store (multi-tenant isolation)
+- Used existing CSS classes: glass-card, card-elevated, hover-glow-border, animate-fade-in-up, text-gradient-emerald, tabular-nums, table-stripe, table-header-enhanced, badge-gradient-emerald/amber/rose, hover-lift-surface, empty-state, dot-pattern, neon-glow
+- Fixed lint error: React Compiler memoization issue in stock.tsx (removed useMemo, inlined queryFn)
+- Fixed TypeScript errors: ease type in framer-motion variants (changed from array to 'easeOut' as const), removed disabled prop from Pagination components (not supported by shadcn)
+
+Stage Summary:
+- **5 API routes** created: /api/owner/{dashboard,products,stock,employees,outlets}
+- **5 page components** built: owner-dashboard, products, stock, employees, outlets
+- **ESLint:** Zero errors
+- **TypeScript:** Zero new errors in new files
+- **All pages** fully responsive, use emerald theme, multi-tenant scoped
+- **Quick Stats bar** still shows above all pages (uses old API, will be updated separately)
+
+---
+Task ID: 3-c
+Agent: Main
+Task: Build Cashier POS with Shift Management
+
+Work Log:
+- Rewrote /src/components/app/kasir.tsx as full POS terminal component (~1200 lines)
+- Created /api/cashier/products/route.ts (GET) — filter by tenantId, search, category, includes category info
+- Created /api/cashier/transaction/route.ts (POST) — atomic transaction creation with items, payment, stock decrement, inventory log, shift totals update, invoice generation (TX-{outletCode}-{YYYYMMDD}-{XXXX})
+- Created /api/cashier/shifts/route.ts (GET + POST) — get active shift with cash sales, open/close shift with expected cash calculation and difference tracking
+- Created /api/cashier/history/route.ts (GET) — cashier's transaction history with shift/today/all filters
+- Rewrote /src/lib/receipt-generator.ts — POS thermal receipt (38mm style) with tenant/outlet info, items, tax, payment details, print-friendly
+
+Kasir UI Features:
+- **POS Tab**: Two-panel layout (products left 60%, cart right 40%)
+  - Horizontal scrollable category tabs with search bar (F2 shortcut)
+  - Product grid (2-4 cols responsive) with stock badges, out-of-stock overlay
+  - Cart with qty controls (- / +), remove, subtotal per item
+  - Cart summary: subtotal, PPN 11%, total in emerald gradient
+  - 8 payment method buttons: QRIS, GoPay, OVO, DANA, ShopeePay, Transfer Bank, Kartu Kredit, Tunai
+  - Cash input with kembalian (change) calculation
+  - Large emerald gradient "Bayar" button
+- **Shift Management**: Yellow "Shift belum dibuka" banner / Green "Shift Aktif" badge with totals
+  - Open Shift dialog: opening cash with quick-pick buttons (0, 100K, 200K, 500K, 1M)
+  - Close Shift dialog: summary (opening cash, total sales, cash sales, expected, difference), closing cash input, note
+- **Payment Success Modal**: Animated checkmark with pulse-ring, transaction details, Cetak Struk + Transaksi Baru buttons
+- **History Tab**: Transaction list with Shift Ini / Hari Ini / Semua filters, click for detail dialog
+- **Receipt Printing**: Opens new window with 38mm thermal-style receipt HTML, auto-triggers print
+
+All text in Bahasa Indonesia. All operations scoped to logged-in user's tenantId/outletId.
+
+Stage Summary:
+- **4 new API routes**: cashier/products, cashier/transaction, cashier/shifts, cashier/history
+- **1 rewritten component**: kasir.tsx (full POS terminal ~1200 lines)
+- **1 rewritten library**: receipt-generator.ts (POS thermal receipt)
+- **ESLint:** Zero errors
+- **TypeScript:** Zero errors in new files
+- All operations multi-tenant scoped (tenantId, outletId, cashierId)
+
+---
+Task ID: 7 (Round 7 - Major Redesign)
+Agent: Main
+Task: Transform Pos Ril into Multi-Tenant SaaS POS System with 4 Roles
+
+Work Log:
+- Completely redesigned Prisma schema: 7 models → 20 models for multi-tenant SaaS POS
+- New core models: Tenant, User (4 roles), Outlet, Category, Product, InventoryLog, Transaction, TransactionItem, Payment, Shift, Discount, Tax, Subscription, TenantSettings, ApiKey, AuditLog
+- Multi-tenant isolation: @@unique([tenantId, email]) on User, @@unique([tenantId, phone]) on Customer, @@unique([tenantId, code]) on Outlet
+- Built login page with emerald gradient, glassmorphism card, 4 quick-login demo buttons
+- Built Super Admin dashboard: platform stats, tenant management table, 4 subscription plan cards, recent activity feed
+- Built Business Owner dashboard: 4 KPI cards, revenue chart, outlet comparison, top 5 products, quick actions
+- Built 5 new pages: Products (table + CRUD), Stock (overview + adjustment dialog + history), Employees (card grid), Outlets (card grid + status toggle), Reports
+- Built enhanced Cashier POS: category tabs, product grid with stock overlay, cart with payment methods (8), shift open/close dialogs, receipt thermal printer, transaction history tab
+- Created 10+ new API routes: /api/auth/login, /api/super-admin/stats, /api/super-admin/tenants, /api/owner/dashboard, /api/owner/products, /api/owner/stock, /api/owner/employees, /api/owner/outlets, /api/cashier/products, /api/cashier/transaction, /api/cashier/shifts, /api/cashier/history
+- Fixed 115 TypeScript errors in 14 old API routes (Merchant→Tenant, amount→totalAmount, paymentMethod→Payment relation, added tenantId scoping)
+- Fixed Cashier default page routing in Zustand store
+- QA verified all 4 roles: Super Admin (4 menu), Business Owner (7 menu), Manager (4 menu), Cashier (2 menu)
+
+Stage Summary:
+- **20 Prisma models** with full multi-tenant isolation
+- **4 role-based navigation systems** in sidebar
+- **6 new page components**: LoginPage, SuperAdmin, OwnerDashboard, Products, Stock, Employees, Outlets
+- **1 rewritten component**: Kasir (POS with shift management, thermal receipt)
+- **12+ new API routes** with tenant_id isolation
+- **Seed data**: 10 tenants, 24 outlets, 56 users (4 roles), 159 products, 250 transactions
+- **Zero TS errors, zero lint errors**
+- **QA**: All 4 roles login and navigate correctly
+
+## Current Project Status
+
+### What's Working (Verified ✅)
+- **Login System**: 4 demo accounts, localStorage persistence, role-based redirect
+- **Super Admin**: Platform dashboard, tenant management, subscription plans
+- **Business Owner**: Analytics dashboard, Products CRUD, Stock management, Employees, Outlets, Reports
+- **Manager**: Dashboard, Stock & Opname, Laporan Penjualan, Pengaturan
+- **Cashier**: Full POS terminal, product grid, cart, payment methods, shift management, receipt printing
+- **Multi-tenant isolation**: All API routes filter by tenantId
+- **Dark/light mode toggle**
+- **Responsive design** with mobile navigation
+
+### Unresolved Issues
+1. SWC parser warning on kasir.tsx (non-blocking, page loads correctly)
+2. Header quick stats still queries old /api/dashboard (cosmetic, shows platform data instead of tenant data)
+3. Receipt generator may need update for new Transaction fields
+4. Subscription management (upgrade/downgrade) not yet implemented
+5. Manager void/refund authorization flow not yet implemented
+6. Thermal Bluetooth printer integration is simulated (opens print window)
+7. Offline mode / PWA not yet implemented

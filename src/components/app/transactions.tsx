@@ -105,6 +105,13 @@ const STATUS_MAP: Record<
   string,
   { label: string; color: string; bgClass: string; icon: React.ElementType }
 > = {
+  paid: {
+    label: 'Berhasil',
+    color: 'text-emerald-700',
+    bgClass:
+      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800',
+    icon: CheckCircle2,
+  },
   success: {
     label: 'Berhasil',
     color: 'text-emerald-700',
@@ -140,6 +147,20 @@ const STATUS_MAP: Record<
       'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800',
     icon: RotateCcw,
   },
+  cancelled: {
+    label: 'Dibatalkan',
+    color: 'text-gray-600',
+    bgClass:
+      'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700',
+    icon: XCircle,
+  },
+  void: {
+    label: 'Void',
+    color: 'text-red-700',
+    bgClass:
+      'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800',
+    icon: XCircle,
+  },
 };
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -147,22 +168,24 @@ const STATUS_MAP: Record<
 interface Transaction {
   id: string;
   invoiceNo: string;
-  amount: number;
-  fee: number;
-  netAmount: number;
+  totalAmount: number;
+  subtotalAmount: number;
+  discountAmount: number;
+  taxAmount: number;
+  serviceCharge: number;
   paymentMethod: string;
   paymentChannel: string;
+  fee: number;
+  netAmount: number;
   status: string;
-  description: string | null;
+  note: string | null;
   customerName: string | null;
-  customerEmail: string | null;
   customerPhone: string | null;
   paidAt: string | null;
-  expiredAt: string | null;
   createdAt: string;
   updatedAt: string;
-  merchant: { id: string; name: string; logo: string | null };
-  customer: { id: string; name: string; email: string } | null;
+  tenant: { id: string; name: string; logo: string | null };
+  customer: { id: string; name: string; phone: string | null } | null;
 }
 
 interface TransactionsResponse {
@@ -217,14 +240,6 @@ function buildTimeline(tx: Transaction): TimelineEvent[] {
       date: tx.paidAt,
       icon: CheckCircle2,
       color: 'text-emerald-500',
-    });
-  }
-  if (tx.expiredAt && (tx.status === 'expired' || tx.status === 'failed')) {
-    events.push({
-      label: 'Transaksi kedaluwarsa',
-      date: tx.expiredAt,
-      icon: AlertTriangle,
-      color: 'text-gray-500',
     });
   }
   if (tx.status === 'failed') {
@@ -296,7 +311,7 @@ function TransactionDetailDialog({
       const res = await fetch(`/api/transactions/${tx.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: tx.amount, reason: refundReason.trim() }),
+        body: JSON.stringify({ amount: tx.totalAmount, reason: refundReason.trim() }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Gagal memproses refund' }));
@@ -360,14 +375,14 @@ function TransactionDetailDialog({
             <div>
               <p className="text-sm font-semibold">Status: {statusInfo.label}</p>
               <p className="text-xs opacity-80">
-                {tx.status === 'success'
+                {tx.status === 'paid' || tx.status === 'success'
                   ? 'Pembayaran telah berhasil diterima'
                   : tx.status === 'pending'
                     ? 'Menunggu pembayaran dari pelanggan'
                     : tx.status === 'failed'
                       ? 'Pembayaran gagal diproses'
-                      : tx.status === 'expired'
-                        ? 'Batas waktu pembayaran telah habis'
+                      : tx.status === 'cancelled' || tx.status === 'void'
+                        ? 'Transaksi dibatalkan'
                         : 'Dana telah dikembalikan ke pelanggan'}
               </p>
             </div>
@@ -378,7 +393,7 @@ function TransactionDetailDialog({
             <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">
               Jumlah Pembayaran
             </p>
-            <p className="text-2xl font-bold tracking-tight">{formatRp(tx.amount)}</p>
+            <p className="text-2xl font-bold tracking-tight">{formatRp(tx.totalAmount)}</p>
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
               <span>
                 Biaya Admin: <span className="font-medium text-foreground">{formatRp(tx.fee)}</span>
@@ -393,8 +408,8 @@ function TransactionDetailDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DetailItem
               icon={Store}
-              label="Merchant"
-              value={tx.merchant.name}
+              label="Tenant"
+              value={tx.tenant.name}
             />
             <DetailItem
               icon={User}
@@ -404,12 +419,12 @@ function TransactionDetailDialog({
             <DetailItem
               icon={CreditCard}
               label="Metode Pembayaran"
-              value={tx.paymentMethod}
+              value={tx.paymentMethod || '-'}
             />
             <DetailItem
               icon={CircleDot}
               label="Saluran"
-              value={tx.paymentChannel}
+              value={tx.paymentChannel || '-'}
             />
             <DetailItem
               icon={CalendarDays}
@@ -423,13 +438,6 @@ function TransactionDetailDialog({
                 value={formatDate(tx.paidAt)}
               />
             )}
-            {tx.customerEmail && (
-              <DetailItem
-                icon={Receipt}
-                label="Email Pelanggan"
-                value={tx.customerEmail}
-              />
-            )}
             {tx.customerPhone && (
               <DetailItem
                 icon={Receipt}
@@ -437,12 +445,12 @@ function TransactionDetailDialog({
                 value={tx.customerPhone}
               />
             )}
-            {tx.description && (
+            {tx.note && (
               <div className="sm:col-span-2">
                 <DetailItem
                   icon={Receipt}
-                  label="Deskripsi"
-                  value={tx.description}
+                  label="Catatan"
+                  value={tx.note}
                 />
               </div>
             )}
@@ -472,23 +480,18 @@ function TransactionDetailDialog({
             const si = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
             const html = generateReceiptHtml({
               invoiceNo: tx.invoiceNo,
-              amount: tx.amount,
-              fee: tx.fee,
-              netAmount: tx.netAmount,
-              merchantName: tx.merchant.name,
-              customerName: tx.customerName || tx.customer?.name || '-',
+              tenantName: tx.tenant.name,
+              outletName: '-',
+              cashierName: '-',
+              items: [],
+              subtotalAmount: tx.subtotalAmount,
+              discountAmount: tx.discountAmount,
+              taxAmount: tx.taxAmount,
+              serviceCharge: tx.serviceCharge,
+              totalAmount: tx.totalAmount,
               paymentMethod: tx.paymentMethod,
               paymentChannel: tx.paymentChannel,
-              status: tx.status,
               createdAt: tx.createdAt,
-              paidAt: tx.paidAt,
-              description: tx.description,
-              formattedAmount: formatRp(tx.amount),
-              formattedFee: formatRp(tx.fee),
-              formattedNetAmount: formatRp(tx.netAmount),
-              formattedCreatedAt: formatDate(tx.createdAt),
-              formattedPaidAt: tx.paidAt ? formatDate(tx.paidAt) : null,
-              statusLabel: si.label,
             });
             const blob = new Blob([html], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
@@ -504,7 +507,7 @@ function TransactionDetailDialog({
             <Printer className="h-4 w-4" />
             Unduh Struk
           </Button>
-          {tx.status === 'success' && (
+          {(tx.status === 'paid' || tx.status === 'success') && (
             <Button
               variant="destructive"
               onClick={() => { setRefundDialogOpen(true); setRefundReason(''); setRefundReasonError(''); }}
@@ -540,7 +543,7 @@ function TransactionDetailDialog({
             <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
               <div className="text-sm">
-                <p className="font-medium text-red-800 dark:text-red-300">Refund sebesar {tx ? formatRp(tx.amount) : ''}</p>
+                <p className="font-medium text-red-800 dark:text-red-300">Refund sebesar {tx ? formatRp(tx.totalAmount) : ''}</p>
                 <p className="text-red-600 dark:text-red-400 mt-0.5">
                   Dana akan dikembalikan ke {tx?.customerName || tx?.customer?.name || 'pelanggan'}. Proses membutuhkan 1-3 hari kerja.
                 </p>
@@ -762,7 +765,7 @@ export default function Transactions() {
     queryFn: async () => {
       // We query the same endpoint but with different pages to get counts via pagination.total
       // More efficient: just get all statuses in parallel
-      const statuses = ['success', 'pending', 'failed', 'expired', 'refunded'];
+      const statuses = ['paid', 'pending', 'failed', 'cancelled', 'refunded'];
       const baseParams = new URLSearchParams();
       baseParams.set('limit', '1');
       baseParams.set('page', '1');
@@ -837,7 +840,7 @@ export default function Transactions() {
 
   const statusCards = [
     {
-      key: 'success',
+      key: 'paid',
       label: 'Berhasil',
       icon: CheckCircle2,
       gradient: 'from-emerald-500 to-teal-400',
@@ -864,8 +867,8 @@ export default function Transactions() {
       textColor: 'text-red-700 dark:text-red-400',
     },
     {
-      key: 'expired',
-      label: 'Kedaluwarsa',
+      key: 'cancelled',
+      label: 'Dibatalkan',
       icon: AlertTriangle,
       gradient: 'from-gray-500 to-slate-400',
       bgLight: 'bg-gray-50 dark:bg-gray-900/30',
@@ -941,7 +944,7 @@ export default function Transactions() {
               <div className="relative flex-1 lg:max-w-xs">
                 <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                 <Input
-                  placeholder="Cari invoice, pelanggan, merchant..."
+                  placeholder="Cari invoice, pelanggan, tenant..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   className="pl-9"
@@ -958,10 +961,10 @@ export default function Transactions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="success">Berhasil</SelectItem>
+                  <SelectItem value="paid">Berhasil</SelectItem>
                   <SelectItem value="pending">Menunggu</SelectItem>
                   <SelectItem value="failed">Gagal</SelectItem>
-                  <SelectItem value="expired">Kedaluwarsa</SelectItem>
+                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
                   <SelectItem value="refunded">Refund</SelectItem>
                 </SelectContent>
               </Select>
@@ -976,11 +979,11 @@ export default function Transactions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Metode</SelectItem>
-                  <SelectItem value="QRIS">QRIS</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="E-Wallet">E-Wallet</SelectItem>
-                  <SelectItem value="Virtual Account">Virtual Account</SelectItem>
-                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+                  <SelectItem value="qris">QRIS</SelectItem>
+                  <SelectItem value="bank_transfer">Transfer Bank</SelectItem>
+                  <SelectItem value="e_wallet">E-Wallet</SelectItem>
+                  <SelectItem value="virtual_account">Virtual Account</SelectItem>
+                  <SelectItem value="credit_card">Kartu Kredit</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -1095,7 +1098,7 @@ export default function Transactions() {
                 <TableHeader className="table-header-enhanced">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="pl-4">Invoice</TableHead>
-                    <TableHead>Merchant</TableHead>
+                    <TableHead>Tenant</TableHead>
                     <TableHead>Pelanggan</TableHead>
                     <TableHead className="text-right">Jumlah</TableHead>
                     <TableHead className="text-right">Biaya</TableHead>
@@ -1142,7 +1145,7 @@ export default function Transactions() {
                                 <Store className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                               </div>
                               <span className="max-w-[120px] truncate text-sm">
-                                {tx.merchant.name}
+                                {tx.tenant.name}
                               </span>
                             </div>
                           </TableCell>
@@ -1155,7 +1158,7 @@ export default function Transactions() {
                           </TableCell>
                           <TableCell className="text-right">
                             <span className="text-sm font-semibold">
-                              {formatRp(tx.amount)}
+                              {formatRp(tx.totalAmount)}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
