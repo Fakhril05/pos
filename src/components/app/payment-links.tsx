@@ -1549,48 +1549,80 @@ export default function PaymentLinks() {
                         <p className="mt-3 text-sm font-medium">Belum ada transaksi untuk link ini</p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto rounded-lg border">
-                        <Table className="text-xs">
-                          <TableHeader className="table-header-enhanced">
-                            <TableRow>
-                              <TableHead>Invoice</TableHead>
-                              <TableHead>Pelanggan</TableHead>
-                              <TableHead className="text-right">Jumlah</TableHead>
-                              <TableHead>Metode</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Tanggal</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {detail.transactions.map((tx) => (
-                              <TableRow key={tx.id} className="table-row-hover">
-                                <TableCell className="font-medium">{tx.invoiceNo}</TableCell>
-                                <TableCell>{tx.customerName || '-'}</TableCell>
-                                <TableCell className="text-right tabular-nums">{formatRp(tx.amount)}</TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant="outline"
-                                    className={methodBadgeClass[tx.paymentMethod] || ''}
-                                  >
-                                    {methodLabel[tx.paymentMethod] || tx.paymentMethod}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant="outline"
-                                    className={statusBadgeClass[tx.status] || ''}
-                                  >
-                                    {statusLabel[tx.status] || tx.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {formatDateTime(tx.createdAt)}
-                                </TableCell>
+                      <>
+                        {/* Mobile card list */}
+                        <div className="md:hidden divide-y rounded-lg border">
+                          {detail.transactions.map((tx) => (
+                            <div key={tx.id} className="flex flex-col gap-1.5 p-3">
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono text-xs font-medium">{tx.invoiceNo}</span>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-medium px-1.5 py-0 ${statusBadgeClass[tx.status] || ''}`}
+                                >
+                                  {statusLabel[tx.status] || tx.status}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">{tx.customerName || '-'}</span>
+                                <span className="text-xs font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{formatRp(tx.amount)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] px-1.5 py-0 ${methodBadgeClass[tx.paymentMethod] || ''}`}
+                                >
+                                  {methodLabel[tx.paymentMethod] || tx.paymentMethod}
+                                </Badge>
+                                <span className="text-[10px] text-muted-foreground">{formatDateTime(tx.createdAt)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Desktop table */}
+                        <div className="hidden md:block overflow-x-auto rounded-lg border">
+                          <Table className="text-xs">
+                            <TableHeader className="table-header-enhanced">
+                              <TableRow>
+                                <TableHead>Invoice</TableHead>
+                                <TableHead>Pelanggan</TableHead>
+                                <TableHead className="text-right">Jumlah</TableHead>
+                                <TableHead>Metode</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Tanggal</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                            </TableHeader>
+                            <TableBody>
+                              {detail.transactions.map((tx) => (
+                                <TableRow key={tx.id} className="table-row-hover">
+                                  <TableCell className="font-medium">{tx.invoiceNo}</TableCell>
+                                  <TableCell>{tx.customerName || '-'}</TableCell>
+                                  <TableCell className="text-right tabular-nums">{formatRp(tx.amount)}</TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant="outline"
+                                      className={methodBadgeClass[tx.paymentMethod] || ''}
+                                    >
+                                      {methodLabel[tx.paymentMethod] || tx.paymentMethod}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant="outline"
+                                      className={statusBadgeClass[tx.status] || ''}
+                                    >
+                                      {statusLabel[tx.status] || tx.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-muted-foreground">
+                                    {formatDateTime(tx.createdAt)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </>
                     )}
                   </motion.div>
                 </div>

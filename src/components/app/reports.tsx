@@ -714,25 +714,25 @@ export default function Reports() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-2 overflow-hidden"
+                    className="flex flex-col sm:flex-row items-start sm:items-center gap-2 overflow-hidden"
                   >
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                       <Calendar className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="date"
                         value={customFrom}
                         onChange={(e) => setCustomFrom(e.target.value)}
-                        className="h-9 w-36 pl-8 text-xs"
+                        className="h-9 w-full min-w-0 sm:w-36 pl-8 text-xs"
                       />
                     </div>
-                    <span className="text-muted-foreground text-xs">s/d</span>
-                    <div className="relative">
+                    <span className="text-muted-foreground text-xs shrink-0">s/d</span>
+                    <div className="relative w-full sm:w-auto">
                       <CalendarDays className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="date"
                         value={customTo}
                         onChange={(e) => setCustomTo(e.target.value)}
-                        className="h-9 w-36 pl-8 text-xs"
+                        className="h-9 w-full min-w-0 sm:w-36 pl-8 text-xs"
                       />
                     </div>
                   </motion.div>

@@ -243,7 +243,7 @@ export function OwnerDashboard() {
                     tickFormatter={formatShortRp}
                     tick={{ fontSize: 11 }}
                     className="fill-muted-foreground"
-                    width={60}
+                    width={45}
                   />
                   <YAxis
                     yAxisId="count"
@@ -252,7 +252,7 @@ export function OwnerDashboard() {
                     axisLine={false}
                     tick={{ fontSize: 11 }}
                     className="fill-muted-foreground"
-                    width={40}
+                    width={30}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <ChartLegend content={<ChartLegendContent />} />
@@ -310,7 +310,7 @@ export function OwnerDashboard() {
                     axisLine={false}
                     tick={{ fontSize: 12 }}
                     className="fill-muted-foreground"
-                    width={90}
+                    width={60}  
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="revenue" fill="var(--chart-1)" radius={[0, 6, 6, 0]} />

@@ -1020,7 +1020,7 @@ export function Kasir() {
                   {/* Payment Method Selection */}
                   <div className="mt-3">
                     <p className="mb-2 text-xs font-semibold text-muted-foreground">Metode Pembayaran</p>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                       {PAYMENT_METHODS.map((pm) => {
                         const Icon = pm.icon
                         return (

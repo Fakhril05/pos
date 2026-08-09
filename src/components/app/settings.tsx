@@ -1471,38 +1471,41 @@ export default function Settings() {
         <Card className="gradient-border">
           <CardContent className="p-1">
             <Tabs defaultValue="profil" className="w-full">
-              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto">
+              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto scrollbar-none">
                 <TabsTrigger
                   value="profil"
-                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                  className="relative gap-1.5 rounded-none border-b-2 border-transparent px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
                 >
                   <User className="h-4 w-4" />
                   Profil
                 </TabsTrigger>
                 <TabsTrigger
                   value="pembayaran"
-                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                  className="relative gap-1.5 rounded-none border-b-2 border-transparent px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
                 >
                   <CreditCard className="h-4 w-4" />
-                  Pembayaran
+                  <span className="hidden sm:inline">Pembayaran</span>
+                  <span className="sm:hidden">Bayar</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="notifikasi"
-                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                  className="relative gap-1.5 rounded-none border-b-2 border-transparent px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
                 >
                   <Bell className="h-4 w-4" />
-                  Notifikasi
+                  <span className="hidden sm:inline">Notifikasi</span>
+                  <span className="sm:hidden">Notif</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="keamanan"
-                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                  className="relative gap-1.5 rounded-none border-b-2 border-transparent px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
                 >
                   <Shield className="h-4 w-4" />
-                  Keamanan
+                  <span className="hidden sm:inline">Keamanan</span>
+                  <span className="sm:hidden">Aman</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="webhook"
-                  className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+                  className="relative gap-1.5 rounded-none border-b-2 border-transparent px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
                 >
                   <Globe className="h-4 w-4" />
                   Webhook

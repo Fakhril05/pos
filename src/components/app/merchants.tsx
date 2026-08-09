@@ -1009,65 +1009,97 @@ export default function Merchants() {
                         <p className="text-muted-foreground text-sm">Belum ada transaksi</p>
                       </div>
                     ) : (
-                      <div className="rounded-xl border overflow-hidden">
-                        <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader className="table-header-enhanced">
-                            <TableRow className="hover:bg-transparent">
-                              <TableHead className="text-[11px]">Invoice</TableHead>
-                              <TableHead className="text-[11px]">Pelanggan</TableHead>
-                              <TableHead className="text-[11px] text-right">Jumlah</TableHead>
-                              <TableHead className="text-[11px]">Metode</TableHead>
-                              <TableHead className="text-[11px]">Status</TableHead>
-                              <TableHead className="text-[11px]">Tanggal</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {detail.transactions.slice(0, 5).map((tx, idx) => (
-                              <motion.tr
-                                key={tx.id}
-                                initial={{ opacity: 0, x: -6 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.15, delay: idx * 0.03 }}
-                                className="table-row-hover border-b last:border-0"
-                              >
-                                <TableCell className="py-2.5">
-                                  <span className="font-mono text-[11px] font-medium">{tx.invoiceNo}</span>
-                                </TableCell>
-                                <TableCell className="py-2.5">
-                                  <span className="text-xs truncate block max-w-[100px]">
-                                    {tx.customer?.name || tx.customerName || '-'}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="py-2.5 text-right">
-                                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                    {formatMoney(tx.amount)}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="py-2.5">
-                                  <span className="text-xs text-muted-foreground capitalize">
-                                    {tx.paymentMethod}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="py-2.5">
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[10px] font-medium px-2 py-0 ${txStatusColor[tx.status] || ''}`}
-                                  >
-                                    {txStatusLabel[tx.status] || tx.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="py-2.5">
-                                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                                    {formatDateTime(tx.createdAt)}
-                                  </span>
-                                </TableCell>
-                              </motion.tr>
-                            ))}
-                          </TableBody>
-                        </Table>
+                      <>
+                        {/* Mobile card list */}
+                        <div className="md:hidden divide-y rounded-xl border">
+                          {detail.transactions.slice(0, 5).map((tx) => (
+                            <div key={tx.id} className="flex flex-col gap-1 p-3">
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono text-[11px] font-medium">{tx.invoiceNo}</span>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-medium px-1.5 py-0 ${txStatusColor[tx.status] || ''}`}
+                                >
+                                  {txStatusLabel[tx.status] || tx.status}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {tx.customer?.name || tx.customerName || '-'}
+                                </span>
+                                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                  {formatMoney(tx.amount)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-muted-foreground capitalize">{tx.paymentMethod}</span>
+                                <span className="text-[10px] text-muted-foreground">·</span>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{formatDateTime(tx.createdAt)}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
+                        {/* Desktop table */}
+                        <div className="hidden md:block rounded-xl border overflow-hidden">
+                          <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader className="table-header-enhanced">
+                              <TableRow className="hover:bg-transparent">
+                                <TableHead className="text-[11px]">Invoice</TableHead>
+                                <TableHead className="text-[11px]">Pelanggan</TableHead>
+                                <TableHead className="text-[11px] text-right">Jumlah</TableHead>
+                                <TableHead className="text-[11px]">Metode</TableHead>
+                                <TableHead className="text-[11px]">Status</TableHead>
+                                <TableHead className="text-[11px]">Tanggal</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {detail.transactions.slice(0, 5).map((tx, idx) => (
+                                <motion.tr
+                                  key={tx.id}
+                                  initial={{ opacity: 0, x: -6 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.15, delay: idx * 0.03 }}
+                                  className="table-row-hover border-b last:border-0"
+                                >
+                                  <TableCell className="py-2.5">
+                                    <span className="font-mono text-[11px] font-medium">{tx.invoiceNo}</span>
+                                  </TableCell>
+                                  <TableCell className="py-2.5">
+                                    <span className="text-xs truncate block max-w-[100px]">
+                                      {tx.customer?.name || tx.customerName || '-'}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="py-2.5 text-right">
+                                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                      {formatMoney(tx.amount)}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="py-2.5">
+                                    <span className="text-xs text-muted-foreground capitalize">
+                                      {tx.paymentMethod}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="py-2.5">
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-[10px] font-medium px-2 py-0 ${txStatusColor[tx.status] || ''}`}
+                                    >
+                                      {txStatusLabel[tx.status] || tx.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="py-2.5">
+                                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                      {formatDateTime(tx.createdAt)}
+                                    </span>
+                                  </TableCell>
+                                </motion.tr>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </motion.div>
                 </div>

@@ -1,0 +1,1430 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+     4→     4→import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+     5→     5→import { motion, AnimatePresence } from 'framer-motion'
+     6→     6→import { toast } from 'sonner'
+     7→     7→import {
+     8→     8→  Search,
+     9→     9→  Plus,
+    10→    10→  Minus,
+    11→    11→  Trash2,
+    12→    12→  Check,
+    13→    13→  Printer,
+    14→    14→  Clock,
+    15→    15→  Wallet,
+    16→    16→  CreditCard,
+    17→    17→  Building2,
+    18→    18→  QrCode,
+    19→    19→  Smartphone,
+    20→    20→  Banknote,
+    21→    21→  ShoppingCart,
+    22→    22→  Loader2,
+    23→    23→  History,
+    24→    24→  CircleDollarSign,
+    25→    25→  ChevronRight,
+    26→    26→  Package,
+    27→    27→  ArrowRight,
+    28→    28→} from 'lucide-react'
+    29→    29→import { Button } from '@/components/ui/button'
+    30→    30→import { Input } from '@/components/ui/input'
+    31→    31→import { Label } from '@/components/ui/label'
+    32→    32→import { Badge } from '@/components/ui/badge'
+    33→    33→import { Separator } from '@/components/ui/separator'
+    34→    34→import { Skeleton } from '@/components/ui/skeleton'
+    35→    35→import {
+    36→    36→  Dialog,
+    37→    37→  DialogContent,
+    38→    38→  DialogHeader,
+    39→    39→  DialogTitle,
+    40→    40→  DialogDescription,
+    41→    41→} from '@/components/ui/dialog'
+    42→    42→import {
+    43→    43→  Sheet,
+    44→    44→  SheetContent,
+    45→    45→  SheetHeader,
+    46→    46→  SheetTitle,
+    47→    47→} from '@/components/ui/sheet'
+    48→    48→import { ScrollArea } from '@/components/ui/scroll-area'
+    49→    49→import { cn } from '@/lib/utils'
+    50→    50→import { generateReceiptHtml } from '@/lib/receipt-generator'
+    51→    51→import { useAppStore } from '@/stores/app-store'
+    52→    52→
+    53→    53→// ── Types ──────────────────────────────────────────────────────────────
+    54→    54→
+    55→    55→interface Product {
+    56→    56→  id: string
+    57→    57→  name: string
+    58→    58→  sellPrice: number
+    59→    59→  buyPrice: number
+    60→    60→  stock: number
+    61→    61→  minStock: number
+    62→    62→  unit: string
+    63→    63→  sku: string | null
+    64→    64→  category: { id: string; name: string; icon: string | null; color: string | null } | null
+    65→    65→  isFavorite: boolean
+    66→    66→}
+    67→    67→
+    68→    68→interface Category {
+    69→    69→  id: string
+    70→    70→  name: string
+    71→    71→  icon: string | null
+    72→    72→  color: string | null
+    73→    73→}
+    74→    74→
+    75→    75→interface CartItem {
+    76→    76→  productId: string
+    77→    77→  name: string
+    78→    78→  price: number
+    79→    79→  buyPrice: number
+    80→    80→  quantity: number
+    81→    81→  unit: string
+    82→    82→  sku: string | null
+    83→    83→}
+    84→    84→
+    85→    85→interface ShiftData {
+    86→    86→  id: string
+    87→    87→  openingCash: number
+    88→    88→  openedAt: string
+    89→    89→  totalSales: number
+    90→    90→  totalTx: number
+    91→    91→  cashier: { name: string }
+    92→    92→  outlet: { name: string; code: string }
+    93→    93→  cashSales: number
+    94→    94→}
+    95→    95→
+    96→    96→interface TxResult {
+    97→    97→  transaction: { id: string; invoiceNo: string; createdAt: string; totalAmount: number }
+    98→    98→  payment: { paymentMethod: string; paymentChannel: string | null }
+    99→    99→  invoiceNo: string
+   100→   100→  outletName: string
+   101→   101→  outletAddress: string | null
+   102→   102→  outletCity: string | null
+   103→   103→  tenantName: string
+   104→   104→  tenantAddress: string | null
+   105→   105→  tenantCity: string | null
+   106→   106→  tenantPhone: string | null
+   107→   107→  cashierName: string
+   108→   108→  items: CartItem[]
+   109→   109→}
+   110→   110→
+   111→   111→interface TxHistoryItem {
+   112→   112→  id: string
+   113→   113→  invoiceNo: string
+   114→   114→  createdAt: string
+   115→   115→  totalAmount: number
+   116→   116→  paymentMethod: string
+   117→   117→  paymentChannel: string | null
+   118→   118→  status: string
+   119→   119→  _count: { items: number }
+   120→   120→}
+   121→   121→
+   122→   122→// ── Helpers ──────────────────────────────────────────────────────────────
+   123→   123→
+   124→   124→const formatRp = (amount: number) =>
+   125→   125→  new Intl.NumberFormat('id-ID', {
+   126→   126→    style: 'currency',
+   127→   127→    currency: 'IDR',
+   128→   128→    minimumFractionDigits: 0,
+   129→   129→  }).format(amount)
+   130→   130→
+   131→   131→const formatTime = (dateStr: string) => {
+   132→   132→  const d = new Date(dateStr)
+   133→   133→  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+   134→   134→}
+   135→   135→
+   136→   136→const TAX_RATE = 0.11
+   137→   137→const SERVICE_CHARGE_RATE = 0
+   138→   138→
+   139→   139→const PAYMENT_METHODS = [
+   140→   140→  { method: 'qris', channel: 'QRIS', label: 'QRIS', icon: QrCode, color: 'text-blue-600 dark:text-blue-400' },
+   141→   141→  { method: 'e_wallet', channel: 'GoPay', label: 'GoPay', icon: Smartphone, color: 'text-blue-500 dark:text-blue-300' },
+   142→   142→  { method: 'e_wallet', channel: 'OVO', label: 'OVO', icon: Smartphone, color: 'text-purple-600 dark:text-purple-400' },
+   143→   143→  { method: 'e_wallet', channel: 'DANA', label: 'DANA', icon: Smartphone, color: 'text-sky-600 dark:text-sky-400' },
+   144→   144→  { method: 'e_wallet', channel: 'ShopeePay', label: 'ShopeePay', icon: Smartphone, color: 'text-orange-600 dark:text-orange-400' },
+   145→   145→  { method: 'bank_transfer', channel: 'Transfer Bank', label: 'Transfer Bank', icon: Building2, color: 'text-slate-600 dark:text-slate-400' },
+   146→   146→  { method: 'credit_card', channel: 'Kartu Kredit', label: 'Kartu Kredit', icon: CreditCard, color: 'text-amber-600 dark:text-amber-400' },
+   147→   147→  { method: 'cash', channel: 'Tunai', label: 'Tunai', icon: Banknote, color: 'text-emerald-600 dark:text-emerald-400' },
+   148→   148→]
+   149→   149→
+   150→   150→// ── Component ──────────────────────────────────────────────────────────
+   151→   151→
+   152→   152→export function Kasir() {
+   153→   153→  const user = useAppStore((s) => s.user)
+   154→   154→  const queryClient = useQueryClient()
+   155→   155→
+   156→   156→  const [search, setSearch] = useState('')
+   157→   157→  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+   158→   158→  const [cart, setCart] = useState<CartItem[]>([])
+   159→   159→  const [selectedPayment, setSelectedPayment] = useState<(typeof PAYMENT_METHODS)[number] | null>(null)
+   160→   160→  const [tendered, setTendered] = useState('')
+   161→   161→  const [showSuccess, setShowSuccess] = useState(false)
+   162→   162→  const [lastTx, setLastTx] = useState<TxResult | null>(null)
+   163→   163→  const [showShiftDialog, setShowShiftDialog] = useState<'open' | 'close' | null>(null)
+   164→   164→  const [shiftOpeningCash, setShiftOpeningCash] = useState('')
+   165→   165→  const [shiftClosingCash, setShiftClosingCash] = useState('')
+   166→   166→  const [shiftNote, setShiftNote] = useState('')
+   167→   167→  const [activeTab, setActiveTab] = useState<'pos' | 'history'>('pos')
+   168→   168→  const [historyFilter, setHistoryFilter] = useState<'shift' | 'today' | 'all'>('shift')
+   169→   169→  const [showTxDetail, setShowTxDetail] = useState<TxHistoryItem | null>(null)
+   170→   170→  const [showMobileCart, setShowMobileCart] = useState(false)
+   171→   171→  const searchRef = useRef<HTMLInputElement>(null)
+   172→   172→
+   173→   173→  // ── Queries ──────────────────────────────────────────────────────
+   174→   174→
+   175→   175→  const { data: productsData, isLoading: productsLoading } = useQuery({
+   176→   176→    queryKey: ['cashier-products', user?.tenantId, search, activeCategory],
+   177→   177→    queryFn: async () => {
+   178→   178→      const params = new URLSearchParams({ tenantId: user!.tenantId! })
+   179→   179→      if (search) params.set('search', search)
+   180→   180→      if (activeCategory) params.set('categoryId', activeCategory)
+   181→   181→      const res = await fetch(`/api/cashier/products?${params}`)
+   182→   182→      if (!res.ok) throw new Error('Gagal memuat produk')
+   183→   183→      return res.json() as Promise<{ products: Product[]; categories: Category[] }>
+   184→   184→    },
+   185→   185→    enabled: !!user?.tenantId,
+   186→   186→    refetchInterval: 30000,
+   187→   187→  })
+   188→   188→
+   189→   189→  const { data: shiftData, isLoading: shiftLoading } = useQuery({
+   190→   190→    queryKey: ['cashier-shift', user?.outletId, user?.id],
+   191→   191→    queryFn: async () => {
+   192→   192→      const params = new URLSearchParams({
+   193→   193→        outletId: user!.outletId!,
+   194→   194→        cashierId: user!.id,
+   195→   195→      })
+   196→   196→      const res = await fetch(`/api/cashier/shifts?${params}`)
+   197→   197→      if (!res.ok) throw new Error('Gagal memuat shift')
+   198→   198→      return res.json() as Promise<{ shift: ShiftData | null }>
+   199→   199→    },
+   200→   200→    enabled: !!user?.outletId && !!user?.id,
+   201→   201→  })
+   202→   202→
+   203→   203→  const { data: historyData, isLoading: historyLoading } = useQuery({
+   204→   204→    queryKey: ['cashier-history', user?.id, historyFilter],
+   205→   205→    queryFn: async () => {
+   206→   206→      const params = new URLSearchParams({
+   207→   207→        cashierId: user!.id,
+   208→   208→        filter: historyFilter,
+   209→   209→      })
+   210→   210→      const res = await fetch(`/api/cashier/history?${params}`)
+   211→   211→      if (!res.ok) throw new Error('Gagal memuat riwayat')
+   212→   212→      return res.json() as Promise<{ transactions: TxHistoryItem[] }>
+   213→   213→    },
+   214→   214→    enabled: activeTab === 'history' && !!user?.id,
+   215→   215→  })
+   216→   216→
+   217→   217→  // ── Mutations ──────────────────────────────────────────────────
+   218→   218→
+   219→   219→  const createTransaction = useMutation({
+   220→   220→    mutationFn: async () => {
+   221→   221→      if (!user || !shiftData?.shift || !selectedPayment) return null
+   222→   222→
+   223→   223→      const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0)
+   224→   224→      const discountAmount = 0
+   225→   225→      const taxAmount = Math.round(subtotal * TAX_RATE)
+   226→   226→      const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_RATE)
+   227→   227→      const totalAmount = subtotal - discountAmount + taxAmount + serviceCharge
+   228→   228→
+   229→   229→      const res = await fetch('/api/cashier/transaction', {
+   230→   230→        method: 'POST',
+   231→   231→        headers: { 'Content-Type': 'application/json' },
+   232→   232→        body: JSON.stringify({
+   233→   233→          tenantId: user.tenantId,
+   234→   234→          outletId: user.outletId,
+   235→   235→          cashierId: user.id,
+   236→   236→          items: cart.map((c) => ({
+   237→   237→            productId: c.productId,
+   238→   238→            name: c.name,
+   239→   239→            price: c.price,
+   240→   240→            buyPrice: c.buyPrice,
+   241→   241→            quantity: c.quantity,
+   242→   242→            unit: c.unit,
+   243→   243→            sku: c.sku,
+   244→   244→          })),
+   245→   245→          subtotalAmount: subtotal,
+   246→   246→          discountAmount,
+   247→   247→          taxAmount,
+   248→   248→          serviceCharge,
+   249→   249→          totalAmount,
+   250→   250→          paymentMethod: selectedPayment.method,
+   251→   251→          paymentChannel: selectedPayment.channel,
+   252→   252→          tendered: selectedPayment.method === 'cash' ? parseFloat(tendered) || 0 : undefined,
+   253→   253→        }),
+   254→   254→      })
+   255→   255→      if (!res.ok) {
+   256→   256→        const err = await res.json()
+   257→   257→        throw new Error(err.error || 'Gagal membuat transaksi')
+   258→   258→      }
+   259→   259→      return res.json() as Promise<TxResult>
+   260→   260→    },
+   261→   261→    onSuccess: (data) => {
+   262→   262→      if (data) {
+   263→   263→        setLastTx(data)
+   264→   264→        setShowSuccess(true)
+   265→   265→        setCart([])
+   266→   266→        setSelectedPayment(null)
+   267→   267→        setTendered('')
+   268→   268→        queryClient.invalidateQueries({ queryKey: ['cashier-products'] })
+   269→   269→        queryClient.invalidateQueries({ queryKey: ['cashier-shift'] })
+   270→   270→        queryClient.invalidateQueries({ queryKey: ['cashier-history'] })
+   271→   271→      }
+   272→   272→    },
+   273→   273→    onError: (err) => {
+   274→   274→      toast.error(err.message)
+   275→   275→    },
+   276→   276→  })
+   277→   277→
+   278→   278→  const shiftMutation = useMutation({
+   279→   279→    mutationFn: async (action: 'open' | 'close') => {
+   280→   280→      if (!user) return null
+   281→   281→      const body: Record<string, unknown> = {
+   282→   282→        action,
+   283→   283→        tenantId: user.tenantId,
+   284→   284→        outletId: user.outletId,
+   285→   285→        cashierId: user.id,
+   286→   286→      }
+   287→   287→      if (action === 'open') body.openingCash = parseFloat(shiftOpeningCash) || 0
+   288→   288→      if (action === 'close') {
+   289→   289→        body.closingCash = parseFloat(shiftClosingCash) || 0
+   290→   290→        body.note = shiftNote
+   291→   291→      }
+   292→   292→      const res = await fetch('/api/cashier/shifts', {
+   293→   293→        method: 'POST',
+   294→   294→        headers: { 'Content-Type': 'application/json' },
+   295→   295→        body: JSON.stringify(body),
+   296→   296→      })
+   297→   297→      if (!res.ok) {
+   298→   298→        const err = await res.json()
+   299→   299→        throw new Error(err.error || 'Gagal')
+   300→   300→      }
+   301→   301→      return res.json()
+   302→   302→    },
+   303→   303→    onSuccess: () => {
+   304→   304→      queryClient.invalidateQueries({ queryKey: ['cashier-shift'] })
+   305→   305→      queryClient.invalidateQueries({ queryKey: ['cashier-history'] })
+   306→   306→      setShowShiftDialog(null)
+   307→   307→      setShiftOpeningCash('')
+   308→   308→      setShiftClosingCash('')
+   309→   309→      setShiftNote('')
+   310→   310→      toast.success(
+   311→   311→        shiftMutation.variables === 'open' ? 'Shift berhasil dibuka' : 'Shift berhasil ditutup',
+   312→   312→      )
+   313→   313→    },
+   314→   314→    onError: (err) => {
+   315→   315→      toast.error(err.message)
+   316→   316→    },
+   317→   317→  })
+   318→   318→
+   319→   319→  // ── Cart Logic ──────────────────────────────────────────────────
+   320→   320→
+   321→   321→  const addToCart = useCallback(
+   322→   322→    (product: Product) => {
+   323→   323→      setCart((prev) => {
+   324→   324→        const existing = prev.find((c) => c.productId === product.id)
+   325→   325→        if (existing) {
+   326→   326→          if (existing.quantity >= product.stock) {
+   327→   327→            toast.warning(`Stok ${product.name} tidak cukup`)
+   328→   328→            return prev
+   329→   329→          }
+   330→   330→          return prev.map((c) =>
+   331→   331→            c.productId === product.id
+   332→   332→              ? { ...c, quantity: c.quantity + 1 }
+   333→   333→              : c,
+   334→   334→          )
+   335→   335→        }
+   336→   336→        if (product.stock <= 0) {
+   337→   337→          toast.warning(`${product.name} habis`)
+   338→   338→          return prev
+   339→   339→        }
+   340→   340→        return [
+   341→   341→          ...prev,
+   342→   342→          {
+   343→   343→            productId: product.id,
+   344→   344→            name: product.name,
+   345→   345→            price: product.sellPrice,
+   346→   346→            buyPrice: product.buyPrice,
+   347→   347→            quantity: 1,
+   348→   348→            unit: product.unit,
+   349→   349→            sku: product.sku,
+   350→   350→          },
+   351→   351→        ]
+   352→   352→      })
+   353→   353→    },
+   354→   354→    [],
+   355→   355→  )
+   356→   356→
+   357→   357→  const updateQty = useCallback((productId: string, delta: number) => {
+   358→   358→    setCart((prev) => {
+   359→   359→      return prev
+   360→   360→        .map((c) => {
+   361→   361→          if (c.productId !== productId) return c
+   362→   362→          const newQty = c.quantity + delta
+   363→   363→          if (newQty <= 0) return null
+   364→   364→          return { ...c, quantity: newQty }
+   365→   365→        })
+   366→   366→        .filter(Boolean) as CartItem[]
+   367→   367→    })
+   368→   368→  }, [])
+   369→   369→
+   370→   370→  const removeFromCart = useCallback((productId: string) => {
+   371→   371→    setCart((prev) => prev.filter((c) => c.productId !== productId))
+   372→   372→  }, [])
+   373→   373→
+   374→   374→  const clearCart = useCallback(() => {
+   375→   375→    setCart([])
+   376→   376→    setSelectedPayment(null)
+   377→   377→    setTendered('')
+   378→   378→  }, [])
+   379→   379→
+   380→   380→  // ── Computed ──────────────────────────────────────────────────
+   381→   381→
+   382→   382→  const cartSubtotal = useMemo(() => cart.reduce((s, c) => s + c.price * c.quantity, 0), [cart])
+   383→   383→  const cartTax = Math.round(cartSubtotal * TAX_RATE)
+   384→   384→  const cartServiceCharge = Math.round(cartSubtotal * SERVICE_CHARGE_RATE)
+   385→   385→  const cartTotal = cartSubtotal + cartTax + cartServiceCharge
+   386→   386→  const cartItemCount = cart.reduce((s, c) => s + c.quantity, 0)
+   387→   387→  const tenderedNum = parseFloat(tendered) || 0
+   388→   388→  const change = tenderedNum - cartTotal
+   389→   389→
+   390→   390→  const filteredProducts = useMemo(() => {
+   391→   391→    const prods = productsData?.products || []
+   392→   392→    if (!activeCategory) return prods
+   393→   393→    return prods.filter((p) => p.category?.id === activeCategory)
+   394→   394→  }, [productsData, activeCategory])
+   395→   395→
+   396→   396→  const categories = productsData?.categories || []
+   397→   397→  const activeShift = shiftData?.shift || null
+   398→   398→  const isProcessing = createTransaction.isPending || shiftMutation.isPending
+   399→   399→
+   400→   400→  // ── Keyboard shortcuts ──────────────────────────────────────────
+   401→   401→
+   402→   402→  useEffect(() => {
+   403→   403→    const handleKey = (e: KeyboardEvent) => {
+   404→   404→      const tag = (e.target as HTMLElement)?.tagName
+   405→   405→      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+   406→   406→      if (e.key === 'F2') {
+   407→   407→        e.preventDefault()
+   408→   408→        searchRef.current?.focus()
+   409→   409→      }
+   410→   410→      if (e.key === 'Escape') {
+   411→   411→        setShowSuccess(false)
+   412→   412→        setShowShiftDialog(null)
+   413→   413→        setShowTxDetail(null)
+   414→   414→      }
+   415→   415→    }
+   416→   416→    document.addEventListener('keydown', handleKey)
+   417→   417→    return () => document.removeEventListener('keydown', handleKey)
+   418→   418→  }, [])
+   419→   419→
+   420→   420→  // ── Print Receipt ──────────────────────────────────────────
+   421→   421→
+   422→   422→  const printReceipt = useCallback(() => {
+   423→   423→    if (!lastTx) return
+   424→   424→    const txSubtotal = lastTx.items.reduce((s, i) => s + i.price * i.quantity, 0)
+   425→   425→    const txTax = Math.round(txSubtotal * TAX_RATE)
+   426→   426→    const txServiceCharge = Math.round(txSubtotal * SERVICE_CHARGE_RATE)
+   427→   427→
+   428→   428→    const html = generateReceiptHtml({
+   429→   429→      invoiceNo: lastTx.invoiceNo,
+   430→   430→      tenantName: lastTx.tenantName,
+   431→   431→      outletName: lastTx.outletName,
+   432→   432→      outletAddress: lastTx.outletAddress,
+   433→   433→      outletCity: lastTx.outletCity,
+   434→   434→      tenantPhone: lastTx.tenantPhone,
+   435→   435→      cashierName: lastTx.cashierName,
+   436→   436→      items: lastTx.items.map((i) => ({
+   437→   437→        name: i.name,
+   438→   438→        quantity: i.quantity,
+   439→   439→        price: i.price,
+   440→   440→        subtotal: i.price * i.quantity,
+   441→   441→      })),
+   442→   442→      subtotalAmount: txSubtotal,
+   443→   443→      discountAmount: 0,
+   444→   444→      taxAmount: txTax,
+   445→   445→      serviceCharge: txServiceCharge,
+   446→   446→      totalAmount: lastTx.transaction.totalAmount,
+   447→   447→      paymentMethod: lastTx.payment.paymentMethod,
+   448→   448→      paymentChannel: lastTx.payment.paymentChannel,
+   449→   449→      tendered: lastTx.payment.paymentMethod === 'cash' ? parseFloat(tendered) || 0 : undefined,
+   450→   450→      change: lastTx.payment.paymentMethod === 'cash' ? change : undefined,
+   451→   451→      createdAt: lastTx.transaction.createdAt,
+   452→   452→    })
+   453→   453→
+   454→   454→    const w = window.open('', '_blank', 'width=400,height=700')
+   455→   455→    if (w) {
+   456→   456→      w.document.write(html)
+   457→   457→      w.document.close()
+   458→   458→      setTimeout(() => w.print(), 300)
+   459→   459→    }
+   460→   460→  }, [lastTx, tendered, change, cart])
+   461→   461→
+   462→   462→
+   463→   463→  // ── Render ──────────────────────────────────────────────────
+   464→   464→
+   465→   465→  return (
+   466→   466→    <div className="flex h-[calc(100vh-8.5rem)] flex-col gap-4 md:gap-6">
+   467→   467→      {/* Tab Switcher */}
+   468→   468→      <div className="flex items-center gap-1">
+   469→   469→        <button
+   470→   470→          onClick={() => setActiveTab('pos')}
+   471→   471→          className={cn(
+   472→   472→            'rounded-lg px-4 py-2 text-sm font-semibold transition-all btn-press',
+   473→   473→            activeTab === 'pos'
+   474→   474→              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+   475→   475→              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+   476→   476→          )}
+   477→   477→        >
+   478→   478→          <span className="flex items-center gap-2">
+   479→   479→            <ShoppingCart className="h-4 w-4" />
+   480→   480→            Kasir POS
+   481→   481→          </span>
+   482→   482→        </button>
+   483→   483→        <button
+   484→   484→          onClick={() => setActiveTab('history')}
+   485→   485→          className={cn(
+   486→   486→            'rounded-lg px-4 py-2 text-sm font-semibold transition-all btn-press',
+   487→   487→            activeTab === 'history'
+   488→   488→              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+   489→   489→              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+   490→   490→          )}
+   491→   491→        >
+   492→   492→          <span className="flex items-center gap-2">
+   493→   493→            <History className="h-4 w-4" />
+   494→   494→            Riwayat
+   495→   495→          </span>
+   496→   496→        </button>
+   497→   497→      </div>
+   498→   498→
+   499→   499→      {activeTab === 'pos' ? (
+   500→   500→        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+   501→   501→          {/* Mobile shift status bar */}
+   502→   502→          <div className="lg:hidden">
+   503→   503→            {shiftLoading ? (
+   504→   504→              <Skeleton className="h-10 w-full rounded-lg" />
+   505→   505→            ) : !activeShift ? (
+   506→   506→              <button
+   507→   507→                onClick={() => setShowShiftDialog('open')}
+   508→   508→                className="flex w-full items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950 btn-press"
+   509→   509→              >
+   510→   510→                <span className="flex items-center gap-2">
+   511→   511→                  <Clock className="h-4 w-4" />
+   512→   512→                  Shift belum dibuka
+   513→   513→                </span>
+   514→   514→                <Badge className="badge-gradient-amber text-white">Buka Shift</Badge>
+   515→   515→              </button>
+   516→   516→            ) : (
+   517→   517→              <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-2.5 dark:bg-emerald-950/30">
+   518→   518→                <div className="flex items-center gap-2">
+   519→   519→                  <div className="relative">
+   520→   520→                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+   521→   521→                    <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+   522→   522→                  </div>
+   523→   523→                  <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+   524→   524→                    Shift Aktif
+   525→   525→                  </span>
+   526→   526→                  <span className="text-xs text-muted-foreground">
+   527→   527→                    • {formatTime(activeShift.openedAt)}
+   528→   528→                  </span>
+   529→   529→                </div>
+   530→   530→                <button
+   531→   531→                  onClick={() => setShowShiftDialog('close')}
+   532→   532→                  className="rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900 btn-press"
+   533→   533→                >
+   534→   534→                  Tutup
+   535→   535→                </button>
+   536→   536→              </div>
+   537→   537→            )}
+   538→   538→          </div>
+   539→   539→
+   540→   540→          {/* ─── LEFT PANEL: Products ─── */}
+   541→   541→          <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-[3]">
+   542→   542→            {/* Search */}
+   543→   543→            <div className="relative">
+   544→   544→              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+   545→   545→              <Input
+   546→   546→                ref={searchRef}
+   547→   547→                value={search}
+   548→   548→                onChange={(e) => setSearch(e.target.value)}
+   549→   549→                placeholder="Cari produk... (F2)"
+   550→   550→                className="pl-10"
+   551→   551→              />
+   552→   552→            </div>
+   553→   553→
+   554→   554→            {/* Category Tabs */}
+   555→   555→            <div className="relative">
+   556→   556→              <ScrollArea className="w-full">
+   557→   557→                <div className="flex gap-2 pb-1">
+   558→   558→                  <button
+   559→   559→                    onClick={() => setActiveCategory(null)}
+   560→   560→                    className={cn(
+   561→   561→                      'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all btn-press',
+   562→   562→                      !activeCategory
+   563→   563→                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+   564→   564→                        : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+   565→   565→                    )}
+   566→   566→                  >
+   567→   567→                    Semua
+   568→   568→                  </button>
+   569→   569→                  {categories.map((cat) => (
+   570→   570→                    <button
+   571→   571→                      key={cat.id}
+   572→   572→                      onClick={() => setActiveCategory(cat.id)}
+   573→   573→                      className={cn(
+   574→   574→                        'shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all btn-press',
+   575→   575→                        activeCategory === cat.id
+   576→   576→                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+   577→   577→                          : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
+   578→   578→                      )}
+   579→   579→                    >
+   580→   580→                      {cat.icon || ''} {cat.name}
+   581→   581→                    </button>
+   582→   582→                  ))}
+   583→   583→                </div>
+   584→   584→              </ScrollArea>
+   585→   585→            </div>
+   586→   586→
+   587→   587→            {/* Product Grid */}
+   588→   588→            <div className="min-h-0 flex-1">
+   589→   589→              {productsLoading ? (
+   590→   590→                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+   591→   591→                  {Array.from({ length: 8 }).map((_, i) => (
+   592→   592→                    <div key={i} className="space-y-2">
+   593→   593→                      <Skeleton className="h-28 w-full rounded-xl" />
+   594→   594→                      <Skeleton className="h-4 w-3/4" />
+   595→   595→                      <Skeleton className="h-4 w-1/2" />
+   596→   596→                    </div>
+   597→   597→                  ))}
+   598→   598→                </div>
+   599→   599→              ) : (
+   600→   600→                <ScrollArea className="h-full">
+   601→   601→                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 pb-4">
+   602→   602→                    <AnimatePresence mode="popLayout">
+   603→   603→                      {filteredProducts.map((product) => {
+   604→   604→                        const isOutOfStock = product.stock <= 0
+   605→   605→                        const inCart = cart.find((c) => c.productId === product.id)
+   606→   606→                        return (
+   607→   607→                          <motion.button
+   608→   608→                            key={product.id}
+   609→   609→                            layout
+   610→   610→                            initial={{ opacity: 0, scale: 0.9 }}
+   611→   611→                            animate={{ opacity: 1, scale: 1 }}
+   612→   612→                            exit={{ opacity: 0, scale: 0.9 }}
+   613→   613→                            transition={{ duration: 0.15 }}
+   614→   614→                            disabled={isOutOfStock}
+   615→   615→                            onClick={() => addToCart(product)}
+   616→   616→                            className={cn(
+   617→   617→                              'glass-card relative flex flex-col items-center gap-1.5 rounded-xl p-3 text-left transition-all hover-scale hover-lift-surface',
+   618→   618→                              isOutOfStock && 'opacity-50 grayscale',
+   619→   619→                              inCart && 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-background',
+   620→   620→                            )}
+   621→   621→                          >
+   622→   622→                            {inCart && (
+   623→   623→                              <Badge className="badge-gradient-emerald absolute -top-2 -right-2 h-5 w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+   624→   624→                                {inCart.quantity}
+   625→   625→                              </Badge>
+   626→   626→                            )}
+   627→   627→                            <div
+   628→   628→                              className={cn(
+   629→   629→                                'flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold',
+   630→   630→                                product.category?.color
+   631→   631→                                  ? ''
+   632→   632→                                  : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
+   633→   633→                              )}
+   634→   634→                              style={
+   635→   635→                                product.category?.color
+   636→   636→                                  ? { backgroundColor: product.category.color + '18', color: product.category.color }
+   637→   637→                                  : undefined
+   638→   638→                              }
+   639→   639→                            >
+   640→   640→                              {product.category?.icon || product.name.charAt(0)}
+   641→   641→                            </div>
+   642→   642→                            <p className="line-clamp-2 w-full text-xs font-medium leading-tight">
+   643→   643→                              {product.name}
+   644→   644→                            </p>
+   645→   645→                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+   646→   646→                              {formatRp(product.sellPrice)}
+   647→   647→                            </p>
+   648→   648→                            <p
+   649→   649→                              className={cn(
+   650→   650→                                'text-[10px] tabular-nums',
+   651→   651→                                product.stock <= product.minStock * 0.5
+   652→   652→                                  ? 'font-semibold text-red-500'
+   653→   653→                                  : 'text-muted-foreground',
+   654→   654→                              )}
+   655→   655→                            >
+   656→   656→                              Stok: {product.stock} {product.unit}
+   657→   657→                            </p>
+   658→   658→                            {isOutOfStock && (
+   659→   659→                              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
+   660→   660→                                <span className="rounded-full bg-destructive px-3 py-1 text-xs font-bold text-white">
+   661→   661→                                  Habis
+   662→   662→                                </span>
+   663→   663→                              </div>
+   664→   664→                            )}
+   665→   665→                          </motion.button>
+   666→   666→                        )
+   667→   667→                      })}
+   668→   668→                    </AnimatePresence>
+   669→   669→                    {filteredProducts.length === 0 && (
+   670→   670→                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
+   671→   671→                        <Package className="mb-3 h-12 w-12 opacity-30" />
+   672→   672→                        <p className="text-sm">Tidak ada produk ditemukan</p>
+   673→   673→                      </div>
+   674→   674→                    )}
+   675→   675→                  </div>
+   676→   676→                </ScrollArea>
+   677→   677→              )}
+   678→   678→            </div>
+   679→   679→          </div>
+   680→   680→
+   681→   681→          {/* ─── RIGHT PANEL: Cart (desktop only) ─── */}
+   682→   682→          <div className="glass-card hidden min-h-0 w-[420px] xl:w-[460px] flex-col rounded-2xl lg:flex">
+   683→   683→            {/* Shift Status Bar */}
+   684→   684→            <div className="p-3">
+   685→   685→              {shiftLoading ? (
+   686→   686→                <Skeleton className="h-10 w-full rounded-lg" />
+   687→   687→              ) : !activeShift ? (
+   688→   688→                <button
+   689→   689→                  onClick={() => setShowShiftDialog('open')}
+   690→   690→                  className="flex w-full items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950 btn-press"
+   691→   691→                >
+   692→   692→                  <span className="flex items-center gap-2">
+   693→   693→                    <Clock className="h-4 w-4" />
+   694→   694→                    Shift belum dibuka
+   695→   695→                  </span>
+   696→   696→                  <Badge className="badge-gradient-amber text-white">Buka Shift</Badge>
+   697→   697→                </button>
+   698→   698→              ) : (
+   699→   699→                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-2.5 dark:bg-emerald-950/30">
+   700→   700→                  <div className="flex items-center gap-2">
+   701→   701→                    <div className="relative">
+   702→   702→                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+   703→   703→                      <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+   704→   704→                    </div>
+   705→   705→                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+   706→   706→                      Shift Aktif
+   707→   707→                    </span>
+   708→   708→                    <span className="text-xs text-muted-foreground">
+   709→   709→                      • {formatTime(activeShift.openedAt)}
+   710→   710→                    </span>
+   711→   711→                  </div>
+   712→   712→                  <div className="flex items-center gap-2">
+   713→   713→                    <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+   714→   714→                      {formatRp(activeShift.totalSales)}
+   715→   715→                    </span>
+   716→   716→                    <button
+   717→   717→                      onClick={() => setShowShiftDialog('close')}
+   718→   718→                      className="rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900 btn-press"
+   719→   719→                    >
+   720→   720→                      Tutup Shift
+   721→   721→                    </button>
+   722→   722→                  </div>
+   723→   723→                </div>
+   724→   724→              )}
+   725→   725→            </div>
+   726→   726→
+   727→   727→            <Separator />
+   728→   728→
+   729→   729→            {/* Cart Header */}
+   730→   730→            <div className="flex items-center justify-between px-4 py-2">
+   731→   731→              <h3 className="text-sm font-semibold">
+   732→   732→                Keranjang{' '}
+   733→   733→                {cartItemCount > 0 && (
+   734→   734→                  <span className="text-muted-foreground">({cartItemCount} item)</span>
+   735→   735→                )}
+   736→   736→              </h3>
+   737→   737→              {cart.length > 0 && (
+   738→   738→                <button
+   739→   739→                  onClick={clearCart}
+   740→   740→                  className="text-xs text-muted-foreground hover:text-destructive btn-press"
+   741→   741→                >
+   742→   742→                  Hapus Semua
+   743→   743→                </button>
+   744→   744→              )}
+   745→   745→            </div>
+   746→   746→
+   747→   747→            {/* Cart Items */}
+   748→   748→            <div className="flex-1 overflow-y-auto px-3">
+   749→   749→              {cart.length === 0 ? (
+   750→   750→                <div className="flex h-full flex-col items-center justify-center py-12 text-muted-foreground">
+   751→   751→                  <ShoppingCart className="mb-2 h-10 w-10 opacity-20" />
+   752→   752→                  <p className="text-sm">Keranjang kosong</p>
+   753→   753→                  <p className="text-xs">Klik produk untuk menambahkan</p>
+   754→   754→                </div>
+   755→   755→              ) : (
+   756→   756→                <AnimatePresence initial={false}>
+   757→   757→                  {cart.map((item) => (
+   758→   758→                    <motion.div
+   759→   759→                      key={item.productId}
+   760→   760→                      initial={{ opacity: 0, x: 20 }}
+   761→   761→                      animate={{ opacity: 1, x: 0 }}
+   762→   762→                      exit={{ opacity: 0, x: -20, height: 0 }}
+   763→   763→                      className="mb-2 rounded-lg border border-border/50 bg-card/50 p-2.5"
+   764→   764→                    >
+   765→   765→                      <div className="flex items-start justify-between gap-2">
+   766→   766→                        <div className="min-w-0 flex-1">
+   767→   767→                          <p className="truncate text-sm font-medium">{item.name}</p>
+   768→   768→                          <p className="text-xs text-muted-foreground tabular-nums">
+   769→   769→                            {formatRp(item.price)} × {item.quantity}
+   770→   770→                          </p>
+   771→   771→                        </div>
+   772→   772→                        <button
+   773→   773→                          onClick={() => removeFromCart(item.productId)}
+   774→   774→                          className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive btn-press"
+   775→   775→                        >
+   776→   776→                          <Trash2 className="h-3.5 w-3.5" />
+   777→   777→                        </button>
+   778→   778→                      </div>
+   779→   779→                      <div className="mt-2 flex items-center justify-between">
+   780→   780→                        <div className="flex items-center gap-1">
+   781→   781→                          <button
+   782→   782→                            onClick={() => updateQty(item.productId, -1)}
+   783→   783→                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+   784→   784→                          >
+   785→   785→                            <Minus className="h-3 w-3" />
+   786→   786→                          </button>
+   787→   787→                          <span className="w-8 text-center text-sm font-bold tabular-nums">
+   788→   788→                            {item.quantity}
+   789→   789→                          </span>
+   790→   790→                          <button
+   791→   791→                            onClick={() => updateQty(item.productId, 1)}
+   792→   792→                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+   793→   793→                          >
+   794→   794→                            <Plus className="h-3 w-3" />
+   795→   795→                          </button>
+   796→   796→                        </div>
+   797→   797→                        <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+   798→   798→                          {formatRp(item.price * item.quantity)}
+   799→   799→                        </p>
+   800→   800→                      </div>
+   801→   801→                    </motion.div>
+   802→   802→                  ))}
+   803→   803→                </AnimatePresence>
+   804→   804→              )}
+   805→   805→            </div>
+   806→   806→
+   807→   807→            {/* Cart Summary & Payment */}
+   808→   808→            {cart.length > 0 && (
+   809→   809→              <div className="border-t border-border bg-card/50 p-3">
+   810→   810→                <div className="space-y-1.5 text-xs">
+   811→   811→                  <div className="flex justify-between text-muted-foreground">
+   812→   812→                    <span>Subtotal</span>
+   813→   813→                    <span className="tabular-nums">{formatRp(cartSubtotal)}</span>
+   814→   814→                  </div>
+   815→   815→                  <div className="flex justify-between text-muted-foreground">
+   816→   816→                    <span>PPN (11%)</span>
+   817→   817→                    <span className="tabular-nums">{formatRp(cartTax)}</span>
+   818→   818→                  </div>
+   819→   819→                  {cartServiceCharge > 0 && (
+   820→   820→                    <div className="flex justify-between text-muted-foreground">
+   821→   821→                      <span>Service Charge</span>
+   822→   822→                      <span className="tabular-nums">{formatRp(cartServiceCharge)}</span>
+   823→   823→                    </div>
+   824→   824→                  )}
+   825→   825→                  <Separator />
+   826→   826→                  <div className="flex justify-between">
+   827→   827→                    <span className="text-sm font-bold">TOTAL</span>
+   828→   828→                    <span className="text-lg font-extrabold text-gradient-emerald tabular-nums">
+   829→   829→                      {formatRp(cartTotal)}
+   830→   830→                    </span>
+   831→   831→                  </div>
+   832→   832→                </div>
+   833→   833→
+   834→   834→                {/* Payment Method Selection */}
+   835→   835→                <div className="mt-3">
+   836→   836→                  <p className="mb-2 text-xs font-semibold text-muted-foreground">Metode Pembayaran</p>
+   837→   837→                  <div className="grid grid-cols-4 gap-1.5">
+   838→   838→                    {PAYMENT_METHODS.map((pm) => {
+   839→   839→                      const Icon = pm.icon
+   840→   840→                      return (
+   841→   841→                        <button
+   842→   842→                          key={pm.label}
+   843→   843→                          onClick={() => setSelectedPayment(pm)}
+   844→   844→                          className={cn(
+   845→   845→                            'flex flex-col items-center gap-0.5 rounded-lg border p-2 text-[10px] font-medium transition-all btn-press',
+   846→   846→                            selectedPayment?.label === pm.label
+   847→   847→                              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400'
+   848→   848→                              : 'border-border hover:border-emerald-300 hover:bg-muted dark:hover:border-emerald-700',
+   849→   849→                          )}
+   850→   850→                        >
+   851→   851→                          <Icon className={cn('h-4 w-4', pm.color)} />
+   852→   852→                          {pm.label}
+   853→   853→                        </button>
+   854→   854→                      )
+   855→   855→                    })}
+   856→   856→                  </div>
+   857→   857→                </div>
+   858→   858→
+   859→   859→                {/* Cash Input */}
+   860→   860→                {selectedPayment?.method === 'cash' && (
+   861→   861→                  <motion.div
+   862→   862→                    initial={{ opacity: 0, height: 0 }}
+   863→   863→                    animate={{ opacity: 1, height: 'auto' }}
+   864→   864→                    className="mt-3 space-y-2"
+   865→   865→                  >
+   866→   866→                    <div>
+   867→   867→                      <Label className="text-xs text-muted-foreground">Uang Diterima</Label>
+   868→   868→                      <Input
+   869→   869→                        type="number"
+   870→   870→                        value={tendered}
+   871→   871→                        onChange={(e) => setTendered(e.target.value)}
+   872→   872→                        placeholder="0"
+   873→   873→                        className="mt-1 text-right text-lg font-bold tabular-nums"
+   874→   874→                      />
+   875→   875→                    </div>
+   876→   876→                    <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+   877→   877→                      <span className="text-xs font-medium text-muted-foreground">Kembalian</span>
+   878→   878→                      <span
+   879→   879→                        className={cn(
+   880→   880→                          'text-sm font-bold tabular-nums',
+   881→   881→                          change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+   882→   882→                        )}
+   883→   883→                      >
+   884→   884→                        {formatRp(Math.max(0, change))}
+   885→   885→                      </span>
+   886→   886→                    </div>
+   887→   887→                  </motion.div>
+   888→   888→                )}
+   889→   889→
+   890→   890→                {/* Pay Button */}
+   891→   891→                <Button
+   892→   892→                  onClick={() => createTransaction.mutate()}
+   893→   893→                  disabled={
+   894→   894→                    cart.length === 0 ||
+   895→   895→                    !selectedPayment ||
+   896→   896→                    !activeShift ||
+   897→   897→                    isProcessing ||
+   898→   898→                    (selectedPayment.method === 'cash' && tenderedNum < cartTotal)
+   899→   899→                  }
+   900→   900→                  className="btn-press mt-3 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 py-5 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50"
+   901→   901→                >
+   902→   902→                  {isProcessing ? (
+   903→   903→                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+   904→   904→                  ) : (
+   905→   905→                    <Wallet className="mr-2 h-4 w-4" />
+   906→   906→                  )}
+   907→   907→                  Bayar {formatRp(cartTotal)}
+   908→   908→                </Button>
+   909→   909→              </div>
+   910→   910→            )}
+   911→   911→          </div>
+   912→   912→
+   913→   913→          {/* Mobile floating cart button */}
+   914→   914→          {cart.length > 0 && (
+   915→   915→            <button
+   916→   916→              onClick={() => setShowMobileCart(true)}
+   917→   917→              className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xl shadow-emerald-500/40 lg:hidden"
+   918→   918→            >
+   919→   919→              <ShoppingCart className="h-6 w-6" />
+   920→   920→              <Badge className="badge-gradient-emerald absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+   921→   921→                {cartItemCount}
+   922→   922→              </Badge>
+   923→   923→            </button>
+   924→   924→          )}
+   925→   925→
+   926→   926→          {/* Mobile Cart Sheet */}
+   927→   927→          <Sheet open={showMobileCart} onOpenChange={setShowMobileCart}>
+   928→   928→            <SheetContent side="bottom" className="flex max-h-[90vh] flex-col rounded-t-2xl">
+   929→   929→              <SheetHeader className="shrink-0">
+   930→   930→                <SheetTitle className="flex items-center gap-2">
+   931→   931→                  <ShoppingCart className="h-5 w-5 text-emerald-500" />
+   932→   932→                  Keranjang
+   933→   933→                  {cartItemCount > 0 && (
+   934→   934→                    <span className="text-sm font-normal text-muted-foreground">({cartItemCount} item)</span>
+   935→   935→                  )}
+   936→   936→                </SheetTitle>
+   937→   937→              </SheetHeader>
+   938→   938→
+   939→   939→              <div className="flex-1 overflow-y-auto">
+   940→   940→                {cart.length === 0 ? (
+   941→   941→                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+   942→   942→                    <ShoppingCart className="mb-2 h-10 w-10 opacity-20" />
+   943→   943→                    <p className="text-sm">Keranjang kosong</p>
+   944→   944→                  </div>
+   945→   945→                ) : (
+   946→   946→                  <div className="space-y-2 px-4 py-3">
+   947→   947→                    <AnimatePresence initial={false}>
+   948→   948→                      {cart.map((item) => (
+   949→   949→                        <motion.div
+   950→   950→                          key={item.productId}
+   951→   951→                          initial={{ opacity: 0, x: 20 }}
+   952→   952→                          animate={{ opacity: 1, x: 0 }}
+   953→   953→                          exit={{ opacity: 0, x: -20, height: 0 }}
+   954→   954→                          className="rounded-lg border border-border/50 bg-card/50 p-2.5"
+   955→   955→                        >
+   956→   956→                          <div className="flex items-start justify-between gap-2">
+   957→   957→                            <div className="min-w-0 flex-1">
+   958→   958→                              <p className="truncate text-sm font-medium">{item.name}</p>
+   959→   959→                              <p className="text-xs text-muted-foreground tabular-nums">
+   960→   960→                                {formatRp(item.price)} × {item.quantity}
+   961→   961→                              </p>
+   962→   962→                            </div>
+   963→   963→                            <button
+   964→   964→                              onClick={() => removeFromCart(item.productId)}
+   965→   965→                              className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive btn-press"
+   966→   966→                            >
+   967→   967→                              <Trash2 className="h-3.5 w-3.5" />
+   968→   968→                            </button>
+   969→   969→                          </div>
+   970→   970→                          <div className="mt-2 flex items-center justify-between">
+   971→   971→                            <div className="flex items-center gap-1">
+   972→   972→                              <button
+   973→   973→                                onClick={() => updateQty(item.productId, -1)}
+   974→   974→                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+   975→   975→                              >
+   976→   976→                                <Minus className="h-3 w-3" />
+   977→   977→                              </button>
+   978→   978→                              <span className="w-8 text-center text-sm font-bold tabular-nums">
+   979→   979→                                {item.quantity}
+   980→   980→                              </span>
+   981→   981→                              <button
+   982→   982→                                onClick={() => updateQty(item.productId, 1)}
+   983→   983→                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+   984→   984→                              >
+   985→   985→                                <Plus className="h-3 w-3" />
+   986→   986→                              </button>
+   987→   987→                            </div>
+   988→   988→                            <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+   989→   989→                              {formatRp(item.price * item.quantity)}
+   990→   990→                            </p>
+   991→   991→                          </div>
+   992→   992→                        </motion.div>
+   993→   993→                      ))}
+   994→   994→                    </AnimatePresence>
+   995→   995→                  </div>
+   996→   996→                )}
+   997→   997→              </div>
+   998→   998→
+   999→   999→              {/* Mobile Cart Summary & Payment */}
+  1000→  1000→              {cart.length > 0 && (
+  1001→  1001→                <div className="shrink-0 border-t border-border bg-card/50 p-4">
+  1002→  1002→                  <div className="space-y-1.5 text-xs">
+  1003→  1003→                    <div className="flex justify-between text-muted-foreground">
+  1004→  1004→                      <span>Subtotal</span>
+  1005→  1005→                      <span className="tabular-nums">{formatRp(cartSubtotal)}</span>
+  1006→  1006→                    </div>
+  1007→  1007→                    <div className="flex justify-between text-muted-foreground">
+  1008→  1008→                      <span>PPN (11%)</span>
+  1009→  1009→                      <span className="tabular-nums">{formatRp(cartTax)}</span>
+  1010→  1010→                    </div>
+  1011→  1011→                    <Separator />
+  1012→  1012→                    <div className="flex justify-between">
+  1013→  1013→                      <span className="text-sm font-bold">TOTAL</span>
+  1014→  1014→                      <span className="text-lg font-extrabold text-gradient-emerald tabular-nums">
+  1015→  1015→                        {formatRp(cartTotal)}
+  1016→  1016→                      </span>
+  1017→  1017→                    </div>
+  1018→  1018→                  </div>
+  1019→  1019→
+  1020→  1020→                  {/* Payment Method Selection */}
+  1021→  1021→                  <div className="mt-3">
+  1022→  1022→                    <p className="mb-2 text-xs font-semibold text-muted-foreground">Metode Pembayaran</p>
+  1023→  1023→                    <div className="grid grid-cols-4 gap-1.5">
+  1024→  1024→                      {PAYMENT_METHODS.map((pm) => {
+  1025→  1025→                        const Icon = pm.icon
+  1026→  1026→                        return (
+  1027→  1027→                          <button
+  1028→  1028→                            key={pm.label}
+  1029→  1029→                            onClick={() => setSelectedPayment(pm)}
+  1030→  1030→                            className={cn(
+  1031→  1031→                              'flex flex-col items-center gap-0.5 rounded-lg border p-2 text-[10px] font-medium transition-all btn-press',
+  1032→  1032→                              selectedPayment?.label === pm.label
+  1033→  1033→                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400'
+  1034→  1034→                                : 'border-border hover:border-emerald-300 hover:bg-muted dark:hover:border-emerald-700',
+  1035→  1035→                            )}
+  1036→  1036→                          >
+  1037→  1037→                            <Icon className={cn('h-4 w-4', pm.color)} />
+  1038→  1038→                            {pm.label}
+  1039→  1039→                          </button>
+  1040→  1040→                        )
+  1041→  1041→                      })}
+  1042→  1042→                    </div>
+  1043→  1043→                  </div>
+  1044→  1044→
+  1045→  1045→                  {/* Cash Input */}
+  1046→  1046→                  {selectedPayment?.method === 'cash' && (
+  1047→  1047→                    <motion.div
+  1048→  1048→                      initial={{ opacity: 0, height: 0 }}
+  1049→  1049→                      animate={{ opacity: 1, height: 'auto' }}
+  1050→  1050→                      className="mt-3 space-y-2"
+  1051→  1051→                    >
+  1052→  1052→                      <div>
+  1053→  1053→                        <Label className="text-xs text-muted-foreground">Uang Diterima</Label>
+  1054→  1054→                        <Input
+  1055→  1055→                          type="number"
+  1056→  1056→                          value={tendered}
+  1057→  1057→                          onChange={(e) => setTendered(e.target.value)}
+  1058→  1058→                          placeholder="0"
+  1059→  1059→                          className="mt-1 text-right text-lg font-bold tabular-nums"
+  1060→  1060→                        />
+  1061→  1061→                      </div>
+  1062→  1062→                      <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+  1063→  1063→                        <span className="text-xs font-medium text-muted-foreground">Kembalian</span>
+  1064→  1064→                        <span
+  1065→  1065→                          className={cn(
+  1066→  1066→                            'text-sm font-bold tabular-nums',
+  1067→  1067→                            change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+  1068→  1068→                          )}
+  1069→  1069→                        >
+  1070→  1070→                          {formatRp(Math.max(0, change))}
+  1071→  1071→                        </span>
+  1072→  1072→                      </div>
+  1073→  1073→                    </motion.div>
+  1074→  1074→                  )}
+  1075→  1075→
+  1076→  1076→                  {/* Pay Button */}
+  1077→  1077→                  <Button
+  1078→  1078→                    onClick={() => createTransaction.mutate()}
+  1079→  1079→                    disabled={
+  1080→  1080→                      cart.length === 0 ||
+  1081→  1081→                      !selectedPayment ||
+  1082→  1082→                      !activeShift ||
+  1083→  1083→                      isProcessing ||
+  1084→  1084→                      (selectedPayment.method === 'cash' && tenderedNum < cartTotal)
+  1085→  1085→                    }
+  1086→  1086→                    className="btn-press mt-3 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 py-5 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50"
+  1087→  1087→                  >
+  1088→  1088→                    {isProcessing ? (
+  1089→  1089→                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+  1090→  1090→                    ) : (
+  1091→  1091→                      <Wallet className="mr-2 h-4 w-4" />
+  1092→  1092→                    )}
+  1093→  1093→                    Bayar {formatRp(cartTotal)}
+  1094→  1094→                  </Button>
+  1095→  1095→                </div>
+  1096→  1096→              )}
+  1097→  1097→            </SheetContent>
+  1098→  1098→          </Sheet>
+  1099→  1099→        </div>
+  1100→  1100→      ) : (
+  1101→  1101→        /* ─── HISTORY TAB ─── */
+  1102→  1102→        <div className="glass-card flex-1 rounded-2xl p-4">
+  1103→  1103→          <div className="mb-4 flex items-center justify-between">
+  1104→  1104→            <h3 className="text-base font-semibold">Riwayat Transaksi</h3>
+  1105→  1105→            <div className="flex gap-1">
+  1106→  1106→              {(['shift', 'today', 'all'] as const).map((f) => (
+  1107→  1107→                <button
+  1108→  1108→                  key={f}
+  1109→  1109→                  onClick={() => setHistoryFilter(f)}
+  1110→  1110→                  className={cn(
+  1111→  1111→                    'rounded-lg px-3 py-1.5 text-xs font-medium transition-all btn-press',
+  1112→  1112→                    historyFilter === f
+  1113→  1113→                      ? 'bg-emerald-500 text-white'
+  1114→  1114→                      : 'bg-muted text-muted-foreground hover:text-foreground',
+  1115→  1115→                  )}
+  1116→  1116→                >
+  1117→  1117→                  {f === 'shift' ? 'Shift Ini' : f === 'today' ? 'Hari Ini' : 'Semua'}
+  1118→  1118→                </button>
+  1119→  1119→              ))}
+  1120→  1120→            </div>
+  1121→  1121→          </div>
+  1122→  1122→
+  1123→  1123→          {historyLoading ? (
+  1124→  1124→            <div className="space-y-3">
+  1125→  1125→              {Array.from({ length: 5 }).map((_, i) => (
+  1126→  1126→                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+  1127→  1127→              ))}
+  1128→  1128→            </div>
+  1129→  1129→          ) : !historyData?.transactions.length ? (
+  1130→  1130→            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+  1131→  1131→              <History className="mb-3 h-10 w-10 opacity-20" />
+  1132→  1132→              <p className="text-sm">Belum ada transaksi</p>
+  1133→  1133→            </div>
+  1134→  1134→          ) : (
+  1135→  1135→            <ScrollArea className="max-h-[60vh]">
+  1136→  1136→              <div className="space-y-2">
+  1137→  1137→                {historyData.transactions.map((tx) => (
+  1138→  1138→                  <button
+  1139→  1139→                    key={tx.id}
+  1140→  1140→                    onClick={() => setShowTxDetail(tx)}
+  1141→  1141→                    className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3 text-left transition-all hover-lift-surface btn-press"
+  1142→  1142→                  >
+  1143→  1143→                    <div>
+  1144→  1144→                      <p className="text-sm font-semibold tabular-nums">{tx.invoiceNo}</p>
+  1145→  1145→                      <p className="text-xs text-muted-foreground">
+  1146→  1146→                        {new Date(tx.createdAt).toLocaleString('id-ID', {
+  1147→  1147→                          day: 'numeric',
+  1148→  1148→                          month: 'short',
+  1149→  1149→                          hour: '2-digit',
+  1150→  1150→                          minute: '2-digit',
+  1151→  1151→                        })}
+  1152→  1152→                      </p>
+  1153→  1153→                    </div>
+  1154→  1154→                    <div className="flex items-center gap-3">
+  1155→  1155→                      <div className="text-right">
+  1156→  1156→                        <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+  1157→  1157→                          {formatRp(tx.totalAmount)}
+  1158→  1158→                        </p>
+  1159→  1159→                        <p className="text-[10px] text-muted-foreground">
+  1160→  1160→                          {tx._count.items} item • {tx.paymentChannel || tx.paymentMethod}
+  1161→  1161→                        </p>
+  1162→  1162→                      </div>
+  1163→  1163→                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+  1164→  1164→                    </div>
+  1165→  1165→                  </button>
+  1166→  1166→                ))}
+  1167→  1167→              </div>
+  1168→  1168→            </ScrollArea>
+  1169→  1169→          )}
+  1170→  1170→        </div>
+  1171→  1171→      )}
+  1172→  1172→
+  1173→  1173→      {/* ─── SHIFT OPEN DIALOG ─── */}
+  1174→  1174→      <Dialog open={showShiftDialog === 'open'} onOpenChange={() => setShowShiftDialog(null)}>
+  1175→  1175→        <DialogContent className="sm:max-w-md">
+  1176→  1176→          <DialogHeader>
+  1177→  1177→            <DialogTitle className="flex items-center gap-2">
+  1178→  1178→              <CircleDollarSign className="h-5 w-5 text-emerald-500" />
+  1179→  1179→              Buka Shift
+  1180→  1180→            </DialogTitle>
+  1181→  1181→            <DialogDescription>Masukkan jumlah modal awal kas kasir</DialogDescription>
+  1182→  1182→          </DialogHeader>
+  1183→  1183→          <div className="space-y-4 py-4">
+  1184→  1184→            <div>
+  1185→  1185→              <Label>Modal Awal (Rp)</Label>
+  1186→  1186→              <Input
+  1187→  1187→                type="number"
+  1188→  1188→                value={shiftOpeningCash}
+  1189→  1189→                onChange={(e) => setShiftOpeningCash(e.target.value)}
+  1190→  1190→                placeholder="contoh: 500000"
+  1191→  1191→                className="mt-1.5 text-right text-lg font-bold tabular-nums"
+  1192→  1192→                autoFocus
+  1193→  1193→              />
+  1194→  1194→              <div className="mt-2 flex flex-wrap gap-2">
+  1195→  1195→                {[0, 100000, 200000, 500000, 1000000].map((v) => (
+  1196→  1196→                  <button
+  1197→  1197→                    key={v}
+  1198→  1198→                    onClick={() => setShiftOpeningCash(String(v))}
+  1199→  1199→                    className={cn(
+  1200→  1200→                      'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all btn-press',
+  1201→  1201→                      shiftOpeningCash === String(v)
+  1202→  1202→                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+  1203→  1203→                        : 'border-border hover:border-emerald-300',
+  1204→  1204→                    )}
+  1205→  1205→                  >
+  1206→  1206→                    {v === 0 ? 'Rp 0' : formatRp(v)}
+  1207→  1207→                  </button>
+  1208→  1208→                ))}
+  1209→  1209→              </div>
+  1210→  1210→            </div>
+  1211→  1211→          </div>
+  1212→  1212→          <div className="flex justify-end gap-2">
+  1213→  1213→            <Button variant="outline" onClick={() => setShowShiftDialog(null)}>
+  1214→  1214→              Batal
+  1215→  1215→            </Button>
+  1216→  1216→            <Button
+  1217→  1217→              onClick={() => shiftMutation.mutate('open')}
+  1218→  1218→              disabled={shiftMutation.isPending}
+  1219→  1219→              className="bg-emerald-500 text-white hover:bg-emerald-600"
+  1220→  1220→            >
+  1221→  1221→              {shiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+  1222→  1222→              Buka Shift
+  1223→  1223→            </Button>
+  1224→  1224→          </div>
+  1225→  1225→        </DialogContent>
+  1226→  1226→      </Dialog>
+  1227→  1227→
+  1228→  1228→      {/* ─── SHIFT CLOSE DIALOG ─── */}
+  1229→  1229→      <Dialog open={showShiftDialog === 'close'} onOpenChange={() => setShowShiftDialog(null)}>
+  1230→  1230→        <DialogContent className="sm:max-w-md">
+  1231→  1231→          <DialogHeader>
+  1232→  1232→            <DialogTitle className="flex items-center gap-2">
+  1233→  1233→              <CircleDollarSign className="h-5 w-5 text-amber-500" />
+  1234→  1234→              Tutup Shift
+  1235→  1235→            </DialogTitle>
+  1236→  1236→            <DialogDescription>Ringkasan shift dan penutupan kas</DialogDescription>
+  1237→  1237→          </DialogHeader>
+  1238→  1238→          {activeShift && (
+  1239→  1239→            <div className="space-y-3 py-4">
+  1240→  1240→              <div className="rounded-lg bg-muted p-3 space-y-1.5 text-sm">
+  1241→  1241→                <div className="flex justify-between">
+  1242→  1242→                  <span className="text-muted-foreground">Modal Awal</span>
+  1243→  1243→                  <span className="tabular-nums font-medium">{formatRp(activeShift.openingCash)}</span>
+  1244→  1244→                </div>
+  1245→  1245→                <div className="flex justify-between">
+  1246→  1246→                  <span className="text-muted-foreground">Total Penjualan</span>
+  1247→  1247→                  <span className="tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+  1248→  1248→                    {formatRp(activeShift.totalSales)}
+  1249→  1249→                  </span>
+  1250→  1250→                </div>
+  1251→  1251→                <div className="flex justify-between">
+  1252→  1252→                  <span className="text-muted-foreground">Penjualan Tunai</span>
+  1253→  1253→                  <span className="tabular-nums font-medium">{formatRp(activeShift.cashSales)}</span>
+  1254→  1254→                </div>
+  1255→  1255→                <Separator />
+  1256→  1256→                <div className="flex justify-between font-semibold">
+  1257→  1257→                  <span>Uang yang Diharapkan</span>
+  1258→  1258→                  <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+  1259→  1259→                    {formatRp(activeShift.openingCash + activeShift.cashSales)}
+  1260→  1260→                  </span>
+  1261→  1261→                </div>
+  1262→  1262→                <div className="flex justify-between text-muted-foreground">
+  1263→  1263→                  <span>Total Transaksi</span>
+  1264→  1264→                  <span className="tabular-nums">{activeShift.totalTx}</span>
+  1265→  1265→                </div>
+  1266→  1266→              </div>
+  1267→  1267→              <div>
+  1268→  1268→                <Label>Jumlah Kas Akhir (Rp)</Label>
+  1269→  1269→                <Input
+  1270→  1270→                  type="number"
+  1271→  1271→                  value={shiftClosingCash}
+  1272→  1272→                  onChange={(e) => setShiftClosingCash(e.target.value)}
+  1273→  1273→                  placeholder="Hitung fisik uang di kas"
+  1274→  1274→                  className="mt-1.5 text-right text-lg font-bold tabular-nums"
+  1275→  1275→                  autoFocus
+  1276→  1276→                />
+  1277→  1277→              </div>
+  1278→  1278→              {shiftClosingCash && (
+  1279→  1279→                <div className={cn(
+  1280→  1280→                  'rounded-lg p-3 text-center text-sm font-semibold',
+  1281→  1281→                  parseFloat(shiftClosingCash) - (activeShift.openingCash + activeShift.cashSales) >= 0
+  1282→  1282→                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+  1283→  1283→                    : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+  1284→  1284→                )}>
+  1285→  1285→                  Selisih: {formatRp(parseFloat(shiftClosingCash) - (activeShift.openingCash + activeShift.cashSales))}
+  1286→  1286→                </div>
+  1287→  1287→              )}
+  1288→  1288→              <div>
+  1289→  1289→                <Label>Catatan (opsional)</Label>
+  1290→  1290→                <Input
+  1291→  1291→                  value={shiftNote}
+  1292→  1292→                  onChange={(e) => setShiftNote(e.target.value)}
+  1293→  1293→                  placeholder="Catatan penutupan shift..."
+  1294→  1294→                  className="mt-1.5"
+  1295→  1295→                />
+  1296→  1296→              </div>
+  1297→  1297→            </div>
+  1298→  1298→          )}
+  1299→  1299→          <div className="flex justify-end gap-2">
+  1300→  1300→            <Button variant="outline" onClick={() => setShowShiftDialog(null)}>
+  1301→  1301→              Batal
+  1302→  1302→            </Button>
+  1303→  1303→            <Button
+  1304→  1304→              onClick={() => shiftMutation.mutate('close')}
+  1305→  1305→              disabled={shiftMutation.isPending || !shiftClosingCash}
+  1306→  1306→              className="bg-amber-500 text-white hover:bg-amber-600"
+  1307→  1307→            >
+  1308→  1308→              {shiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+  1309→  1309→              Tutup Shift
+  1310→  1310→            </Button>
+  1311→  1311→          </div>
+  1312→  1312→        </DialogContent>
+  1313→  1313→      </Dialog>
+  1314→  1314→
+  1315→  1315→      {/* ─── PAYMENT SUCCESS MODAL ─── */}
+  1316→  1316→      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+  1317→  1317→        <DialogContent className="sm:max-w-md">
+  1318→  1318→          <div className="flex flex-col items-center py-6">
+  1319→  1319→            {/* Success Animation */}
+  1320→  1320→            <motion.div
+  1321→  1321→              initial={{ scale: 0 }}
+  1322→  1322→              animate={{ scale: 1 }}
+  1323→  1323→              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+  1324→  1324→              className="relative mb-6"
+  1325→  1325→            >
+  1326→  1326→              <div className="pulse-ring absolute inset-0 rounded-full bg-emerald-400/30" />
+  1327→  1327→              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-500/40">
+  1328→  1328→                <Check className="h-10 w-10 text-white" strokeWidth={3} />
+  1329→  1329→              </div>
+  1330→  1330→            </motion.div>
+  1331→  1331→
+  1332→  1332→            <h2 className="mb-1 text-xl font-bold">Pembayaran Berhasil!</h2>
+  1333→  1333→            {lastTx && (
+  1334→  1334→              <>
+  1335→  1335→                <p className="mb-4 text-sm text-muted-foreground">{lastTx.invoiceNo}</p>
+  1336→  1336→                <div className="w-full space-y-2 rounded-xl bg-muted/50 p-4 text-sm">
+  1337→  1337→                  <div className="flex justify-between">
+  1338→  1338→                    <span className="text-muted-foreground">Total</span>
+  1339→  1339→                    <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+  1340→  1340→                      {formatRp(lastTx.transaction.totalAmount)}
+  1341→  1341→                    </span>
+  1342→  1342→                  </div>
+  1343→  1343→                  <div className="flex justify-between">
+  1344→  1344→                    <span className="text-muted-foreground">Metode</span>
+  1345→  1345→                    <span className="font-medium">
+  1346→  1346→                      {lastTx.payment.paymentChannel || lastTx.payment.paymentMethod}
+  1347→  1347→                    </span>
+  1348→  1348→                  </div>
+  1349→  1349→                  <Separator />
+  1350→  1350→                  <div className="space-y-1">
+  1351→  1351→                    {lastTx.items.map((item, i) => (
+  1352→  1352→                      <div key={i} className="flex justify-between text-xs text-muted-foreground">
+  1353→  1353→                        <span>{item.quantity}× {item.name}</span>
+  1354→  1354→                        <span className="tabular-nums">{formatRp(item.price * item.quantity)}</span>
+  1355→  1355→                      </div>
+  1356→  1356→                    ))}
+  1357→  1357→                  </div>
+  1358→  1358→                </div>
+  1359→  1359→                <div className="mt-6 flex w-full gap-3">
+  1360→  1360→                  <Button
+  1361→  1361→                    onClick={printReceipt}
+  1362→  1362→                    variant="outline"
+  1363→  1363→                    className="flex-1 btn-press"
+  1364→  1364→                  >
+  1365→  1365→                    <Printer className="mr-2 h-4 w-4" />
+  1366→  1366→                    Cetak Struk
+  1367→  1367→                  </Button>
+  1368→  1368→                  <Button
+  1369→  1369→                    onClick={() => {
+  1370→  1370→                      setShowSuccess(false)
+  1371→  1371→                      setLastTx(null)
+  1372→  1372→                    }}
+  1373→  1373→                    className="flex-1 bg-emerald-500 text-white hover:bg-emerald-600 btn-press"
+  1374→  1374→                  >
+  1375→  1375→                    Transaksi Baru
+  1376→  1376→                    <ArrowRight className="ml-2 h-4 w-4" />
+  1377→  1377→                  </Button>
+  1378→  1378→                </div>
+  1379→  1379→              </>
+  1380→  1380→            )}
+  1381→  1381→          </div>
+  1382→  1382→        </DialogContent>
+  1383→  1383→      </Dialog>
+  1384→  1384→
+  1385→  1385→      {/* ─── TX DETAIL DIALOG ─── */}
+  1386→  1386→      <Dialog open={!!showTxDetail} onOpenChange={() => setShowTxDetail(null)}>
+  1387→  1387→        <DialogContent className="sm:max-w-md">
+  1388→  1388→          <DialogHeader>
+  1389→  1389→            <DialogTitle className="tabular-nums">{showTxDetail?.invoiceNo}</DialogTitle>
+  1390→  1390→            <DialogDescription>
+  1391→  1391→              {showTxDetail &&
+  1392→  1392→                new Date(showTxDetail.createdAt).toLocaleString('id-ID')}
+  1393→  1393→            </DialogDescription>
+  1394→  1394→          </DialogHeader>
+  1395→  1395→          {showTxDetail && (
+  1396→  1396→            <div className="space-y-3 py-2">
+  1397→  1397→              <div className="grid grid-cols-2 gap-2 text-sm">
+  1398→  1398→                <div className="rounded-lg bg-muted p-3">
+  1399→  1399→                  <p className="text-xs text-muted-foreground">Total</p>
+  1400→  1400→                  <p className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+  1401→  1401→                    {formatRp(showTxDetail.totalAmount)}
+  1402→  1402→                  </p>
+  1403→  1403→                </div>
+  1404→  1404→                <div className="rounded-lg bg-muted p-3">
+  1405→  1405→                  <p className="text-xs text-muted-foreground">Metode</p>
+  1406→  1406→                  <p className="font-medium">{showTxDetail.paymentChannel || showTxDetail.paymentMethod}</p>
+  1407→  1407→                </div>
+  1408→  1408→                <div className="rounded-lg bg-muted p-3">
+  1409→  1409→                  <p className="text-xs text-muted-foreground">Jumlah Item</p>
+  1410→  1410→                  <p className="font-medium tabular-nums">{showTxDetail._count.items}</p>
+  1411→  1411→                </div>
+  1412→  1412→                <div className="rounded-lg bg-muted p-3">
+  1413→  1413→                  <p className="text-xs text-muted-foreground">Status</p>
+  1414→  1414→                  <Badge
+  1415→  1415→                    className={cn(
+  1416→  1416→                      showTxDetail.status === 'paid' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400',
+  1417→  1417→                    )}
+  1418→  1418→                  >
+  1419→  1419→                    {showTxDetail.status === 'paid' ? 'Lunas' : showTxDetail.status}
+  1420→  1420→                  </Badge>
+  1421→  1421→                </div>
+  1422→  1422→              </div>
+  1423→  1423→            </div>
+  1424→  1424→          )}
+  1425→  1425→        </DialogContent>
+  1426→  1426→      </Dialog>
+  1427→  1427→    </div>
+  1428→  1428→  )
+  1429→  1429→}
+  1430→  1430→
