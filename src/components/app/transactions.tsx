@@ -1093,7 +1093,8 @@ export default function Transactions() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <Table className="table-stripe">
                 <TableHeader className="table-header-enhanced">
                   <TableRow className="hover:bg-transparent">
@@ -1193,13 +1194,62 @@ export default function Transactions() {
               </Table>
             </div>
 
+            {/* Mobile Card List */}
+            <div className="md:hidden">
+              <AnimatePresence mode="popLayout">
+                {transactions.length === 0 ? (
+                  <div className="py-8">
+                    <EmptyState
+                      title="Tidak ada transaksi ditemukan"
+                      description="Coba ubah filter atau kata kunci pencarian"
+                      icon="transaction"
+                    />
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {transactions.map((tx) => {
+                      const statusInfo = STATUS_MAP[tx.status] ?? STATUS_MAP.pending;
+                      return (
+                        <motion.button
+                          key={tx.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => handleRowClick(tx)}
+                          className="flex w-full items-start justify-between gap-3 p-4 text-left transition-colors hover:bg-muted/50 active:bg-muted"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono text-xs font-medium truncate">{tx.invoiceNo}</span>
+                              <StatusBadge status={tx.status} />
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {tx.customerName || tx.customer?.name || 'Umum'} · {tx.tenant.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {tx.paymentChannel || tx.paymentMethod} · {formatShortDate(tx.createdAt)}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-bold tabular-nums">{formatRp(tx.totalAmount)}</p>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t px-4 py-3">
+              <div className="flex flex-col gap-2 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-xs">
-                  Menampilkan {(pagination.page - 1) * pagination.limit + 1}
+                  <span className="hidden sm:inline">Menampilkan {(pagination.page - 1) * pagination.limit + 1}
                   –{Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
-                  dari {pagination.total} transaksi
+                  dari {pagination.total} transaksi</span>
+                  <span className="sm:hidden">Halaman {pagination.page} dari {pagination.totalPages}</span>
                 </p>
                 <Pagination>
                   <PaginationContent>

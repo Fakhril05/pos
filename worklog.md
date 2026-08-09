@@ -1137,3 +1137,36 @@ Stage Summary:
   - Cashier: Kasir POS, Riwayat Transaksi ✅
 - Header avatar now correctly shows user initials per role
 - VLM screenshot analysis confirms all visual fixes
+---
+Task ID: mobile-responsiveness-fix
+Agent: Main
+Task: Fix mobile responsiveness - layout 'acak-acakan' on Android
+
+Work Log:
+- Identified root cause: `paddingLeft: sidebarOpen ? 260 : 72` applied on ALL screen sizes via framer-motion in page.tsx and header.tsx, causing 72px left offset on mobile where sidebar is hidden
+- Fixed page.tsx: Added `useIsMobile()` hook, conditional paddingLeft = 0 on mobile
+- Fixed header.tsx: Same paddingLeft fix for mobile
+- Fixed mobile-nav.tsx: Replaced hardcoded nav items with role-based navigation (getPrimaryNav/getMoreNav functions for super_admin, business_owner, manager, cashier)
+- Fixed kasir.tsx: 
+  - Cart panel now hidden on mobile (hidden lg:flex)
+  - Added mobile shift status bar (lg:hidden)
+  - Added full Mobile Cart Sheet with items, payment method selection, and pay button
+  - Floating cart button triggers the sheet
+- Fixed owner-dashboard.tsx:
+  - Charts wrapped in overflow-x-auto containers with min-width
+  - Recent transactions: added mobile card list (md:hidden) alongside desktop table (hidden md:block)
+- Fixed transactions.tsx:
+  - Desktop table wrapped in hidden md:block
+  - Added mobile card list with invoice, status badge, customer, amount
+  - Responsive pagination text
+- Fixed payment-links.tsx, customers.tsx, payouts.tsx, reports.tsx, settings.tsx, products.tsx, stock.tsx, super-admin.tsx - all received mobile card views / overflow fixes (via sub-agent)
+- Fixed employees.tsx, outlets.tsx: Form grid-cols-2 changed to grid-cols-1 sm:grid-cols-2
+- Fixed merchants.tsx: Added overflow-x-auto wrapper for dialog table
+- Fixed reports.tsx: Fixed TS type error (as unknown as Record)
+
+Stage Summary:
+- All 15+ pages now properly responsive on mobile (< 768px)
+- Zero TypeScript errors, zero lint errors
+- Verified on iPhone 14 viewport via agent-browser: Dashboard, Transactions, Kasir POS, Products all render correctly
+- Desktop layout (1440px) verified: sidebar, tables, charts all intact
+- Mobile nav now shows role-based items (business_owner sees Dashboard/Kasir/Transaksi + Lainnya with Produk/Stok/Karyawan/Outlet/Laporan/Pengaturan)

@@ -39,6 +39,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { generateReceiptHtml } from '@/lib/receipt-generator'
@@ -492,6 +498,45 @@ export function Kasir() {
 
       {activeTab === 'pos' ? (
         <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+          {/* Mobile shift status bar */}
+          <div className="lg:hidden">
+            {shiftLoading ? (
+              <Skeleton className="h-10 w-full rounded-lg" />
+            ) : !activeShift ? (
+              <button
+                onClick={() => setShowShiftDialog('open')}
+                className="flex w-full items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 transition-all hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950 btn-press"
+              >
+                <span className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Shift belum dibuka
+                </span>
+                <Badge className="badge-gradient-amber text-white">Buka Shift</Badge>
+              </button>
+            ) : (
+              <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-2.5 dark:bg-emerald-950/30">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    <div className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                    Shift Aktif
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    • {formatTime(activeShift.openedAt)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowShiftDialog('close')}
+                  className="rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:hover:bg-emerald-900 btn-press"
+                >
+                  Tutup
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* ─── LEFT PANEL: Products ─── */}
           <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-[3]">
             {/* Search */}
@@ -633,8 +678,8 @@ export function Kasir() {
             </div>
           </div>
 
-          {/* ─── RIGHT PANEL: Cart ─── */}
-          <div className="glass-card flex min-h-[400px] w-full flex-col rounded-2xl lg:min-h-0 lg:w-[420px] xl:w-[460px]">
+          {/* ─── RIGHT PANEL: Cart (desktop only) ─── */}
+          <div className="glass-card hidden min-h-0 w-[420px] xl:w-[460px] flex-col rounded-2xl lg:flex">
             {/* Shift Status Bar */}
             <div className="p-3">
               {shiftLoading ? (
@@ -872,11 +917,185 @@ export function Kasir() {
               className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xl shadow-emerald-500/40 lg:hidden"
             >
               <ShoppingCart className="h-6 w-6" />
-              <Badge className="badge-gradient-emerald absolute -top-1 -right-1 h-5 min-w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
+              <Badge className="badge-gradient-emerald absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full p-0 text-[10px] font-bold">
                 {cartItemCount}
               </Badge>
             </button>
           )}
+
+          {/* Mobile Cart Sheet */}
+          <Sheet open={showMobileCart} onOpenChange={setShowMobileCart}>
+            <SheetContent side="bottom" className="flex max-h-[90vh] flex-col rounded-t-2xl">
+              <SheetHeader className="shrink-0">
+                <SheetTitle className="flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5 text-emerald-500" />
+                  Keranjang
+                  {cartItemCount > 0 && (
+                    <span className="text-sm font-normal text-muted-foreground">({cartItemCount} item)</span>
+                  )}
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto">
+                {cart.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <ShoppingCart className="mb-2 h-10 w-10 opacity-20" />
+                    <p className="text-sm">Keranjang kosong</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 px-4 py-3">
+                    <AnimatePresence initial={false}>
+                      {cart.map((item) => (
+                        <motion.div
+                          key={item.productId}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20, height: 0 }}
+                          className="rounded-lg border border-border/50 bg-card/50 p-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">{item.name}</p>
+                              <p className="text-xs text-muted-foreground tabular-nums">
+                                {formatRp(item.price)} × {item.quantity}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => removeFromCart(item.productId)}
+                              className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive btn-press"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => updateQty(item.productId, -1)}
+                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="w-8 text-center text-sm font-bold tabular-nums">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQty(item.productId, 1)}
+                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted btn-press"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                              {formatRp(item.price * item.quantity)}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Cart Summary & Payment */}
+              {cart.length > 0 && (
+                <div className="shrink-0 border-t border-border bg-card/50 p-4">
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span className="tabular-nums">{formatRp(cartSubtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>PPN (11%)</span>
+                      <span className="tabular-nums">{formatRp(cartTax)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-sm font-bold">TOTAL</span>
+                      <span className="text-lg font-extrabold text-gradient-emerald tabular-nums">
+                        {formatRp(cartTotal)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment Method Selection */}
+                  <div className="mt-3">
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground">Metode Pembayaran</p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {PAYMENT_METHODS.map((pm) => {
+                        const Icon = pm.icon
+                        return (
+                          <button
+                            key={pm.label}
+                            onClick={() => setSelectedPayment(pm)}
+                            className={cn(
+                              'flex flex-col items-center gap-0.5 rounded-lg border p-2 text-[10px] font-medium transition-all btn-press',
+                              selectedPayment?.label === pm.label
+                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400'
+                                : 'border-border hover:border-emerald-300 hover:bg-muted dark:hover:border-emerald-700',
+                            )}
+                          >
+                            <Icon className={cn('h-4 w-4', pm.color)} />
+                            {pm.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Cash Input */}
+                  {selectedPayment?.method === 'cash' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 space-y-2"
+                    >
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Uang Diterima</Label>
+                        <Input
+                          type="number"
+                          value={tendered}
+                          onChange={(e) => setTendered(e.target.value)}
+                          placeholder="0"
+                          className="mt-1 text-right text-lg font-bold tabular-nums"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+                        <span className="text-xs font-medium text-muted-foreground">Kembalian</span>
+                        <span
+                          className={cn(
+                            'text-sm font-bold tabular-nums',
+                            change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+                          )}
+                        >
+                          {formatRp(Math.max(0, change))}
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Pay Button */}
+                  <Button
+                    onClick={() => createTransaction.mutate()}
+                    disabled={
+                      cart.length === 0 ||
+                      !selectedPayment ||
+                      !activeShift ||
+                      isProcessing ||
+                      (selectedPayment.method === 'cash' && tenderedNum < cartTotal)
+                    }
+                    className="btn-press mt-3 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 py-5 text-base font-bold text-white shadow-lg shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wallet className="mr-2 h-4 w-4" />
+                    )}
+                    Bayar {formatRp(cartTotal)}
+                  </Button>
+                </div>
+              )}
+            </SheetContent>
+          </Sheet>
         </div>
       ) : (
         /* ─── HISTORY TAB ─── */

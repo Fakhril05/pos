@@ -12,6 +12,13 @@ import {
   Store,
   Banknote,
   Settings,
+  Package,
+  ClipboardList,
+  UserCog,
+  MapPin,
+  History,
+  Building2,
+  CreditCard,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
@@ -23,24 +30,88 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 
-const primaryNavItems: { id: Page; label: string; icon: React.ReactNode }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-  { id: 'transactions', label: 'Transaksi', icon: <ArrowLeftRight className="h-5 w-5" /> },
-  { id: 'payment-links', label: 'Payment Link', icon: <Link2 className="h-5 w-5" /> },
-  { id: 'kasir', label: 'Kasir', icon: <Calculator className="h-5 w-5" /> },
-]
+interface NavItemDef {
+  id: Page
+  label: string
+  icon: React.ReactNode
+}
 
-const moreNavItems: { id: Page; label: string; icon: React.ReactNode }[] = [
-  { id: 'reports', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
-  { id: 'customers', label: 'Pelanggan', icon: <Users className="h-5 w-5" /> },
-  { id: 'merchants', label: 'Merchant', icon: <Store className="h-5 w-5" /> },
-  { id: 'payouts', label: 'Payout', icon: <Banknote className="h-5 w-5" /> },
-  { id: 'settings', label: 'Pengaturan', icon: <Settings className="h-5 w-5" /> },
-]
+function getPrimaryNav(role: string): NavItemDef[] {
+  switch (role) {
+    case 'super_admin':
+      return [
+        { id: 'super-admin', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+        { id: 'tenant-detail', label: 'Tenant', icon: <Building2 className="h-5 w-5" /> },
+        { id: 'subscription-plans', label: 'Langganan', icon: <CreditCard className="h-5 w-5" /> },
+      ]
+    case 'business_owner':
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+        { id: 'kasir', label: 'Kasir', icon: <Calculator className="h-5 w-5" /> },
+        { id: 'transactions', label: 'Transaksi', icon: <ArrowLeftRight className="h-5 w-5" /> },
+      ]
+    case 'manager':
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+        { id: 'stok-opname', label: 'Stok', icon: <ClipboardList className="h-5 w-5" /> },
+        { id: 'laporan-penjualan', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
+      ]
+    case 'cashier':
+      return [
+        { id: 'kasir', label: 'Kasir', icon: <Calculator className="h-5 w-5" /> },
+        { id: 'riwayat-transaksi', label: 'Riwayat', icon: <History className="h-5 w-5" /> },
+      ]
+    default:
+      return [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+        { id: 'transactions', label: 'Transaksi', icon: <ArrowLeftRight className="h-5 w-5" /> },
+        { id: 'payment-links', label: 'Payment Link', icon: <Link2 className="h-5 w-5" /> },
+      ]
+  }
+}
+
+function getMoreNav(role: string): NavItemDef[] {
+  switch (role) {
+    case 'super_admin':
+      return [
+        { id: 'settings', label: 'Pengaturan', icon: <Settings className="h-5 w-5" /> },
+      ]
+    case 'business_owner':
+      return [
+        { id: 'produk', label: 'Produk', icon: <Package className="h-5 w-5" /> },
+        { id: 'stok', label: 'Stok', icon: <ClipboardList className="h-5 w-5" /> },
+        { id: 'karyawan', label: 'Karyawan', icon: <UserCog className="h-5 w-5" /> },
+        { id: 'outlet', label: 'Outlet', icon: <MapPin className="h-5 w-5" /> },
+        { id: 'reports', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
+        { id: 'settings', label: 'Pengaturan', icon: <Settings className="h-5 w-5" /> },
+      ]
+    case 'manager':
+      return [
+        { id: 'reports', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
+        { id: 'settings', label: 'Pengaturan', icon: <Settings className="h-5 w-5" /> },
+      ]
+    case 'cashier':
+      return [
+        { id: 'settings', label: 'Pengaturan', icon: <Settings className="h-5 w-5" /> },
+      ]
+    default:
+      return [
+        { id: 'reports', label: 'Laporan', icon: <BarChart3 className="h-5 w-5" /> },
+        { id: 'customers', label: 'Pelanggan', icon: <Users className="h-5 w-5" /> },
+        { id: 'merchants', label: 'Merchant', icon: <Store className="h-5 w-5" /> },
+        { id: 'payouts', label: 'Payout', icon: <Banknote className="h-5 w-5" /> },
+        { id: 'settings', label: 'Pengaturan', icon: <Settings className="h-5 w-5" /> },
+      ]
+  }
+}
 
 export function MobileNav() {
-  const { activePage, setActivePage } = useAppStore()
+  const { user, activePage, setActivePage } = useAppStore()
   const [moreOpen, setMoreOpen] = useState(false)
+
+  const role = user?.role || 'business_owner'
+  const primaryNavItems = getPrimaryNav(role)
+  const moreNavItems = getMoreNav(role)
 
   return (
     <>
@@ -82,14 +153,16 @@ export function MobileNav() {
             )
           })}
 
-          {/* More button */}
-          <button
-            onClick={() => setMoreOpen(true)}
-            className="mobile-nav-item relative flex flex-1 flex-col items-center gap-0.5 py-2 pt-2.5 text-muted-foreground"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-            <span className="text-[10px] font-medium leading-tight">Lainnya</span>
-          </button>
+          {/* More button - only show if there are more items */}
+          {moreNavItems.length > 0 && (
+            <button
+              onClick={() => setMoreOpen(true)}
+              className="mobile-nav-item relative flex flex-1 flex-col items-center gap-0.5 py-2 pt-2.5 text-muted-foreground"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+              <span className="text-[10px] font-medium leading-tight">Lainnya</span>
+            </button>
+          )}
         </div>
       </nav>
 

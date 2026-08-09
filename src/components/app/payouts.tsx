@@ -846,7 +846,9 @@ export default function Payouts() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <Table className="table-stripe">
                   <TableHeader className="table-header-enhanced">
                     <TableRow>
@@ -946,6 +948,69 @@ export default function Payouts() {
                   </TableBody>
                 </Table>
               </div>
+              {/* Mobile Card List */}
+              <div className="md:hidden divide-y">
+                <AnimatePresence>
+                  {payouts.map((po, i) => {
+                    const StatusIcon = statusIcon[po.status] || Clock;
+                    return (
+                      <motion.div
+                        key={po.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2, delay: i * 0.03 }}
+                        className="p-4 space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {po.merchant.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{po.merchant.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{po.bankName} • {po.accountNo}</p>
+                            </div>
+                          </div>
+                          <Badge className={`text-xs shrink-0 ${statusColor[po.status] || ''}`}>
+                            <StatusIcon className={`h-3 w-3 mr-1 ${po.status === 'processing' ? 'animate-spin' : ''}`} />
+                            {statusLabel[po.status] || po.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-end justify-between pl-[42px]">
+                          <div>
+                            <button
+                              type="button"
+                              className="text-base font-bold cursor-pointer text-emerald-600 dark:text-emerald-400 hover:underline"
+                              onClick={() => setSelectedPayoutId(po.id)}
+                            >
+                              {formatMoney(po.amount)}
+                            </button>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Bersih: {formatMoney(po.amount - po.fee)}</p>
+                          </div>
+                          {po.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:border-emerald-700 dark:hover:bg-emerald-950"
+                              onClick={() => handleProcess(po.id)}
+                              disabled={processMutation.isPending}
+                            >
+                              {processMutation.isPending ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                              ) : (
+                                <Play className="h-3.5 w-3.5 mr-1" />
+                              )}
+                              Proses
+                            </Button>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -1033,7 +1098,7 @@ export default function Payouts() {
             </div>
 
             {/* Amount + Fee */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2 input-glow">
                 <Label htmlFor="payout-amount" className="flex items-center gap-1.5">
                   <Banknote className="h-3.5 w-3.5" />
@@ -1110,7 +1175,7 @@ export default function Payouts() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2 input-glow">
                 <Label htmlFor="account-no" className="flex items-center gap-1.5">
                   Nomor Rekening <span className="text-red-500">*</span>

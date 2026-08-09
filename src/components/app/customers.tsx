@@ -641,8 +641,8 @@ export default function Customers() {
               </div>
             )}
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader className="table-header-enhanced">
                   <TableRow className="hover:bg-transparent">
@@ -690,9 +690,6 @@ export default function Customers() {
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-medium cursor-pointer text-emerald-600 dark:text-emerald-400 hover:underline">
                                   {customer.name}
-                                </p>
-                                <p className="text-muted-foreground truncate text-xs sm:hidden">
-                                  {customer.email}
                                 </p>
                               </div>
                             </div>
@@ -744,6 +741,51 @@ export default function Customers() {
                   </AnimatePresence>
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="md:hidden">
+              <AnimatePresence mode="popLayout">
+                {customers.length === 0 ? (
+                  <div className="py-8">
+                    <EmptyState
+                      title="Tidak ada pelanggan ditemukan"
+                      description="Coba ubah kata kunci pencarian Anda"
+                      icon="users"
+                    />
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {customers.map((customer) => (
+                      <motion.button
+                        key={customer.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => handleRowClick(customer)}
+                        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50 active:bg-muted"
+                      >
+                        <Avatar className="h-9 w-9 shrink-0">
+                          <AvatarFallback
+                            className={`text-xs font-semibold ${getAvatarColor(customer.name)}`}
+                          >
+                            {getInitials(customer.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{customer.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatRp(customer.totalSpent)}</p>
+                          <p className="text-[10px] text-muted-foreground">{customer._count.transactions} transaksi</p>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Pagination */}

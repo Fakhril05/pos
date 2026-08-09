@@ -17,6 +17,7 @@ import {
 import { useTheme } from 'next-themes'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CommandPalette } from '@/components/app/command-palette'
 import { toast } from 'sonner'
@@ -148,6 +149,7 @@ function useDebounce<T>(value: T, delay: number): T {
 export function Header() {
   const { user, activePage, toggleSidebar, sidebarOpen, setActivePage, setPendingTxId } = useAppStore()
   const { theme, setTheme } = useTheme()
+  const isMobile = useIsMobile()
   const [commandOpen, setCommandOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -219,7 +221,7 @@ export function Header() {
   return (
     <motion.header
       initial={false}
-      animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
+      animate={{ paddingLeft: isMobile ? 0 : sidebarOpen ? 260 : 72 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6 glass-card neon-glow"
     >

@@ -441,7 +441,7 @@ export default function Reports() {
     }
 
     // Handle dashboard report format (may have topTenants instead of topMerchants)
-    const raw = data as Record<string, unknown>;
+    const raw = data as unknown as Record<string, unknown>;
     const topTenants = raw.topTenants as { id: string; name: string; totalSales: number; totalTx: number }[] | undefined;
     const mapped: ReportsData = {
       summary: raw.summary as ReportsData['summary'],
@@ -864,9 +864,10 @@ export default function Reports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto -mx-2 px-2">
             <ChartContainer
               config={areaChartConfig}
-              className="h-[340px] w-full"
+              className="h-[340px] w-full min-w-[280px] sm:min-w-0"
             >
               <AnimatePresence mode="wait">
                 {revenueChartType === 'area' && (
@@ -1096,6 +1097,7 @@ export default function Reports() {
                 )}
               </AnimatePresence>
             </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
@@ -1135,6 +1137,7 @@ export default function Reports() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto -mx-2 px-2">
               <AnimatePresence mode="wait">
                 {paymentChartType === 'pie' && (
                   <motion.div
@@ -1277,6 +1280,7 @@ export default function Reports() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -1388,6 +1392,8 @@ export default function Reports() {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-2 pb-4">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader className="table-header-enhanced">
                 <TableRow>
@@ -1442,6 +1448,40 @@ export default function Reports() {
                 )}
               </TableBody>
             </Table>
+            </div>
+            {/* Mobile Card List */}
+            <div className="md:hidden">
+              {topMerchants.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">Belum ada data merchant</p>
+              ) : (
+                <div className="divide-y">
+                  {topMerchants.map((merchant, idx) => (
+                    <div key={merchant.id} className="flex items-center gap-3 py-3">
+                      <div
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                          idx === 0
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                            : idx === 1
+                              ? 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            : idx === 2
+                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {idx + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{merchant.name}</p>
+                        <p className="text-xs text-muted-foreground">{merchant.totalTx.toLocaleString('id-ID')} transaksi</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatRp(merchant.totalRevenue)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </motion.div>

@@ -1010,6 +1010,7 @@ export default function Merchants() {
                       </div>
                     ) : (
                       <div className="rounded-xl border overflow-hidden">
+                        <div className="overflow-x-auto">
                         <Table>
                           <TableHeader className="table-header-enhanced">
                             <TableRow className="hover:bg-transparent">
@@ -1065,6 +1066,7 @@ export default function Merchants() {
                             ))}
                           </TableBody>
                         </Table>
+                        </div>
                       </div>
                     )}
                   </motion.div>

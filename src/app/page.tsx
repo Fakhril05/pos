@@ -10,6 +10,7 @@ import { LoadingBar } from '@/components/app/loading-bar'
 import { KeyboardShortcutsOverlay } from '@/components/app/keyboard-shortcuts'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTheme } from 'next-themes'
+import { useIsMobile } from '@/hooks/use-mobile'
 import dynamic from 'next/dynamic'
 
 const LoginPage = dynamic(() => import('@/components/app/login-page').then(m => ({ default: m.LoginPage })), { ssr: false })
@@ -67,6 +68,7 @@ export default function Home() {
   const { user, currentPage, activePage, sidebarOpen, setActivePage, login } = useAppStore()
   const { theme, setTheme } = useTheme()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const isMobile = useIsMobile()
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -160,14 +162,14 @@ export default function Home() {
       <Header />
       <motion.div
         initial={false}
-        animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
+        animate={{ paddingLeft: isMobile ? 0 : sidebarOpen ? 260 : 72 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       >
         <QuickStats />
       </motion.div>
       <motion.main
         initial={false}
-        animate={{ paddingLeft: sidebarOpen ? 260 : 72 }}
+        animate={{ paddingLeft: isMobile ? 0 : sidebarOpen ? 260 : 72 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="flex min-h-[calc(100vh-5.5rem)] flex-col pt-[4.75rem] pb-20 md:pb-0"
       >

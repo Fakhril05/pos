@@ -416,7 +416,7 @@ function PembayaranTab() {
 
                 {/* Right: Controls */}
                 <div className="flex items-center gap-4">
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Biaya</Label>
                       <Input
@@ -1255,7 +1255,8 @@ function WebhookTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto -mx-6 px-6">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto -mx-6 px-6">
             <Table className="table-stripe">
               <TableHeader className="table-header-enhanced">
                 <TableRow className="border-border/50 hover:bg-transparent">
@@ -1311,6 +1312,30 @@ function WebhookTab() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y">
+            {MOCK_WEBHOOK_LOGS.map((log) => (
+              <div key={log.id} className="p-4 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className={getEventBadge(log.status)}>{log.eventType}</Badge>
+                    <span className={`font-mono text-xs font-semibold ${getStatusCodeColor(log.statusCode)}`}>{log.statusCode}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 shrink-0"
+                    onClick={() => handleResend(log.id)}
+                  >
+                    <Send className="h-3 w-3" />
+                    Ulang
+                  </Button>
+                </div>
+                <p className="font-mono text-[11px] text-muted-foreground truncate" title={log.url}>{log.url}</p>
+                <p className="text-[10px] text-muted-foreground">{log.responseTime} · {log.timestamp}</p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -1446,7 +1471,7 @@ export default function Settings() {
         <Card className="gradient-border">
           <CardContent className="p-1">
             <Tabs defaultValue="profil" className="w-full">
-              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto">
                 <TabsTrigger
                   value="profil"
                   className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"

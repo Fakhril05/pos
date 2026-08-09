@@ -303,7 +303,7 @@ export function Outlets() {
             <DialogDescription>Isi detail outlet / cabang baru</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="o-name">Nama Outlet *</Label>
                 <Input id="o-name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Cabang Sudirman" />
@@ -317,7 +317,7 @@ export function Outlets() {
               <Label htmlFor="o-address">Alamat</Label>
               <Input id="o-address" value={formAddress} onChange={(e) => setFormAddress(e.target.value)} placeholder="Jl. Sudirman No. 123" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="o-city">Kota</Label>
                 <Input id="o-city" value={formCity} onChange={(e) => setFormCity(e.target.value)} placeholder="Jakarta" />

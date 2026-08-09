@@ -400,7 +400,8 @@ function AnalyticsSection() {
         <Card className="card-hover border-border/60 shadow-sm">
           <CardContent className="p-5">
             <h3 className="mb-4 text-base font-semibold">Link Terbaik</h3>
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left">
@@ -431,6 +432,27 @@ function AnalyticsSection() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile Card List */}
+            <div className="md:hidden divide-y">
+              {topPerformingLinks.map((row, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: 0.48 + idx * 0.06 }}
+                  className="flex items-center justify-between py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{row.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{row.clicks.toLocaleString('id-ID')} klik · {row.conversion}</p>
+                  </div>
+                  <div className="shrink-0 text-right ml-3">
+                    <p className="text-sm font-bold tabular-nums">{row.revenue}</p>
+                    <StatusBadge status={row.status} />
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </CardContent>
         </Card>

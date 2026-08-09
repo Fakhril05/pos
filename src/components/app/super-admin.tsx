@@ -263,7 +263,7 @@ export function SuperAdmin() {
                 placeholder="Cari bisnis..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-56 pl-9"
+                className="w-full sm:w-56 pl-9"
               />
             </div>
             <select
@@ -281,7 +281,8 @@ export function SuperAdmin() {
         </div>
 
         <div className="glass-card overflow-hidden rounded-xl border">
-          <div className="max-h-[500px] overflow-y-auto scrollbar-thin">
+          {/* Desktop Table */}
+          <div className="hidden md:block max-h-[500px] overflow-y-auto scrollbar-thin">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                 <tr className="border-b border-border">
@@ -364,6 +365,56 @@ export function SuperAdmin() {
                 )}
               </tbody>
             </table>
+          </div>
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y">
+            {tenantsLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-4">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))
+            ) : tenants && tenants.length > 0 ? (
+              tenants.map((t: any, i: number) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="flex items-center gap-3 p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate">{t.name}</p>
+                      {statusBadge(t.status)}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{t.city} · {t.ownerName}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 capitalize">{t.plan}</Badge>
+                      {t.outletCount != null && <span className="ml-2">{t.outletCount} outlet</span>}
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-8 w-8 p-0 ${t.status === 'active' ? 'text-rose-500 hover:text-rose-600 hover:bg-rose-500/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10'}`}
+                    >
+                      <Power className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada tenant ditemukan</p>
+            )}
           </div>
         </div>
       </div>

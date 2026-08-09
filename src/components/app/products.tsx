@@ -317,7 +317,8 @@ export function Products() {
           />
         ) : (
           <Card className="glass-card card-elevated overflow-hidden">
-            <div className="max-h-[calc(100vh-22rem)] overflow-y-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block max-h-[calc(100vh-22rem)] overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="table-header-enhanced">
@@ -345,7 +346,6 @@ export function Products() {
                             {p.isFavorite && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400 shrink-0" />}
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{p.name}</p>
-                              <p className="text-xs text-muted-foreground md:hidden">{p.category?.name ?? '-'}</p>
                             </div>
                           </div>
                         </TableCell>
@@ -377,6 +377,43 @@ export function Products() {
                   })}
                 </TableBody>
               </Table>
+            </div>
+            {/* Mobile Card List */}
+            <div className="md:hidden divide-y">
+              {products.map((p) => {
+                const isLow = p.stock > 0 && p.stock <= p.minStock;
+                const isOut = p.stock === 0;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => handleOpenDetail(p)}
+                    className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50 active:bg-muted"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        {p.isFavorite && <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />}
+                        <p className="text-sm font-medium truncate">{p.name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{p.category?.name ?? '-'}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold tabular-nums">{formatRp(p.sellPrice)}</p>
+                      <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                        <span className={`text-xs font-medium tabular-nums ${isOut ? 'text-rose-500' : isLow ? 'text-amber-500' : ''}`}>
+                          {p.stock}{p.unit}
+                        </span>
+                        {isOut ? (
+                          <Badge variant="destructive" className="text-[9px] px-1.5 py-0">Habis</Badge>
+                        ) : isLow ? (
+                          <Badge className="text-[9px] px-1.5 py-0">Rendah</Badge>
+                        ) : p.isAvailable ? (
+                          <Badge variant="default" className="text-[9px] px-1.5 py-0">Aktif</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Pagination */}
@@ -428,7 +465,7 @@ export function Products() {
               <Label htmlFor="p-name">Nama Produk *</Label>
               <Input id="p-name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Contoh: Kopi Arabika 250g" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="p-sku">SKU</Label>
                 <Input id="p-sku" value={form.sku} onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))} placeholder="PRD-001" />
@@ -449,7 +486,7 @@ export function Products() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="p-buy">Harga Beli</Label>
                 <Input id="p-buy" type="number" value={form.buyPrice} onChange={(e) => setForm((f) => ({ ...f, buyPrice: e.target.value }))} placeholder="0" />
@@ -463,7 +500,7 @@ export function Products() {
                 <Input id="p-wholesale" type="number" value={form.wholesalePrice} onChange={(e) => setForm((f) => ({ ...f, wholesalePrice: e.target.value }))} placeholder="0" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="p-stock">Stok</Label>
                 <Input id="p-stock" type="number" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} />

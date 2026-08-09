@@ -211,7 +211,8 @@ export function OwnerDashboard() {
               <CardDescription>Pendapatan & jumlah transaksi harian</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
-              <ChartContainer config={revenueChartConfig} className="h-[280px] w-full">
+              <div className="overflow-x-auto -mx-2 px-2">
+              <ChartContainer config={revenueChartConfig} className="h-[240px] w-full min-w-[300px] sm:min-w-0">
                 {data?.revenueTrend?.every((d: { revenue: number }) => d.revenue === 0) ? (
                   <div className="flex h-full items-center justify-center">
                     <div className="text-center">
@@ -273,6 +274,7 @@ export function OwnerDashboard() {
                 </AreaChart>
                 )}
               </ChartContainer>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -285,7 +287,8 @@ export function OwnerDashboard() {
               <CardDescription>Pendapatan per outlet bulan ini</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
-              <ChartContainer config={outletChartConfig} className="h-[280px] w-full">
+              <div className="overflow-x-auto -mx-2 px-2">
+              <ChartContainer config={outletChartConfig} className="h-[240px] w-full min-w-[280px] sm:min-w-0">
                 <BarChart
                   data={data?.outletComparison ?? []}
                   layout="vertical"
@@ -313,6 +316,7 @@ export function OwnerDashboard() {
                   <Bar dataKey="revenue" fill="var(--chart-1)" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ChartContainer>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -374,6 +378,8 @@ export function OwnerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="max-h-[320px] overflow-y-auto">
+                {/* Desktop Table */}
+                <div className="hidden sm:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="table-header-enhanced">
@@ -422,6 +428,38 @@ export function OwnerDashboard() {
                     )}
                   </TableBody>
                 </Table>
+                </div>
+                {/* Mobile Card List */}
+                <div className="space-y-2 sm:hidden">
+                  {(data?.recentTransactions ?? []).length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">Belum ada transaksi</p>
+                  ) : (
+                    (data?.recentTransactions ?? []).map(
+                      (tx: {
+                        id: string;
+                        invoiceNo: string;
+                        customerName: string | null;
+                        totalAmount: number;
+                        status: string;
+                        createdAt: string;
+                      }) => {
+                        const st = statusMap[tx.status] ?? { label: tx.status, variant: 'secondary' as const };
+                        return (
+                          <div key={tx.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-mono font-medium">{tx.invoiceNo}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{tx.customerName ?? 'Umum'}</p>
+                            </div>
+                            <div className="text-right ml-3">
+                              <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatRp(tx.totalAmount)}</p>
+                              <Badge variant={st.variant} className="text-[10px] px-1.5 py-0 mt-1">{st.label}</Badge>
+                            </div>
+                          </div>
+                        );
+                      },
+                    )
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

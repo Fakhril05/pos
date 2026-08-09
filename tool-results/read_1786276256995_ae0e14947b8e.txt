@@ -1,0 +1,732 @@
+   485→      </AnimatePresence>
+   486→
+   487→      {/* ── Cards Grid ── */}
+   488→      {isLoading ? (
+   489→        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   490→          {Array.from({ length: 6 }).map((_, i) => (
+   491→            <Card key={i} className="overflow-hidden">
+   492→              <Skeleton className="h-1.5 w-full" />
+   493→              <CardContent className="p-5 space-y-3">
+   494→                <Skeleton className="h-5 w-3/4" />
+   495→                <Skeleton className="h-4 w-1/2" />
+   496→                <Skeleton className="h-4 w-2/3" />
+   497→                <Skeleton className="h-4 w-full" />
+   498→                <div className="flex gap-4 pt-2">
+   499→                  <Skeleton className="h-4 w-20" />
+   500→                  <Skeleton className="h-4 w-20" />
+   501→                </div>
+   502→              </CardContent>
+   503→            </Card>
+   504→          ))}
+   505→        </div>
+   506→      ) : merchants.length === 0 ? (
+   507→        <EmptyState
+   508→          title="Tidak ada merchant ditemukan"
+   509→          description="Coba ubah kata kunci pencarian"
+   510→          icon="merchant"
+   511→          actionLabel={(!search) ? 'Tambah' : undefined}
+   512→          onAction={(!search) ? () => setCreateOpen(true) : undefined}
+   513→        />
+   514→      ) : (
+   515→        <motion.div
+   516→          layout
+   517→          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+   518→        >
+   519→          <AnimatePresence mode="popLayout">
+   520→            {merchants.map((m, i) => (
+   521→              <motion.div
+   522→                key={m.id}
+   523→                layout
+   524→                initial={{ opacity: 0, y: 16 }}
+   525→                animate={{ opacity: 1, y: 0 }}
+   526→                exit={{ opacity: 0, y: -8 }}
+   527→                transition={{ duration: 0.3, delay: i * 0.04 }}
+   528→              >
+   529→                <Card
+   530→                  className="overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group card-hover"
+   531→                  onClick={() => handleOpenDetail(m.id)}
+   532→                >
+   533→                  {/* Gradient top border */}
+   534→                  <div className={`h-1.5 w-full bg-gradient-to-r ${m.status === 'active' ? 'from-emerald-400 via-emerald-500 to-teal-400' : 'from-gray-300 via-gray-400 to-gray-300'}`} />
+   535→                  <CardContent className="p-5 space-y-3.5">
+   536→                    {/* Name + Status */}
+   537→                    <div className="flex items-start justify-between gap-2">
+   538→                      <div className="min-w-0">
+   539→                        <h3
+   540→                          className="font-semibold text-sm truncate text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+   541→                          onClick={(e) => {
+   542→                            e.stopPropagation();
+   543→                            handleOpenDetail(m.id);
+   544→                          }}
+   545→                        >
+   546→                          {m.name}
+   547→                        </h3>
+   548→                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+   549→                          <Mail className="h-3 w-3 flex-shrink-0" />
+   550→                          <span className="truncate">{m.email}</span>
+   551→                        </div>
+   552→                      </div>
+   553→                      <Badge className={`text-[10px] px-2 py-0.5 flex-shrink-0 ${statusColor[m.status] || ''}`}>
+   554→                        {statusLabel[m.status] || m.status}
+   555→                      </Badge>
+   556→                    </div>
+   557→
+   558→                    {/* Phone */}
+   559→                    {m.phone && (
+   560→                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   561→                        <Phone className="h-3 w-3 flex-shrink-0" />
+   562→                        <span>{m.phone}</span>
+   563→                      </div>
+   564→                    )}
+   565→
+   566→                    {/* API Key */}
+   567→                    <div className="flex items-center gap-2">
+   568→                      <Key className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+   569→                      <code className="text-xs bg-muted px-2 py-1 rounded font-mono flex-1 truncate">
+   570→                        {maskKey(m.apiKey)}
+   571→                      </code>
+   572→                      <button
+   573→                        onClick={(e) => {
+   574→                          e.stopPropagation();
+   575→                          handleCopyKey(m.id, m.apiKey);
+   576→                        }}
+   577→                        className="flex-shrink-0 text-muted-foreground hover:text-emerald-600 transition-colors"
+   578→                        aria-label="Salin API Key"
+   579→                      >
+   580→                        {copiedId === m.id ? (
+   581→                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+   582→                        ) : (
+   583→                          <Copy className="h-3.5 w-3.5" />
+   584→                        )}
+   585→                      </button>
+   586→                    </div>
+   587→
+   588→                    <Separator />
+   589→
+   590→                    {/* Sales & Transactions */}
+   591→                    <div className="flex items-center justify-between text-xs">
+   592→                      <div className="flex items-center gap-1.5">
+   593→                        <CreditCard className="h-3 w-3 text-emerald-600" />
+   594→                        <span className="font-semibold text-emerald-600">{formatMoney(m.totalSales)}</span>
+   595→                      </div>
+   596→                      <span className="text-muted-foreground">
+   597→                        {m._count.transactions.toLocaleString('id-ID')} transaksi
+   598→                      </span>
+   599→                    </div>
+   600→
+   601→                    {/* Created date */}
+   602→                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   603→                      <CalendarDays className="h-3 w-3 flex-shrink-0" />
+   604→                      <span>Bergabung {formatDate(m.createdAt)}</span>
+   605→                    </div>
+   606→                  </CardContent>
+   607→                </Card>
+   608→              </motion.div>
+   609→            ))}
+   610→          </AnimatePresence>
+   611→        </motion.div>
+   612→      )}
+   613→
+   614→      {/* ── Pagination ── */}
+   615→      {pagination && pagination.totalPages > 1 && (
+   616→        <div className="space-y-3">
+   617→          <Pagination>
+   618→            <PaginationContent>
+   619→              <PaginationItem>
+   620→                <PaginationPrevious
+   621→                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+   622→                  className={page === 1 ? 'pointer-events-none opacity-40' : 'cursor-pointer'}
+   623→                />
+   624→              </PaginationItem>
+   625→              {pageRange.map((p, i) =>
+   626→                p === 'ellipsis' ? (
+   627→                  <PaginationItem key={`e${i}`}>
+   628→                    <PaginationEllipsis />
+   629→                  </PaginationItem>
+   630→                ) : (
+   631→                  <PaginationItem key={p}>
+   632→                    <PaginationLink
+   633→                      isActive={p === page}
+   634→                      onClick={() => setPage(p as number)}
+   635→                      className="cursor-pointer"
+   636→                    >
+   637→                      {p}
+   638→                    </PaginationLink>
+   639→                  </PaginationItem>
+   640→                )
+   641→              )}
+   642→              <PaginationItem>
+   643→                <PaginationNext
+   644→                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+   645→                  className={page === pagination.totalPages ? 'pointer-events-none opacity-40' : 'cursor-pointer'}
+   646→                />
+   647→              </PaginationItem>
+   648→            </PaginationContent>
+   649→          </Pagination>
+   650→          <p className="text-center text-sm text-muted-foreground">
+   651→            Menampilkan {(page - 1) * pagination.limit + 1}&ndash;{Math.min(page * pagination.limit, pagination.total)} dari {pagination.total} merchant
+   652→          </p>
+   653→        </div>
+   654→      )}
+   655→
+   656→      {/* ── Merchant Detail Sheet ── */}
+   657→      <Sheet open={sheetOpen} onOpenChange={handleCloseSheet}>
+   658→        <SheetContent side="right" className="w-full sm:max-w-xl p-0 overflow-hidden">
+   659→          {detailLoading ? (
+   660→            <div className="flex flex-col gap-4 p-6">
+   661→              <div className="flex items-center gap-4">
+   662→                <Skeleton className="h-14 w-14 rounded-2xl" />
+   663→                <div className="space-y-2 flex-1">
+   664→                  <Skeleton className="h-5 w-40" />
+   665→                  <Skeleton className="h-4 w-56" />
+   666→                </div>
+   667→                <Skeleton className="h-6 w-16" />
+   668→              </div>
+   669→              <div className="rounded-xl border p-3">
+   670→                <Skeleton className="h-4 w-20 mb-2" />
+   671→                <Skeleton className="h-9 w-full" />
+   672→              </div>
+   673→              <div className="grid grid-cols-2 gap-3">
+   674→                {Array.from({ length: 4 }).map((_, i) => (
+   675→                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
+   676→                ))}
+   677→              </div>
+   678→              <Separator />
+   679→              <div className="space-y-3">
+   680→                {Array.from({ length: 4 }).map((_, i) => (
+   681→                  <Skeleton key={i} className="h-10 w-full" />
+   682→                ))}
+   683→              </div>
+   684→              <Separator />
+   685→              <Skeleton className="h-[120px] w-full rounded-xl" />
+   686→              <Separator />
+   687→              {Array.from({ length: 3 }).map((_, i) => (
+   688→                <Skeleton key={i} className="h-12 w-full" />
+   689→              ))}
+   690→              <Separator />
+   691→              {Array.from({ length: 5 }).map((_, i) => (
+   692→                <Skeleton key={i} className="h-10 w-full" />
+   693→              ))}
+   694→            </div>
+   695→          ) : detail ? (
+   696→            <div className="flex h-full flex-col">
+   697→              {/* ── Drawer Header ─────────────────────────────────── */}
+   698→              <SheetHeader className="border-b px-6 py-5 shrink-0">
+   699→                <div className="flex items-center gap-4">
+   700→                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-400 text-white text-lg font-bold shadow-lg">
+   701→                    {detail.name.charAt(0).toUpperCase()}
+   702→                  </div>
+   703→                  <div className="min-w-0 flex-1">
+   704→                    <SheetTitle className="text-lg truncate">
+   705→                      {detail.name}
+   706→                    </SheetTitle>
+   707→                    <SheetDescription className="truncate">
+   708→                      {detail.email}
+   709→                    </SheetDescription>
+   710→                  </div>
+   711→                  <Badge
+   712→                    className={`text-xs shrink-0 ${statusColor[detail.status] || ''}`}
+   713→                  >
+   714→                    {statusLabel[detail.status] || detail.status}
+   715→                  </Badge>
+   716→                </div>
+   717→
+   718→                {/* API Key */}
+   719→                <div className="mt-3 rounded-lg border p-3">
+   720→                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+   721→                    <Key className="h-3 w-3" />
+   722→                    API Key
+   723→                  </div>
+   724→                  <div className="flex items-center gap-2">
+   725→                    <code className="text-xs bg-muted px-2 py-1.5 rounded font-mono flex-1 break-all">
+   726→                      {showApiKey ? detail.apiKey : maskKey(detail.apiKey)}
+   727→                    </code>
+   728→                    <button
+   729→                      onClick={() => setShowApiKey(!showApiKey)}
+   730→                      className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1"
+   731→                      aria-label={showApiKey ? 'Sembunyikan API Key' : 'Tampilkan API Key'}
+   732→                    >
+   733→                      {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+   734→                    </button>
+   735→                    <Button
+   736→                      size="sm"
+   737→                      variant="outline"
+   738→                      className="flex-shrink-0"
+   739→                      onClick={() => handleCopyKey(detail.id, detail.apiKey)}
+   740→                    >
+   741→                      {copiedId === detail.id ? (
+   742→                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+   743→                      ) : (
+   744→                        <Copy className="h-3.5 w-3.5" />
+   745→                      )}
+   746→                    </Button>
+   747→                  </div>
+   748→                </div>
+   749→              </SheetHeader>
+   750→
+   751→              {/* ── Scrollable Content ─────────────────────────────── */}
+   752→              <div className="flex-1 overflow-y-auto scrollbar-thin">
+   753→                <div className="space-y-6 p-6">
+   754→                  {/* ── Stats Section (2x2 grid) ─────────────────── */}
+   755→                  <motion.div
+   756→                    initial={{ opacity: 0, y: 12 }}
+   757→                    animate={{ opacity: 1, y: 0 }}
+   758→                    transition={{ duration: 0.3, delay: 0.05 }}
+   759→                    className="grid grid-cols-2 gap-3"
+   760→                  >
+   761→                    {/* Total Penjualan */}
+   762→                    <div className="card-elevated rounded-xl p-3.5">
+   763→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-400">
+   764→                        <DollarSign className="h-4 w-4 text-white" />
+   765→                      </div>
+   766→                      <p className="text-muted-foreground text-[11px] font-medium">Total Penjualan</p>
+   767→                      <p className="mt-0.5 text-sm font-bold">
+   768→                        <AnimatedCounter
+   769→                          value={detail.totalSales}
+   770→                          formatFn={(v) => formatMoney(v)}
+   771→                          duration={800}
+   772→                          className="text-emerald-600 dark:text-emerald-400"
+   773→                        />
+   774→                      </p>
+   775→                    </div>
+   776→
+   777→                    {/* Total Transaksi */}
+   778→                    <div className="card-elevated rounded-xl p-3.5">
+   779→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-400">
+   780→                        <ArrowLeftRight className="h-4 w-4 text-white" />
+   781→                      </div>
+   782→                      <p className="text-muted-foreground text-[11px] font-medium">Total Transaksi</p>
+   783→                      <p className="mt-0.5 text-sm font-bold">
+   784→                        <AnimatedCounter
+   785→                          value={detail.totalTx}
+   786→                          duration={800}
+   787→                        />
+   788→                      </p>
+   789→                    </div>
+   790→
+   791→                    {/* Tingkat Keberhasilan */}
+   792→                    <div className="card-elevated rounded-xl p-3.5">
+   793→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-400">
+   794→                        <TrendingUp className="h-4 w-4 text-white" />
+   795→                      </div>
+   796→                      <p className="text-muted-foreground text-[11px] font-medium">Tingkat Keberhasilan</p>
+   797→                      <p className="mt-0.5 text-sm font-bold">
+   798→                        <AnimatedCounter
+   799→                          value={detail.successRate}
+   800→                          duration={800}
+   801→                          suffix="%"
+   802→                        />
+   803→                      </p>
+   804→                    </div>
+   805→
+   806→                    {/* Rata-rata Transaksi */}
+   807→                    <div className="card-elevated rounded-xl p-3.5">
+   808→                      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-400">
+   809→                        <CreditCard className="h-4 w-4 text-white" />
+   810→                      </div>
+   811→                      <p className="text-muted-foreground text-[11px] font-medium">Rata-rata Transaksi</p>
+   812→                      <p className="mt-0.5 text-sm font-bold">
+   813→                        <AnimatedCounter
+   814→                          value={Math.round(detail.avgAmount)}
+   815→                          formatFn={(v) => formatMoney(v)}
+   816→                          duration={800}
+   817→                          className="text-rose-600 dark:text-rose-400"
+   818→                        />
+   819→                      </p>
+   820→                    </div>
+   821→                  </motion.div>
+   822→
+   823→                  {/* ── Contact Info Section ────────────────────────── */}
+   824→                  <motion.div
+   825→                    initial={{ opacity: 0, y: 12 }}
+   826→                    animate={{ opacity: 1, y: 0 }}
+   827→                    transition={{ duration: 0.3, delay: 0.1 }}
+   828→                    className="space-y-3"
+   829→                  >
+   830→                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   831→                      Informasi Kontak
+   832→                    </h4>
+   833→                    <div className="rounded-xl border p-4 space-y-3">
+   834→                      <div className="flex items-center gap-3">
+   835→                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   836→                          <Mail className="h-4 w-4 text-muted-foreground" />
+   837→                        </div>
+   838→                        <div className="min-w-0">
+   839→                          <p className="text-muted-foreground text-[11px]">Email</p>
+   840→                          <p className="text-sm font-medium truncate">{detail.email}</p>
+   841→                        </div>
+   842→                      </div>
+   843→                      {detail.phone && (
+   844→                        <div className="flex items-center gap-3">
+   845→                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   846→                            <Phone className="h-4 w-4 text-muted-foreground" />
+   847→                          </div>
+   848→                          <div className="min-w-0">
+   849→                            <p className="text-muted-foreground text-[11px]">Telepon</p>
+   850→                            <p className="text-sm font-medium">{detail.phone}</p>
+   851→                          </div>
+   852→                        </div>
+   853→                      )}
+   854→                      {detail.address && (
+   855→                        <div className="flex items-center gap-3">
+   856→                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   857→                            <MapPin className="h-4 w-4 text-muted-foreground" />
+   858→                          </div>
+   859→                          <div className="min-w-0">
+   860→                            <p className="text-muted-foreground text-[11px]">Alamat</p>
+   861→                            <p className="text-sm font-medium">{detail.address}</p>
+   862→                          </div>
+   863→                        </div>
+   864→                      )}
+   865→                      <div className="flex items-center gap-3">
+   866→                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+   867→                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+   868→                        </div>
+   869→                        <div className="min-w-0">
+   870→                          <p className="text-muted-foreground text-[11px]">Bergabung Sejak</p>
+   871→                          <p className="text-sm font-medium">{formatDate(detail.createdAt)}</p>
+   872→                        </div>
+   873→                      </div>
+   874→                    </div>
+   875→                  </motion.div>
+   876→
+   877→                  {/* ── Revenue Chart ────────────────────────────────── */}
+   878→                  {detail.monthlyRevenue && detail.monthlyRevenue.length > 0 && (
+   879→                    <motion.div
+   880→                      initial={{ opacity: 0, y: 12 }}
+   881→                      animate={{ opacity: 1, y: 0 }}
+   882→                      transition={{ duration: 0.3, delay: 0.15 }}
+   883→                    >
+   884→                      <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   885→                        Pendapatan Bulanan
+   886→                      </h4>
+   887→                      <div className="rounded-xl border p-4">
+   888→                        <ChartContainer
+   889→                          config={revenueChartConfig}
+   890→                          className="h-[120px] w-full"
+   891→                        >
+   892→                          <AreaChart data={detail.monthlyRevenue} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+   893→                            <defs>
+   894→                              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+   895→                                <stop offset="5%" stopColor="oklch(0.6 0.15 160)" stopOpacity={0.3} />
+   896→                                <stop offset="95%" stopColor="oklch(0.6 0.15 160)" stopOpacity={0} />
+   897→                              </linearGradient>
+   898→                            </defs>
+   899→                            <XAxis
+   900→                              dataKey="month"
+   901→                              tickLine={false}
+   902→                              axisLine={false}
+   903→                              tickFormatter={(v: string) => {
+   904→                                const [, m] = v.split('-');
+   905→                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+   906→                                return months[parseInt(m, 10) - 1] ?? m;
+   907→                              }}
+   908→                              className="text-[10px]"
+   909→                              interval={0}
+   910→                            />
+   911→                            <YAxis tickLine={false} axisLine={false} className="text-[10px]" />
+   912→                            <ChartTooltip
+   913→                              content={
+   914→                                <ChartTooltipContent
+   915→                                  labelFormatter={(label: string) => {
+   916→                                    const parts = label.split('-');
+   917→                                    const m = parseInt(parts[1], 10);
+   918→                                    const y = parts[0];
+   919→                                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+   920→                                    return `${months[m - 1]} ${y}`;
+   921→                                  }}
+   922→                                  formatter={(value: unknown) => formatMoney(Number(value))}
+   923→                                />
+   924→                              }
+   925→                            />
+   926→                            <Area
+   927→                              type="monotone"
+   928→                              dataKey="revenue"
+   929→                              stroke="var(--color-revenue)"
+   930→                              fill="url(#revenueGradient)"
+   931→                              strokeWidth={2}
+   932→                            />
+   933→                          </AreaChart>
+   934→                        </ChartContainer>
+   935→                      </div>
+   936→                    </motion.div>
+   937→                  )}
+   938→
+   939→                  {/* ── Payment Links Section ────────────────────────── */}
+   940→                  <motion.div
+   941→                    initial={{ opacity: 0, y: 12 }}
+   942→                    animate={{ opacity: 1, y: 0 }}
+   943→                    transition={{ duration: 0.3, delay: 0.2 }}
+   944→                  >
+   945→                    <div className="mb-3 flex items-center justify-between">
+   946→                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   947→                        Link Pembayaran
+   948→                      </h4>
+   949→                      <Badge variant="secondary" className="text-[10px]">
+   950→                        {detail.paymentLinks.length} link
+   951→                      </Badge>
+   952→                    </div>
+   953→
+   954→                    {detail.paymentLinks.length === 0 ? (
+   955→                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-8">
+   956→                        <Link2 className="h-8 w-8 text-muted-foreground/40" />
+   957→                        <p className="text-muted-foreground text-sm">Belum ada link pembayaran</p>
+   958→                      </div>
+   959→                    ) : (
+   960→                      <div className="space-y-2">
+   961→                        {detail.paymentLinks.map((pl, idx) => (
+   962→                          <motion.div
+   963→                            key={pl.id}
+   964→                            initial={{ opacity: 0, x: -6 }}
+   965→                            animate={{ opacity: 1, x: 0 }}
+   966→                            transition={{ duration: 0.15, delay: idx * 0.03 }}
+   967→                            className="card-hover rounded-xl border p-3"
+   968→                          >
+   969→                            <div className="flex items-center justify-between gap-2">
+   970→                              <div className="min-w-0 flex-1">
+   971→                                <p className="text-sm font-medium truncate">{pl.title}</p>
+   972→                                <div className="flex items-center gap-2 mt-1">
+   973→                                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+   974→                                    {formatMoney(pl.amount)}
+   975→                                  </span>
+   976→                                  <span className="text-xs text-muted-foreground">
+   977→                                    {pl.soldQty}/{pl.maxQty} terjual
+   978→                                  </span>
+   979→                                </div>
+   980→                              </div>
+   981→                              <Badge className={`text-[10px] px-2 py-0.5 shrink-0 ${paymentLinkStatusColor[pl.status] || ''}`}>
+   982→                                {paymentLinkStatusLabel[pl.status] || pl.status}
+   983→                              </Badge>
+   984→                            </div>
+   985→                          </motion.div>
+   986→                        ))}
+   987→                      </div>
+   988→                    )}
+   989→                  </motion.div>
+   990→
+   991→                  {/* ── Recent Transactions Section ──────────────────── */}
+   992→                  <motion.div
+   993→                    initial={{ opacity: 0, y: 12 }}
+   994→                    animate={{ opacity: 1, y: 0 }}
+   995→                    transition={{ duration: 0.3, delay: 0.25 }}
+   996→                  >
+   997→                    <div className="mb-3 flex items-center justify-between">
+   998→                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   999→                        Transaksi Terbaru
+  1000→                      </h4>
+  1001→                      <Badge variant="secondary" className="text-[10px]">
+  1002→                        {detail._count.transactions} total
+  1003→                      </Badge>
+  1004→                    </div>
+  1005→
+  1006→                    {detail.transactions.length === 0 ? (
+  1007→                      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-8">
+  1008→                        <ArrowLeftRight className="h-8 w-8 text-muted-foreground/40" />
+  1009→                        <p className="text-muted-foreground text-sm">Belum ada transaksi</p>
+  1010→                      </div>
+  1011→                    ) : (
+  1012→                      <div className="rounded-xl border overflow-hidden">
+  1013→                        <Table>
+  1014→                          <TableHeader className="table-header-enhanced">
+  1015→                            <TableRow className="hover:bg-transparent">
+  1016→                              <TableHead className="text-[11px]">Invoice</TableHead>
+  1017→                              <TableHead className="text-[11px]">Pelanggan</TableHead>
+  1018→                              <TableHead className="text-[11px] text-right">Jumlah</TableHead>
+  1019→                              <TableHead className="text-[11px]">Metode</TableHead>
+  1020→                              <TableHead className="text-[11px]">Status</TableHead>
+  1021→                              <TableHead className="text-[11px]">Tanggal</TableHead>
+  1022→                            </TableRow>
+  1023→                          </TableHeader>
+  1024→                          <TableBody>
+  1025→                            {detail.transactions.slice(0, 5).map((tx, idx) => (
+  1026→                              <motion.tr
+  1027→                                key={tx.id}
+  1028→                                initial={{ opacity: 0, x: -6 }}
+  1029→                                animate={{ opacity: 1, x: 0 }}
+  1030→                                transition={{ duration: 0.15, delay: idx * 0.03 }}
+  1031→                                className="table-row-hover border-b last:border-0"
+  1032→                              >
+  1033→                                <TableCell className="py-2.5">
+  1034→                                  <span className="font-mono text-[11px] font-medium">{tx.invoiceNo}</span>
+  1035→                                </TableCell>
+  1036→                                <TableCell className="py-2.5">
+  1037→                                  <span className="text-xs truncate block max-w-[100px]">
+  1038→                                    {tx.customer?.name || tx.customerName || '-'}
+  1039→                                  </span>
+  1040→                                </TableCell>
+  1041→                                <TableCell className="py-2.5 text-right">
+  1042→                                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+  1043→                                    {formatMoney(tx.amount)}
+  1044→                                  </span>
+  1045→                                </TableCell>
+  1046→                                <TableCell className="py-2.5">
+  1047→                                  <span className="text-xs text-muted-foreground capitalize">
+  1048→                                    {tx.paymentMethod}
+  1049→                                  </span>
+  1050→                                </TableCell>
+  1051→                                <TableCell className="py-2.5">
+  1052→                                  <Badge
+  1053→                                    variant="outline"
+  1054→                                    className={`text-[10px] font-medium px-2 py-0 ${txStatusColor[tx.status] || ''}`}
+  1055→                                  >
+  1056→                                    {txStatusLabel[tx.status] || tx.status}
+  1057→                                  </Badge>
+  1058→                                </TableCell>
+  1059→                                <TableCell className="py-2.5">
+  1060→                                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+  1061→                                    {formatDateTime(tx.createdAt)}
+  1062→                                  </span>
+  1063→                                </TableCell>
+  1064→                              </motion.tr>
+  1065→                            ))}
+  1066→                          </TableBody>
+  1067→                        </Table>
+  1068→                      </div>
+  1069→                    )}
+  1070→                  </motion.div>
+  1071→                </div>
+  1072→              </div>
+  1073→
+  1074→              {/* ── Action Buttons ─────────────────────────────────── */}
+  1075→              <div className="shrink-0 border-t px-6 py-4 flex gap-3">
+  1076→                <Button
+  1077→                  variant="outline"
+  1078→                  className="flex-1 btn-press"
+  1079→                  onClick={() => {
+  1080→                    // Navigate to transactions page
+  1081→                    const event = new CustomEvent('navigate', { detail: '/transaksi' });
+  1082→                    window.dispatchEvent(event);
+  1083→                    handleCloseSheet();
+  1084→                  }}
+  1085→                >
+  1086→                  <Receipt className="mr-2 h-4 w-4" />
+  1087→                  Lihat Semua Transaksi
+  1088→                </Button>
+  1089→                <Button
+  1090→                  className="flex-1 btn-press bg-emerald-600 hover:bg-emerald-700"
+  1091→                  onClick={() => {
+  1092→                    const event = new CustomEvent('navigate', { detail: '/payouts' });
+  1093→                    window.dispatchEvent(event);
+  1094→                    handleCloseSheet();
+  1095→                  }}
+  1096→                >
+  1097→                  <Banknote className="mr-2 h-4 w-4" />
+  1098→                  Buat Payout
+  1099→                </Button>
+  1100→              </div>
+  1101→            </div>
+  1102→          ) : null}
+  1103→        </SheetContent>
+  1104→      </Sheet>
+  1105→
+  1106→      {/* ── Create Merchant Dialog ── */}
+  1107→      <Dialog open={createOpen} onOpenChange={(open) => {
+  1108→        setCreateOpen(open);
+  1109→        if (!open) setCreateForm({ name: '', email: '', phone: '', address: '' });
+  1110→      }}>
+  1111→        <DialogContent className="sm:max-w-lg">
+  1112→          <DialogHeader>
+  1113→            <DialogTitle className="flex items-center gap-2">
+  1114→              <Plus className="h-5 w-5 text-emerald-500" />
+  1115→              Tambah Merchant Baru
+  1116→            </DialogTitle>
+  1117→            <DialogDescription>
+  1118→              Isi detail di bawah untuk menambahkan merchant baru ke sistem.
+  1119→            </DialogDescription>
+  1120→          </DialogHeader>
+  1121→
+  1122→          <div className="grid gap-4 py-2">
+  1123→            {/* Nama */}
+  1124→            <div className="grid gap-2">
+  1125→              <Label htmlFor="create-name">Nama Merchant *</Label>
+  1126→              <div className="relative">
+  1127→                <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  1128→                <Input
+  1129→                  id="create-name"
+  1130→                  placeholder="contoh: Toko Sejahtera"
+  1131→                  value={createForm.name}
+  1132→                  onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+  1133→                  className="pl-9"
+  1134→                />
+  1135→              </div>
+  1136→            </div>
+  1137→
+  1138→            {/* Email */}
+  1139→            <div className="grid gap-2">
+  1140→              <Label htmlFor="create-email">Email *</Label>
+  1141→              <div className="relative">
+  1142→                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  1143→                <Input
+  1144→                  id="create-email"
+  1145→                  type="email"
+  1146→                  placeholder="contoh: admin@tokosejahtera.com"
+  1147→                  value={createForm.email}
+  1148→                  onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+  1149→                  className="pl-9"
+  1150→                />
+  1151→              </div>
+  1152→            </div>
+  1153→
+  1154→            {/* Telepon */}
+  1155→            <div className="grid gap-2">
+  1156→              <Label htmlFor="create-phone">Telepon</Label>
+  1157→              <div className="relative">
+  1158→                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  1159→                <Input
+  1160→                  id="create-phone"
+  1161→                  placeholder="contoh: 081234567890"
+  1162→                  value={createForm.phone}
+  1163→                  onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))}
+  1164→                  className="pl-9"
+  1165→                />
+  1166→              </div>
+  1167→            </div>
+  1168→
+  1169→            {/* Alamat */}
+  1170→            <div className="grid gap-2">
+  1171→              <Label htmlFor="create-address">Alamat</Label>
+  1172→              <div className="relative">
+  1173→                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+  1174→                <Input
+  1175→                  id="create-address"
+  1176→                  placeholder="contoh: Jl. Sudirman No. 123, Jakarta"
+  1177→                  value={createForm.address}
+  1178→                  onChange={(e) => setCreateForm((f) => ({ ...f, address: e.target.value }))}
+  1179→                  className="pl-9"
+  1180→                />
+  1181→              </div>
+  1182→            </div>
+  1183→          </div>
+  1184→
+  1185→          <DialogFooter>
+  1186→            <Button
+  1187→              variant="outline"
+  1188→              onClick={() => {
+  1189→                setCreateOpen(false);
+  1190→                setCreateForm({ name: '', email: '', phone: '', address: '' });
+  1191→              }}
+  1192→              disabled={createMutation.isPending}
+  1193→            >
+  1194→              Batal
+  1195→            </Button>
+  1196→            <Button
+  1197→              onClick={handleSubmitCreate}
+  1198→              disabled={createMutation.isPending}
+  1199→              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+  1200→            >
+  1201→              {createMutation.isPending ? (
+  1202→                <>
+  1203→                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+  1204→                  Menyimpan...
+  1205→                </>
+  1206→              ) : (
+  1207→                'Tambah Merchant'
+  1208→              )}
+  1209→            </Button>
+  1210→          </DialogFooter>
+  1211→        </DialogContent>
+  1212→      </Dialog>
+  1213→    </div>
+  1214→  );
+  1215→}
+  1216→

@@ -315,7 +315,7 @@ export function Employees() {
               <Label htmlFor="e-email">Email *</Label>
               <Input id="e-email" type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="email@contoh.com" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Role *</Label>
                 <Select value={formRole} onValueChange={setFormRole}>
@@ -342,7 +342,7 @@ export function Employees() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="e-pin">PIN (4-6 digit)</Label>
                 <Input id="e-pin" type="password" maxLength={6} value={formPin} onChange={(e) => setFormPin(e.target.value.replace(/\D/g, ''))} placeholder="••••" className="tracking-widest" />
