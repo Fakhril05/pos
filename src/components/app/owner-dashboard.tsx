@@ -212,6 +212,14 @@ export function OwnerDashboard() {
             </CardHeader>
             <CardContent className="pt-2">
               <ChartContainer config={revenueChartConfig} className="h-[280px] w-full">
+                {data?.revenueTrend?.every((d: { revenue: number }) => d.revenue === 0) ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <BarChart3 className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                      <p className="mt-2 text-sm text-muted-foreground">Belum ada data penjualan 7 hari terakhir</p>
+                    </div>
+                  </div>
+                ) : (
                 <AreaChart data={data?.revenueTrend ?? []} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -263,6 +271,7 @@ export function OwnerDashboard() {
                     radius={[4, 4, 0, 0]}
                   />
                 </AreaChart>
+                )}
               </ChartContainer>
             </CardContent>
           </Card>
@@ -425,22 +434,26 @@ export function OwnerDashboard() {
           <CardContent className="p-5">
             <h3 className="text-sm font-semibold text-muted-foreground mb-3">Aksi Cepat</h3>
             <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                className="gap-2 hover:border-emerald-500/50 hover:bg-emerald-500/5"
-                onClick={() => useAppStore.getState().setActivePage('kasir')}
-              >
-                <Plus className="h-4 w-4" />
-                Buat Transaksi
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 hover:border-emerald-500/50 hover:bg-emerald-500/5"
-                onClick={() => useAppStore.getState().setActivePage('produk')}
-              >
-                <Package className="h-4 w-4" />
-                Kelola Produk
-              </Button>
+              {user?.role === 'business_owner' && (
+                <Button
+                  variant="outline"
+                  className="gap-2 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+                  onClick={() => useAppStore.getState().setActivePage('kasir')}
+                >
+                  <Plus className="h-4 w-4" />
+                  Buat Transaksi
+                </Button>
+              )}
+              {user?.role === 'business_owner' && (
+                <Button
+                  variant="outline"
+                  className="gap-2 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+                  onClick={() => useAppStore.getState().setActivePage('produk')}
+                >
+                  <Package className="h-4 w-4" />
+                  Kelola Produk
+                </Button>
+              )}
               <Button
                 variant="outline"
                 className="gap-2 hover:border-emerald-500/50 hover:bg-emerald-500/5"
@@ -449,6 +462,16 @@ export function OwnerDashboard() {
                 <BarChart3 className="h-4 w-4" />
                 Lihat Laporan
               </Button>
+              {user?.role === 'manager' && (
+                <Button
+                  variant="outline"
+                  className="gap-2 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+                  onClick={() => useAppStore.getState().setActivePage('stok')}
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Kelola Stok
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

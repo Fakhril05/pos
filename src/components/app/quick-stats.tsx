@@ -9,6 +9,7 @@ import {
   Store,
   DollarSign,
 } from 'lucide-react'
+import { useAppStore } from '@/stores/app-store'
 
 const formatRp = (amount: number) =>
   new Intl.NumberFormat('id-ID', {
@@ -26,6 +27,8 @@ interface DashboardStats {
 }
 
 export function QuickStats() {
+  const { user } = useAppStore()
+
   const { data, isLoading } = useQuery<DashboardStats>({
     queryKey: ['quick-stats'],
     queryFn: async () => {
@@ -42,7 +45,13 @@ export function QuickStats() {
     },
     refetchInterval: 60000,
     staleTime: 30000,
+    enabled: user?.role === 'super_admin',
   })
+
+  // Only show platform-wide QuickStats for Super Admin
+  if (user?.role !== 'super_admin') {
+    return null
+  }
 
   const items = [
     {

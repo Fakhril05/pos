@@ -30,10 +30,21 @@ const pageTitles: Record<string, string> = {
   payouts: 'Payout',
   reports: 'Laporan',
   settings: 'Pengaturan',
+  'super-admin': 'Dashboard Super Admin',
+  'tenant-detail': 'Tenant',
+  'subscription-plans': 'Paket Langganan',
+  produk: 'Produk',
+  stok: 'Stok & Inventaris',
+  'stok-opname': 'Stok & Opname',
+  karyawan: 'Karyawan',
+  outlet: 'Outlet',
+  'laporan-penjualan': 'Laporan Penjualan',
+  'riwayat-transaksi': 'Riwayat Transaksi',
+  kasir: 'Kasir POS',
 }
 
 const pageDescriptions: Record<string, string> = {
-  dashboard: 'Ringkasan aktivitas pembayaran Anda',
+  dashboard: 'Ringkasan aktivitas bisnis Anda',
   transactions: 'Kelola semua transaksi pembayaran',
   'payment-links': 'Buat dan kelola link pembayaran',
   customers: 'Data pelanggan Anda',
@@ -41,6 +52,17 @@ const pageDescriptions: Record<string, string> = {
   payouts: 'Kelola pencairan dana',
   reports: 'Analisis dan laporan keuangan',
   settings: 'Konfigurasi akun dan aplikasi',
+  'super-admin': 'Kelola platform dan tenant',
+  'tenant-detail': 'Detail dan kelola tenant',
+  'subscription-plans': 'Paket langganan tersedia',
+  produk: 'Kelola produk dan katalog',
+  stok: 'Pantau dan kelola stok produk',
+  'stok-opname': 'Pantau dan kelola stok produk',
+  karyawan: 'Kelola karyawan dan akses',
+  outlet: 'Kelola outlet bisnis',
+  'laporan-penjualan': 'Analisis penjualan bisnis',
+  'riwayat-transaksi': 'Riwayat transaksi',
+  kasir: 'Terminal Point of Sale',
 }
 
 type NotificationType = {
@@ -124,7 +146,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function Header() {
-  const { activePage, toggleSidebar, sidebarOpen, setActivePage, setPendingTxId } = useAppStore()
+  const { user, activePage, toggleSidebar, sidebarOpen, setActivePage, setPendingTxId } = useAppStore()
   const { theme, setTheme } = useTheme()
   const [commandOpen, setCommandOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -450,9 +472,9 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
-                <AvatarImage src="" alt="Admin" />
+                <AvatarImage src="" alt={user?.name ?? 'User'} />
                 <AvatarFallback className="gradient-emerald text-sm font-bold text-white">
-                  AR
+                  {user?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() ?? 'U'}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -460,15 +482,15 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">Admin Ril</p>
-                <p className="text-xs text-muted-foreground">admin@posril.id</p>
+                <p className="text-sm font-medium">{user?.name ?? 'User'}</p>
+                <p className="text-xs text-muted-foreground">{user?.email ?? ''}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profil</DropdownMenuItem>
-            <DropdownMenuItem>Pengaturan</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActivePage('settings')}>Profil</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActivePage('settings')}>Pengaturan</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Keluar</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={() => useAppStore.getState().logout()}>Keluar</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

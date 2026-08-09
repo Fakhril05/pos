@@ -1085,3 +1085,55 @@ Stage Summary:
 5. Manager void/refund authorization flow not yet implemented
 6. Thermal Bluetooth printer integration is simulated (opens print window)
 7. Offline mode / PWA not yet implemented
+
+---
+Task ID: 8 (Bug Fix Round)
+Agent: Main
+Task: Fix all bugs and errors found via browser QA
+
+Work Log:
+- Ran tsc --noEmit: 0 TypeScript errors
+- Ran bun run lint: 0 ESLint errors
+- Performed browser QA for all 4 roles using agent-browser + VLM screenshot analysis
+- Found 7 bugs total:
+
+**Bug 1 (CRITICAL): Manager Stock/Reports pages blank**
+- Root cause: Sidebar uses page IDs ('stok-opname', 'laporan-penjualan', 'riwayat-transaksi', 'tenant-detail', 'subscription-plans') that had no mapping in pageComponents
+- Fix: Added 5 missing entries to pageComponents in page.tsx
+
+**Bug 2: Header avatar hardcoded "AR"**
+- Root cause: header.tsx had hardcoded 'AR', 'Admin Ril', 'admin@posril.id'
+- Fix: Use user from useAppStore() for initials, name, email; logout button now functional
+
+**Bug 3: Customer names show "(Toko )" with empty outlet**
+- Root cause: Seed data creates customerName with "(Toko X)" format but outlet name empty
+- Fix: Added regex cleanup in owner/dashboard API: .replace(/\s*\(Toko\s*\)\s*$/, '')
+
+**Bug 4: Charts show empty with no message**
+- Root cause: 7-day revenue trend all zeros, chart renders but appears blank
+- Fix: Added conditional empty state in owner-dashboard.tsx with icon + message
+
+**Bug 5: Manager sees Owner-only quick actions**
+- Root cause: Quick actions (Buat Transaksi, Kelola Produk) not role-filtered
+- Fix: Wrapped owner-only actions with `user?.role === 'business_owner'` condition; added Manager-specific "Kelola Stok" action
+
+**Bug 6: QuickStats bar shows platform data for all roles**
+- Root cause: QuickStats always fetches /api/dashboard regardless of role
+- Fix: Added `enabled: user?.role === 'super_admin'` to query; early return null for other roles (using enabled flag, not conditional hook)
+
+**Bug 7 (CRITICAL): Reports page crashes with error boundary**
+- Root cause: API returns 'topTenants' but component destructures 'topMerchants' → undefined.length crash
+- Fix: Added proper data transformation mapping 'topTenants' to 'topMerchants' with null-safe fallbacks
+
+- Also added all missing page IDs to header.tsx pageTitles and pageDescriptions
+
+Stage Summary:
+- **7 bugs found, 7 bugs fixed**
+- **0 TypeScript errors, 0 ESLint errors** after fixes
+- All 4 roles verified working via agent-browser QA:
+  - Super Admin: Dashboard, Tenant, Paket Langganan ✅
+  - Business Owner: Dashboard (KPIs, chart empty state, clean names, role-aware actions), Products, Stock, Karyawan, Outlet, Laporan ✅
+  - Manager: Dashboard, Stok & Opname (previously blank!), Laporan Penjualan (previously crashing!) ✅
+  - Cashier: Kasir POS, Riwayat Transaksi ✅
+- Header avatar now correctly shows user initials per role
+- VLM screenshot analysis confirms all visual fixes

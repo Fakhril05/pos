@@ -440,7 +440,23 @@ export default function Reports() {
       } as ReportsData;
     }
 
-    return data as ReportsData;
+    // Handle dashboard report format (may have topTenants instead of topMerchants)
+    const raw = data as Record<string, unknown>;
+    const topTenants = raw.topTenants as { id: string; name: string; totalSales: number; totalTx: number }[] | undefined;
+    const mapped: ReportsData = {
+      summary: raw.summary as ReportsData['summary'],
+      dailyRevenue: (raw.dailyRevenue as DailyRevenue[]) ?? [],
+      paymentMethodBreakdown: (raw.paymentMethodBreakdown as PaymentMethodBreakdown[]) ?? [],
+      topMerchants: (topTenants ?? []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        totalTx: m.totalTx,
+        totalRevenue: m.totalSales,
+        avgTxSize: m.totalTx > 0 ? m.totalSales / m.totalTx : 0,
+      })),
+      statusDistribution: (raw.statusDistribution as StatusDistribution[]) ?? [],
+    };
+    return mapped;
   }, [data]);
 
   // ── CSV Export handlers ───────────────────────────────────────────────────

@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     const recentTransactions = recentTx.map((tx) => ({
       id: tx.id,
       invoiceNo: tx.invoiceNo,
-      customerName: tx.customerName,
+      customerName: (tx.customerName || 'Umum').replace(/\s*\(Toko\s*\)\s*$/, ''),
       outletName: tx.outlet?.name ?? '-',
       cashierName: tx.cashier?.name ?? '-',
       totalAmount: tx.totalAmount,

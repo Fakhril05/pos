@@ -39,10 +39,15 @@ const pageComponents: Record<string, React.ComponentType> = {
   reports: Reports,
   settings: Settings,
   'super-admin': SuperAdmin,
+  'tenant-detail': SuperAdmin,
+  'subscription-plans': SuperAdmin,
   produk: Products,
   stok: Stock,
+  'stok-opname': Stock,
   karyawan: Employees,
   outlet: Outlets,
+  'laporan-penjualan': Reports,
+  'riwayat-transaksi': Transactions,
 }
 
 const PAGE_KEYS: Record<string, string> = {
