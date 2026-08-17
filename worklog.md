@@ -1198,3 +1198,25 @@ Stage Summary:
 - Zero TypeScript and ESLint errors
 - Mobile viewport verified: no overflow, no console errors, all pages render properly
 - Known pre-existing issue: Reports page "Kustom" date preset shows error when custom dates are empty (not caused by responsive fixes)
+
+---
+Task ID: super-admin-fix
+Agent: Main
+Task: Fitur Tambah Akun Super Admin + Perbaikan tombol yang belum aktif
+
+Work Log:
+- Analisis komponen super-admin.tsx: tombol Eye & Power tidak punya onClick handler
+- Install bcryptjs + @types/bcryptjs untuk hash password
+- Buat API route POST /api/admin/users (buat user dengan hash password, validasi, auto-create tenant untuk business_owner)
+- Buat API route GET /api/admin/users (list semua user)
+- Buat API route PATCH /api/super-admin/tenants/[id] (toggle tenant status suspend/activate/close)
+- Buat API route GET /api/super-admin/tenants/[id] (detail tenant)
+- Buat komponen AddAccountDialog dengan React Hook Form + Zod validasi, 5 field (Nama, Email, Password, Role dropdown, Status toggle)
+- Rewrite super-admin.tsx: integrasi dialog, tombol Eye buka detail Sheet, tombol Power toggle status via useMutation, error state handling dengan AlertTriangle + retry button, loading skeleton sudah ada
+- Verifikasi browser: dialog buka/submit berhasil, tenant baru terbuat, toggle status berfungsi, detail sheet berfungsi
+
+Stage Summary:
+- 4 file dibuat: /api/admin/users/route.ts, /api/super-admin/tenants/[id]/route.ts, add-account-dialog.tsx
+- 1 file di-rewrite: super-admin.tsx
+- 0 TypeScript errors, 0 ESLint errors
+- Semua tombol Super Admin sekarang berfungsi (Tambah Akun, Lihat Detail, Toggle Status)
